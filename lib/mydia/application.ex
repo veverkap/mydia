@@ -7,6 +7,12 @@ defmodule Mydia.Application do
 
   @impl true
   def start(_type, _args) do
+    # Load and validate configuration at startup
+    config = load_config!()
+
+    # Store validated config in Application environment for fast access
+    Application.put_env(:mydia, :runtime_config, config)
+
     children =
       [
         MydiaWeb.Telemetry,
@@ -15,7 +21,9 @@ defmodule Mydia.Application do
          repos: Application.fetch_env!(:mydia, :ecto_repos), skip: skip_migrations?()},
         {DNSCluster, query: Application.get_env(:mydia, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: Mydia.PubSub},
-        Mydia.Downloads.Client.Registry
+        Mydia.Downloads.Client.Registry,
+        Mydia.Indexers.Adapter.Registry,
+        Mydia.Metadata.Provider.Registry
       ] ++
         oban_children() ++
         [
@@ -28,7 +36,12 @@ defmodule Mydia.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Mydia.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    with {:ok, pid} <- Supervisor.start_link(children, opts) do
+      # Register indexer adapters after supervisor has started
+      Mydia.Indexers.register_adapters()
+      {:ok, pid}
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -55,5 +68,16 @@ defmodule Mydia.Application do
   defp skip_migrations?() do
     # By default, sqlite migrations are run when using a release
     System.get_env("RELEASE_NAME") == nil
+  end
+
+  defp load_config! do
+    # Only load runtime config in non-dev/test environments
+    # or if explicitly enabled via environment variable
+    if Mix.env() in [:prod, :staging] or System.get_env("LOAD_RUNTIME_CONFIG") == "true" do
+      Mydia.Config.Loader.load!()
+    else
+      # In dev/test, use schema defaults to avoid interfering with Mix config
+      Mydia.Config.Schema.defaults()
+    end
   end
 end
