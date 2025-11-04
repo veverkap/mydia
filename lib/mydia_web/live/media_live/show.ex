@@ -252,6 +252,11 @@ defmodule MydiaWeb.MediaLive.Show do
     end
   end
 
+  def handle_event("stop_propagation", _params, socket) do
+    # This handler catches clicks on action buttons to prevent row click propagation
+    {:noreply, socket}
+  end
+
   def handle_event("search_episode", %{"episode-id" => episode_id}, socket) do
     episode = Media.get_episode!(episode_id, preload: [:media_item])
     media_item = episode.media_item

@@ -272,9 +272,32 @@
                             </tr>
                           </thead>
                           <tbody>
-                            <tr :for={episode <- Enum.sort_by(episodes, & &1.episode_number)}>
+                            <tr
+                              :for={episode <- Enum.sort_by(episodes, & &1.episode_number)}
+                              phx-click="toggle_episode_monitored"
+                              phx-value-episode-id={episode.id}
+                              class={[
+                                "cursor-pointer transition-colors",
+                                episode.monitored && "bg-base-200/50",
+                                !episode.monitored && "opacity-60"
+                              ]}
+                            >
                               <td class="font-mono text-base-content/70">
-                                {episode.episode_number}
+                                <div class="flex items-center gap-2">
+                                  <.icon
+                                    name={
+                                      if episode.monitored,
+                                        do: "hero-bookmark-solid",
+                                        else: "hero-bookmark"
+                                    }
+                                    class={[
+                                      "w-4 h-4",
+                                      episode.monitored && "text-primary",
+                                      !episode.monitored && "text-base-content/30"
+                                    ]}
+                                  />
+                                  {episode.episode_number}
+                                </div>
                               </td>
                               <td>
                                 <div class="font-medium">{episode.title || "TBA"}</div>
@@ -306,28 +329,8 @@
                                   </span>
                                 </div>
                               </td>
-                              <td>
+                              <td phx-click="stop_propagation">
                                 <div class="flex gap-1">
-                                  <button
-                                    type="button"
-                                    phx-click="toggle_episode_monitored"
-                                    phx-value-episode-id={episode.id}
-                                    class="btn btn-ghost btn-xs"
-                                    title={
-                                      if episode.monitored,
-                                        do: "Stop monitoring",
-                                        else: "Start monitoring"
-                                    }
-                                  >
-                                    <.icon
-                                      name={
-                                        if episode.monitored,
-                                          do: "hero-bookmark-solid",
-                                          else: "hero-bookmark"
-                                      }
-                                      class="w-4 h-4"
-                                    />
-                                  </button>
                                   <button
                                     type="button"
                                     phx-click="search_episode"
