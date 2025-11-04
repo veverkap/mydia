@@ -100,4 +100,38 @@ if config_env() == :prod do
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
+
+  # Guardian JWT secret key
+  guardian_secret_key =
+    System.get_env("GUARDIAN_SECRET_KEY") ||
+      raise """
+      environment variable GUARDIAN_SECRET_KEY is missing.
+      You can generate one by calling: mix guardian.gen.secret
+      """
+
+  config :mydia, Mydia.Auth.Guardian,
+    secret_key: guardian_secret_key
+
+  # Ueberauth OIDC configuration
+  oidc_discovery_document_uri =
+    System.get_env("OIDC_DISCOVERY_DOCUMENT_URI") ||
+      System.get_env("OIDC_ISSUER")
+
+  oidc_client_id = System.get_env("OIDC_CLIENT_ID")
+  oidc_client_secret = System.get_env("OIDC_CLIENT_SECRET")
+  oidc_redirect_uri = System.get_env("OIDC_REDIRECT_URI") || "#{host}/auth/oidc/callback"
+
+  if oidc_discovery_document_uri && oidc_client_id && oidc_client_secret do
+    config :ueberauth, Ueberauth.Strategy.Oidcc,
+      issuer: oidc_discovery_document_uri,
+      client_id: oidc_client_id,
+      client_secret: oidc_client_secret,
+      redirect_uri: oidc_redirect_uri,
+      scopes: System.get_env("OIDC_SCOPES") || "openid profile email"
+
+    config :ueberauth, Ueberauth,
+      providers: [
+        oidc: {Ueberauth.Strategy.Oidcc, []}
+      ]
+  end
 end

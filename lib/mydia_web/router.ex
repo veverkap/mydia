@@ -14,8 +14,47 @@ defmodule MydiaWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", MydiaWeb do
+  # Authentication pipeline - verifies JWT tokens from session or header
+  pipeline :auth do
+    plug MydiaWeb.Plugs.AuthPipeline
+  end
+
+  # Require authenticated user
+  pipeline :require_authenticated do
+    plug MydiaWeb.Plugs.EnsureAuthenticated
+  end
+
+  # Require admin role
+  pipeline :require_admin do
+    plug MydiaWeb.Plugs.EnsureRole, :admin
+  end
+
+  # API authentication pipeline - supports both JWT and API keys
+  pipeline :api_auth do
+    plug MydiaWeb.Plugs.AuthPipeline
+    plug MydiaWeb.Plugs.ApiAuth
+  end
+
+  # Authentication routes
+  scope "/auth", MydiaWeb do
     pipe_through :browser
+
+    # Local authentication (development only)
+    get "/login", SessionController, :new
+    get "/local/login", SessionController, :new
+    post "/local/login", SessionController, :create
+
+    # OIDC authentication
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+    post "/:provider/callback", AuthController, :callback
+
+    # Logout
+    get "/logout", AuthController, :logout
+  end
+
+  scope "/", MydiaWeb do
+    pipe_through [:browser, :auth]
 
     get "/", PageController, :home
   end

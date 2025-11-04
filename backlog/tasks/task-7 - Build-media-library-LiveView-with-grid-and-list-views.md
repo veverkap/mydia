@@ -1,9 +1,10 @@
 ---
 id: task-7
 title: Build media library LiveView with grid and list views
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-04 01:52'
+updated_date: '2025-11-04 03:17'
 labels:
   - liveview
   - ui

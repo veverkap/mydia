@@ -1,0 +1,61 @@
+defmodule MydiaWeb.Plugs.ApiAuth do
+  @moduledoc """
+  Authenticates API requests using API keys.
+
+  API keys can be provided via:
+  1. X-API-Key header
+  2. api_key query parameter
+
+  If valid, the user is loaded and available via Guardian.Plug.current_resource/1.
+  """
+  import Plug.Conn
+  import Phoenix.Controller, only: [json: 2]
+
+  alias Mydia.Accounts
+  alias Mydia.Auth.Guardian
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    # Skip if user is already authenticated via JWT
+    case Guardian.Plug.current_resource(conn) do
+      nil -> verify_api_key(conn)
+      _user -> conn
+    end
+  end
+
+  defp verify_api_key(conn) do
+    case extract_api_key(conn) do
+      nil ->
+        conn
+
+      api_key ->
+        case Accounts.verify_api_key(api_key) do
+          {:ok, user} ->
+            # Store user in the connection for later use
+            Guardian.Plug.put_current_resource(conn, user)
+
+          {:error, :invalid_key} ->
+            conn
+            |> put_status(401)
+            |> json(%{error: "Unauthorized", message: "Invalid API key"})
+            |> halt()
+        end
+    end
+  end
+
+  defp extract_api_key(conn) do
+    # Check X-API-Key header first
+    case get_req_header(conn, "x-api-key") do
+      [key | _] ->
+        key
+
+      [] ->
+        # Fall back to query parameter
+        case conn.query_params do
+          %{"api_key" => key} -> key
+          _ -> nil
+        end
+    end
+  end
+end

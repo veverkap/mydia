@@ -65,7 +65,7 @@ defmodule Mydia.MixProject do
 
       # Authentication (will be configured in task-5)
       {:ueberauth, "~> 0.10"},
-      {:ueberauth_oidc, "~> 0.2"},
+      {:ueberauth_oidcc, "~> 0.4"},
       {:guardian, "~> 2.3"},
       {:bcrypt_elixir, "~> 3.0"},  # Password hashing for users
       {:argon2_elixir, "~> 4.0"},  # Password hashing for API keys

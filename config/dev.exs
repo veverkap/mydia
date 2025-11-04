@@ -87,3 +87,27 @@ config :phoenix_live_view,
   debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+# Guardian secret key for development (NOT for production!)
+config :mydia, Mydia.Auth.Guardian,
+  secret_key: "dev_secret_key_replace_in_production_with_secure_random_key"
+
+# Ueberauth OIDC configuration for development
+# These can be overridden with environment variables
+oidc_issuer = System.get_env("OIDC_ISSUER")
+oidc_client_id = System.get_env("OIDC_CLIENT_ID")
+oidc_client_secret = System.get_env("OIDC_CLIENT_SECRET")
+
+if oidc_issuer && oidc_client_id && oidc_client_secret do
+  config :ueberauth, Ueberauth.Strategy.Oidcc,
+    issuer: oidc_issuer,
+    client_id: oidc_client_id,
+    client_secret: oidc_client_secret,
+    redirect_uri: System.get_env("OIDC_REDIRECT_URI") || "http://localhost:4000/auth/oidc/callback",
+    scopes: System.get_env("OIDC_SCOPES") || "openid profile email"
+
+  config :ueberauth, Ueberauth,
+    providers: [
+      oidc: {Ueberauth.Strategy.Oidcc, []}
+    ]
+end

@@ -30,13 +30,9 @@ if [ ! -d "$MIX_HOME" ] || [ ! -f "$MIX_HOME/rebar" ]; then
     mix local.rebar --force
 fi
 
-# Install Mix dependencies if not present
-if [ ! -d "deps" ] || [ -z "$(ls -A deps 2>/dev/null)" ]; then
-    echo "==> Installing Elixir dependencies..."
-    mix deps.get
-else
-    echo "==> Dependencies already installed, skipping..."
-fi
+# Install Mix dependencies (always run to ensure container-compatible deps)
+echo "==> Installing Elixir dependencies..."
+mix deps.get --only dev
 
 # Compile exqlite if it's not already built (it was cleaned at startup)
 if [ -d "deps/exqlite" ] && [ ! -f "_build/dev/lib/exqlite/priv/sqlite3_nif.so" ]; then

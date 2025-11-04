@@ -51,6 +51,14 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Configure Guardian for JWT authentication
+config :mydia, Mydia.Auth.Guardian,
+  issuer: "mydia",
+  ttl: {30, :days},
+  allowed_drift: 2000,
+  verify_issuer: true,
+  secret_key: "REPLACE_IN_RUNTIME_CONFIG"
+
 # Configure Oban for background job processing
 # Using Lite engine with polling for SQLite compatibility
 config :mydia, Oban,

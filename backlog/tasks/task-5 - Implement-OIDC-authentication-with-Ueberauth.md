@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - assistant
 created_date: '2025-11-04 01:52'
-updated_date: '2025-11-04 03:04'
+updated_date: '2025-11-04 03:15'
 labels:
   - authentication
   - security
@@ -23,13 +23,13 @@ Set up OpenID Connect authentication using Ueberauth and Guardian for JWT tokens
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Ueberauth and ueberauth_oidc dependencies configured
-- [ ] #2 Guardian set up for JWT token management
-- [ ] #3 OIDC callback routes implemented
-- [ ] #4 User session management working
-- [ ] #5 Role-based authorization (admin, user, readonly)
-- [ ] #6 Local auth fallback for development
-- [ ] #7 Authentication plugs created
+- [x] #1 Ueberauth and ueberauth_oidc dependencies configured
+- [x] #2 Guardian set up for JWT token management
+- [x] #3 OIDC callback routes implemented
+- [x] #4 User session management working
+- [x] #5 Role-based authorization (admin, user, readonly)
+- [x] #6 Local auth fallback for development
+- [x] #7 Authentication plugs created
 <!-- AC:END -->
 
 ## Implementation Plan

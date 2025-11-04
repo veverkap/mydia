@@ -1,0 +1,53 @@
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+  <div class="card w-full max-w-md bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title text-2xl font-bold">Local Login (Development)</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        This is a development-only login. Use your local username and password.
+      </p>
+
+      <.form :let={f} for={@changeset} action={~p"/auth/local/login"} id="login-form">
+        <div class="form-control">
+          <label class="label" for="user_username">
+            <span class="label-text">Username</span>
+          </label>
+          <input
+            type="text"
+            name="user[username]"
+            id="user_username"
+            class="input input-bordered w-full"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="form-control mt-4">
+          <label class="label" for="user_password">
+            <span class="label-text">Password</span>
+          </label>
+          <input
+            type="password"
+            name="user[password]"
+            id="user_password"
+            class="input input-bordered w-full"
+            required
+          />
+        </div>
+
+        <div class="form-control mt-6">
+          <button type="submit" class="btn btn-primary w-full">
+            Log In
+          </button>
+        </div>
+      </.form>
+
+      <div class="divider">OR</div>
+
+      <div class="text-center">
+        <a href="/auth/oidc" class="btn btn-outline btn-secondary w-full">
+          Log in with OIDC
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

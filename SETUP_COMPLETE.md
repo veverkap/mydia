@@ -10,7 +10,7 @@ The Mydia Phoenix application has been successfully generated and configured wit
    - Phoenix 1.8.1 with LiveView
    - SQLite3 database adapter (Ecto_SQLite3)
    - No mailer (as specified)
-   - Nix shell environment configured
+   - Docker development environment configured
 
 2. **SQLite Database Configuration**
    - Development config: `config/dev.exs`
@@ -107,7 +107,8 @@ mydia/
 ├── product.md                # Product specification
 ├── technical.md              # Technical architecture
 ├── README.md                 # Quick start guide
-├── shell.nix                 # Nix development environment
+├── compose.yml               # Docker Compose configuration
+├── dev                       # Development command wrapper
 ├── mix.exs                   # Elixir dependencies
 └── mydia_dev.db             # SQLite database (created)
 ```
@@ -117,14 +118,24 @@ mydia/
 ### To start developing:
 
 ```bash
-# Enter the Nix shell environment
-nix-shell
+# Start the development environment with Docker
+./dev up -d
+
+# Run database migrations
+./dev mix ecto.migrate
 
 # Start the Phoenix server
-mix phx.server
+./dev mix phx.server
 ```
 
 Then visit http://localhost:4000
+
+Or for local development without Docker:
+
+```bash
+# Start the Phoenix server
+mix phx.server
+```
 
 ### Immediate development priorities:
 
@@ -221,7 +232,7 @@ mix assets.build           # Build assets
 
 ## Notes
 
-- The project uses **Nix** for reproducible development environments
+- The project uses **Docker** with the `./dev` wrapper for reproducible development environments
 - All dependencies are managed through `mix.exs` (Elixir) and `package.json` (Node)
 - SQLite is configured with WAL mode for optimal concurrency
 - DaisyUI theme `mydia` is the default dark theme
