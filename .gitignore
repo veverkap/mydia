@@ -46,6 +46,3 @@ compose.override.yml
 .env
 .env.prod
 
-# Generated screenshots
-/screenshots/
-

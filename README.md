@@ -13,6 +13,27 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 🎯 **Episode Tracking** – Monitor individual episodes or entire seasons
 - 🎨 **Modern UI** – Built with LiveView, Tailwind CSS, and DaisyUI
 
+## 📸 Screenshots
+
+<table>
+  <tr>
+    <td><img src="screenshots/homepage.png" alt="Homepage" /></td>
+    <td><img src="screenshots/dashboard.png" alt="Dashboard" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Homepage</b></td>
+    <td align="center"><b>Dashboard</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/calendar.png" alt="Calendar View" /></td>
+    <td><img src="screenshots/search.png" alt="Search" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Calendar View</b></td>
+    <td align="center"><b>Search</b></td>
+  </tr>
+</table>
+
 ## 🚀 Quick Start
 
 ### Docker (Recommended)
