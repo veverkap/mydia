@@ -28,6 +28,9 @@ defmodule MydiaWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import MydiaWeb.ConnCase
+      import MydiaWeb.AuthHelpers
+      import Mydia.ConfigHelpers
+      import Mydia.Factory
     end
   end
 

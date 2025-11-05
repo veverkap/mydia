@@ -93,6 +93,7 @@ defmodule Mydia.MixProject do
       {:bandit, "~> 1.5"},
 
       # Development & Testing
+      {:ex_machina, "~> 2.8", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false}
     ]
