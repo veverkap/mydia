@@ -7,6 +7,7 @@ defmodule Mydia.Media do
   require Logger
   alias Mydia.Repo
   alias Mydia.Media.{MediaItem, Episode}
+  alias Mydia.Events
 
   ## Media Items
 
@@ -51,12 +52,22 @@ defmodule Mydia.Media do
 
   @doc """
   Creates a media item.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :system
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def create_media_item(attrs \\ %{}) do
+  def create_media_item(attrs \\ %{}, opts \\ []) do
     with {:ok, media_item} <-
            %MediaItem{}
            |> MediaItem.changeset(attrs)
            |> Repo.insert() do
+      # Track event
+      actor_type = Keyword.get(opts, :actor_type, :system)
+      actor_id = Keyword.get(opts, :actor_id, "media_context")
+
+      Events.media_item_added(media_item, actor_type, actor_id)
+
       # Execute after_media_added hooks asynchronously
       Mydia.Hooks.execute_async("after_media_added", %{
         media_item: serialize_media_item(media_item)
@@ -68,17 +79,46 @@ defmodule Mydia.Media do
 
   @doc """
   Updates a media item.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :system
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def update_media_item(%MediaItem{} = media_item, attrs) do
-    media_item
-    |> MediaItem.changeset(attrs)
-    |> Repo.update()
+  def update_media_item(%MediaItem{} = media_item, attrs, opts \\ []) do
+    result =
+      media_item
+      |> MediaItem.changeset(attrs)
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_media_item} ->
+        # Track event
+        actor_type = Keyword.get(opts, :actor_type, :system)
+        actor_id = Keyword.get(opts, :actor_id, "media_context")
+
+        Events.media_item_updated(updated_media_item, actor_type, actor_id)
+
+        {:ok, updated_media_item}
+
+      error ->
+        error
+    end
   end
 
   @doc """
   Deletes a media item.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :system
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def delete_media_item(%MediaItem{} = media_item) do
+  def delete_media_item(%MediaItem{} = media_item, opts \\ []) do
+    # Track event before deletion (we need the media_item data)
+    actor_type = Keyword.get(opts, :actor_type, :system)
+    actor_id = Keyword.get(opts, :actor_id, "media_context")
+
+    Events.media_item_removed(media_item, actor_type, actor_id)
+
     Repo.delete(media_item)
   end
 
@@ -94,13 +134,34 @@ defmodule Mydia.Media do
 
   Returns `{:ok, count}` where count is the number of updated items,
   or `{:error, reason}` if the transaction fails.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :system
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def update_media_items_monitored(ids, monitored) when is_list(ids) do
+  def update_media_items_monitored(ids, monitored, opts \\ []) when is_list(ids) do
     Repo.transaction(fn ->
-      MediaItem
-      |> where([m], m.id in ^ids)
-      |> Repo.update_all(set: [monitored: monitored, updated_at: DateTime.utc_now()])
-      |> elem(0)
+      # Fetch media items before update to track events
+      media_items =
+        MediaItem
+        |> where([m], m.id in ^ids)
+        |> Repo.all()
+
+      # Perform the update
+      {count, _} =
+        MediaItem
+        |> where([m], m.id in ^ids)
+        |> Repo.update_all(set: [monitored: monitored, updated_at: DateTime.utc_now()])
+
+      # Track events for each media item
+      actor_type = Keyword.get(opts, :actor_type, :system)
+      actor_id = Keyword.get(opts, :actor_id, "media_context")
+
+      Enum.each(media_items, fn media_item ->
+        Events.media_item_monitoring_changed(media_item, monitored, actor_type, actor_id)
+      end)
+
+      count
     end)
   end
 

@@ -139,7 +139,12 @@ case "$COMMAND" in
             docker compose up -d
             sleep 2
         fi
-        run_in_container mix "$@"
+        # Set MIX_ENV=test for commands that run tests
+        if [[ "$1" == "precommit" ]] || [[ "$1" == "test" ]]; then
+            docker compose exec -e MIX_ENV=test "$SERVICE_NAME" mix "$@"
+        else
+            run_in_container mix "$@"
+        fi
         ;;
 
     # Common development shortcuts

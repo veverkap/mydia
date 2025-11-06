@@ -14,19 +14,40 @@ defmodule Mydia.Jobs.LibraryScanner do
     max_attempts: 3
 
   require Logger
-  alias Mydia.{Library, Settings, Repo, Metadata}
+  alias Mydia.{Library, Settings, Repo, Metadata, Events}
   alias Mydia.Library.{MetadataMatcher, MetadataEnricher, FileParser, FileAnalyzer}
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
+    start_time = System.monotonic_time(:millisecond)
     library_path_id = Map.get(args, "library_path_id")
 
-    case library_path_id do
-      nil ->
-        scan_all_libraries()
+    result =
+      case library_path_id do
+        nil ->
+          scan_all_libraries()
 
-      id ->
-        scan_single_library(id)
+        id ->
+          scan_single_library(id)
+      end
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("library_scanner", %{
+          "duration_ms" => duration,
+          "library_path_id" => library_path_id
+        })
+
+        :ok
+
+      {:error, reason} ->
+        Events.job_failed("library_scanner", inspect(reason), %{
+          "library_path_id" => library_path_id
+        })
+
+        {:error, reason}
     end
   end
 

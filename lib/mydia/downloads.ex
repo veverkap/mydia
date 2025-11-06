@@ -10,6 +10,9 @@ defmodule Mydia.Downloads do
   alias Mydia.Downloads.Client.Registry
   alias Mydia.Indexers.SearchResult
   alias Mydia.Settings
+  alias Mydia.Library.MediaFile
+  alias Mydia.Media.Episode
+  alias Mydia.Events
   alias Phoenix.PubSub
   require Logger
 
@@ -158,20 +161,31 @@ defmodule Mydia.Downloads do
   @doc """
   Cancels a download by removing it from the download client.
 
-  This removes the torrent from the client and optionally deletes files.
-  The database record is kept for historical tracking.
+  This removes the torrent from the client and deletes the database record.
+  Downloads table is ephemeral (active downloads only).
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :user
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
+    - Other client-specific options
   """
   def cancel_download(%Download{} = download, opts \\ []) do
     with {:ok, client_config} <- find_client_config(download.download_client),
          {:ok, adapter} <- get_adapter_for_client(client_config),
          client_map_config = config_to_map(client_config),
          :ok <-
-           Client.remove_download(adapter, client_map_config, download.download_client_id, opts) do
-      broadcast_download_update(download.id)
+           Client.remove_download(adapter, client_map_config, download.download_client_id, opts),
+         {:ok, _deleted} <- delete_download(download) do
+      # Track event
+      actor_type = Keyword.get(opts, :actor_type, :user)
+      actor_id = Keyword.get(opts, :actor_id, "unknown")
+
+      Events.download_cancelled(download, actor_type, actor_id)
+
       {:ok, download}
     else
       {:error, reason} ->
-        Logger.warning("Failed to cancel download in client: #{inspect(reason)}")
+        Logger.warning("Failed to cancel download: #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -181,12 +195,22 @@ defmodule Mydia.Downloads do
 
   This pauses the torrent in the client, stopping the download/upload activity.
   The database record remains unchanged.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :user
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def pause_download(%Download{} = download) do
+  def pause_download(%Download{} = download, opts \\ []) do
     with {:ok, client_config} <- find_client_config(download.download_client),
          {:ok, adapter} <- get_adapter_for_client(client_config),
          client_map_config = config_to_map(client_config),
          :ok <- Client.pause_torrent(adapter, client_map_config, download.download_client_id) do
+      # Track event
+      actor_type = Keyword.get(opts, :actor_type, :user)
+      actor_id = Keyword.get(opts, :actor_id, "unknown")
+
+      Events.download_paused(download, actor_type, actor_id)
+
       broadcast_download_update(download.id)
       {:ok, download}
     else
@@ -201,12 +225,22 @@ defmodule Mydia.Downloads do
 
   This resumes the torrent in the client, restarting the download/upload activity.
   The database record remains unchanged.
+
+  ## Options
+    - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :user
+    - `:actor_id` - The ID of the actor (user_id, job name, etc.)
   """
-  def resume_download(%Download{} = download) do
+  def resume_download(%Download{} = download, opts \\ []) do
     with {:ok, client_config} <- find_client_config(download.download_client),
          {:ok, adapter} <- get_adapter_for_client(client_config),
          client_map_config = config_to_map(client_config),
          :ok <- Client.resume_torrent(adapter, client_map_config, download.download_client_id) do
+      # Track event
+      actor_type = Keyword.get(opts, :actor_type, :user)
+      actor_id = Keyword.get(opts, :actor_id, "unknown")
+
+      Events.download_resumed(download, actor_type, actor_id)
+
       broadcast_download_update(download.id)
       {:ok, download}
     else
@@ -289,6 +323,17 @@ defmodule Mydia.Downloads do
          {:ok, adapter} <- get_adapter_for_client(client_config),
          {:ok, client_id} <- add_torrent_to_client(adapter, client_config, search_result, opts),
          {:ok, download} <- create_download_record(search_result, client_config, client_id, opts) do
+      # Track event
+      actor_type = Keyword.get(opts, :actor_type, :system)
+      actor_id = Keyword.get(opts, :actor_id, "downloads_context")
+
+      # Get media_item for context if available (preloaded on download)
+      download_with_media = Repo.preload(download, :media_item)
+
+      Events.download_initiated(download_with_media, actor_type, actor_id,
+        media_item: download_with_media.media_item
+      )
+
       {:ok, download}
     else
       {:error, reason} = error ->
@@ -329,6 +374,14 @@ defmodule Mydia.Downloads do
     media_item_id = Keyword.get(opts, :media_item_id)
     episode_id = Keyword.get(opts, :episode_id)
 
+    # First check for active downloads (not completed and not failed)
+    with :ok <- check_for_active_download(search_result, media_item_id, episode_id),
+         :ok <- check_for_existing_media_files(search_result, media_item_id, episode_id) do
+      :ok
+    end
+  end
+
+  defp check_for_active_download(search_result, media_item_id, episode_id) do
     # Query for active downloads (not completed and not failed)
     base_query =
       Download
@@ -378,6 +431,76 @@ defmodule Mydia.Downloads do
         {:error, :duplicate_download}
 
       false ->
+        :ok
+    end
+  end
+
+  defp check_for_existing_media_files(search_result, media_item_id, episode_id) do
+    cond do
+      # For episodes, check if media files already exist for this episode
+      episode_id ->
+        query = from(f in MediaFile, where: f.episode_id == ^episode_id)
+
+        if Repo.exists?(query) do
+          Logger.info("Skipping download - media files already exist for episode",
+            episode_id: episode_id
+          )
+
+          {:error, :duplicate_download}
+        else
+          :ok
+        end
+
+      # For season packs, check if any episodes in the season already have media files
+      media_item_id && match?(%{season_pack: true, season_number: _}, search_result.metadata) ->
+        season_number = search_result.metadata.season_number
+
+        # Get all episodes for this season
+        episodes_query =
+          from(e in Episode,
+            where: e.media_item_id == ^media_item_id and e.season_number == ^season_number,
+            select: e.id
+          )
+
+        episode_ids = Repo.all(episodes_query)
+
+        if episode_ids != [] do
+          # Check if any of these episodes have media files
+          media_files_query =
+            from(f in MediaFile, where: f.episode_id in ^episode_ids)
+
+          if Repo.exists?(media_files_query) do
+            Logger.info(
+              "Skipping download - media files already exist for some episodes in season",
+              media_item_id: media_item_id,
+              season_number: season_number
+            )
+
+            {:error, :duplicate_download}
+          else
+            :ok
+          end
+        else
+          # No episodes found for this season yet - allow download
+          :ok
+        end
+
+      # For movies, check if media files already exist for this media_item
+      media_item_id ->
+        query = from(f in MediaFile, where: f.media_item_id == ^media_item_id)
+
+        if Repo.exists?(query) do
+          Logger.info("Skipping download - media files already exist for media item",
+            media_item_id: media_item_id
+          )
+
+          {:error, :duplicate_download}
+        else
+          :ok
+        end
+
+      # No media association, can't check for existing files
+      true ->
         :ok
     end
   end

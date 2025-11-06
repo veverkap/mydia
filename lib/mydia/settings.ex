@@ -489,13 +489,16 @@ defmodule Mydia.Settings do
           raise "Invalid runtime library path ID: #{id}"
       end
     else
-      # Try to parse as integer ID for database lookup
+      # Try to parse as integer ID for database lookup, or use directly as UUID
       case Integer.parse(id) do
         {int_id, ""} ->
           get_library_path!(int_id, opts)
 
         _ ->
-          raise "Invalid library path ID: #{id}"
+          # Assume it's a UUID string and try to fetch directly
+          LibraryPath
+          |> maybe_preload(opts[:preload])
+          |> Repo.get!(id)
       end
     end
   end

@@ -53,29 +53,59 @@ defmodule Mydia.Jobs.TVShowSearch do
 
   import Ecto.Query, warn: false
 
-  alias Mydia.{Repo, Media, Indexers, Downloads}
+  alias Mydia.{Repo, Media, Indexers, Downloads, Events}
   alias Mydia.Indexers.ReleaseRanker
   alias Mydia.Media.{MediaItem, Episode}
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"mode" => "specific", "episode_id" => episode_id} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting search for specific episode", episode_id: episode_id)
 
-    try do
-      episode = load_episode(episode_id)
+    result =
+      try do
+        episode = load_episode(episode_id)
 
-      case episode do
-        %Episode{} ->
-          search_episode(episode, args)
+        case episode do
+          %Episode{} ->
+            search_episode(episode, args)
 
-        nil ->
+          nil ->
+            Logger.error("Episode not found", episode_id: episode_id)
+            {:error, :not_found}
+        end
+      rescue
+        Ecto.NoResultsError ->
           Logger.error("Episode not found", episode_id: episode_id)
           {:error, :not_found}
       end
-    rescue
-      Ecto.NoResultsError ->
-        Logger.error("Episode not found", episode_id: episode_id)
-        {:error, :not_found}
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("tv_show_search_specific", %{
+          "duration_ms" => duration,
+          "episode_id" => episode_id
+        })
+
+        :ok
+
+      :no_results ->
+        Events.job_executed("tv_show_search_specific", %{
+          "duration_ms" => duration,
+          "episode_id" => episode_id,
+          "no_results" => true
+        })
+
+        :no_results
+
+      {:error, reason} ->
+        Events.job_failed("tv_show_search_specific", inspect(reason), %{
+          "episode_id" => episode_id
+        })
+
+        {:error, reason}
     end
   end
 
@@ -89,83 +119,139 @@ defmodule Mydia.Jobs.TVShowSearch do
           } =
             args
       }) do
+    start_time = System.monotonic_time(:millisecond)
+
     Logger.info("Starting search for full season",
       media_item_id: media_item_id,
       season_number: season_number
     )
 
-    try do
-      media_item = Media.get_media_item!(media_item_id)
+    result =
+      try do
+        media_item = Media.get_media_item!(media_item_id)
 
-      case media_item do
-        %MediaItem{type: "tv_show"} ->
-          episodes = load_episodes_for_season(media_item_id, season_number)
+        case media_item do
+          %MediaItem{type: "tv_show"} ->
+            episodes = load_episodes_for_season(media_item_id, season_number)
 
-          if episodes == [] do
-            Logger.info("No missing episodes found for season",
+            if episodes == [] do
+              Logger.info("No missing episodes found for season",
+                media_item_id: media_item_id,
+                season_number: season_number
+              )
+
+              :ok
+            else
+              search_season(media_item, season_number, episodes, args)
+            end
+
+          %MediaItem{type: type} ->
+            Logger.error("Invalid media type for TV show search",
               media_item_id: media_item_id,
-              season_number: season_number
+              type: type
             )
 
-            :ok
-          else
-            search_season(media_item, season_number, episodes, args)
-          end
-
-        %MediaItem{type: type} ->
-          Logger.error("Invalid media type for TV show search",
-            media_item_id: media_item_id,
-            type: type
-          )
-
-          {:error, :invalid_type}
+            {:error, :invalid_type}
+        end
+      rescue
+        Ecto.NoResultsError ->
+          Logger.error("Media item not found", media_item_id: media_item_id)
+          {:error, :not_found}
       end
-    rescue
-      Ecto.NoResultsError ->
-        Logger.error("Media item not found", media_item_id: media_item_id)
-        {:error, :not_found}
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("tv_show_search_season", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id,
+          "season_number" => season_number
+        })
+
+        :ok
+
+      :no_results ->
+        Events.job_executed("tv_show_search_season", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id,
+          "season_number" => season_number,
+          "no_results" => true
+        })
+
+        :no_results
+
+      {:error, reason} ->
+        Events.job_failed("tv_show_search_season", inspect(reason), %{
+          "media_item_id" => media_item_id,
+          "season_number" => season_number
+        })
+
+        {:error, reason}
     end
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"mode" => "show", "media_item_id" => media_item_id} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting search for all episodes of show", media_item_id: media_item_id)
 
-    try do
-      media_item = Media.get_media_item!(media_item_id)
+    result =
+      try do
+        media_item = Media.get_media_item!(media_item_id)
 
-      case media_item do
-        %MediaItem{type: "tv_show"} ->
-          episodes = load_episodes_for_show(media_item_id)
+        case media_item do
+          %MediaItem{type: "tv_show"} ->
+            episodes = load_episodes_for_show(media_item_id)
 
-          if episodes == [] do
-            Logger.info("No missing episodes found for show",
+            if episodes == [] do
+              Logger.info("No missing episodes found for show",
+                media_item_id: media_item_id,
+                title: media_item.title
+              )
+
+              :ok
+            else
+              process_episodes_with_smart_logic(media_item, episodes, args)
+            end
+
+          %MediaItem{type: type} ->
+            Logger.error("Invalid media type for TV show search",
               media_item_id: media_item_id,
-              title: media_item.title
+              type: type
             )
 
-            :ok
-          else
-            process_episodes_with_smart_logic(media_item, episodes, args)
-          end
-
-        %MediaItem{type: type} ->
-          Logger.error("Invalid media type for TV show search",
-            media_item_id: media_item_id,
-            type: type
-          )
-
-          {:error, :invalid_type}
+            {:error, :invalid_type}
+        end
+      rescue
+        Ecto.NoResultsError ->
+          Logger.error("Media item not found", media_item_id: media_item_id)
+          {:error, :not_found}
       end
-    rescue
-      Ecto.NoResultsError ->
-        Logger.error("Media item not found", media_item_id: media_item_id)
-        {:error, :not_found}
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("tv_show_search_show", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id
+        })
+
+        :ok
+
+      {:error, reason} ->
+        Events.job_failed("tv_show_search_show", inspect(reason), %{
+          "media_item_id" => media_item_id
+        })
+
+        {:error, reason}
     end
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"mode" => "all_monitored"} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting automatic search for all monitored episodes")
 
     episodes = load_monitored_episodes_without_files()
@@ -175,6 +261,13 @@ defmodule Mydia.Jobs.TVShowSearch do
 
     if total_count == 0 do
       Logger.info("No episodes to search")
+      duration = System.monotonic_time(:millisecond) - start_time
+
+      Events.job_executed("tv_show_search", %{
+        "duration_ms" => duration,
+        "items_processed" => 0
+      })
+
       :ok
     else
       # Group by media_item for processing
@@ -198,10 +291,18 @@ defmodule Mydia.Jobs.TVShowSearch do
         process_episodes_with_smart_logic(media_item, show_episodes, args)
       end)
 
+      duration = System.monotonic_time(:millisecond) - start_time
+
       Logger.info("Automatic episode search completed",
         total_episodes: total_count,
         shows_processed: show_count
       )
+
+      Events.job_executed("tv_show_search", %{
+        "duration_ms" => duration,
+        "items_processed" => total_count,
+        "shows_processed" => show_count
+      })
 
       :ok
     end

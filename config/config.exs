@@ -69,7 +69,8 @@ config :mydia, Oban,
     default: 5,
     media: 3,
     search: 2,
-    notifications: 1
+    notifications: 1,
+    maintenance: 1
   ],
   plugins: [
     # Keep completed jobs for 7 days
@@ -84,9 +85,15 @@ config :mydia, Oban,
        # Search for monitored movies every 30 minutes
        {"*/30 * * * *", Mydia.Jobs.MovieSearch, args: %{"mode" => "all_monitored"}},
        # Search for monitored TV shows every 15 minutes
-       {"*/15 * * * *", Mydia.Jobs.TVShowSearch, args: %{"mode" => "all_monitored"}}
+       {"*/15 * * * *", Mydia.Jobs.TVShowSearch, args: %{"mode" => "all_monitored"}},
+       # Clean up old events every Sunday at 2 AM
+       {"0 2 * * 0", Mydia.Jobs.EventCleanup}
      ]}
   ]
+
+# Event retention configuration
+# Events older than this will be automatically deleted
+config :mydia, :event_retention_days, 90
 
 # Configure Ueberauth with empty providers by default
 # This is overridden in dev.exs if OIDC is configured

@@ -84,6 +84,20 @@ defmodule Mydia.Jobs.MediaImport do
             cleanup_download_client(download)
           end
 
+          # Delete the download record now that import is complete
+          case Downloads.delete_download(download) do
+            {:ok, _deleted} ->
+              Logger.info("Download record deleted after successful import",
+                download_id: download.id
+              )
+
+            {:error, changeset} ->
+              Logger.warning("Failed to delete download record after import",
+                download_id: download.id,
+                errors: inspect(changeset.errors)
+              )
+          end
+
           {:ok, :imported}
 
         {:error, reason} ->
@@ -591,7 +605,9 @@ defmodule Mydia.Jobs.MediaImport do
         imported_from_download_id: download.id,
         imported_at: DateTime.utc_now(),
         source: filename_metadata.quality.source,
-        release_group: filename_metadata.release_group
+        release_group: filename_metadata.release_group,
+        download_client: download.download_client,
+        download_client_id: download.download_client_id
       }
     }
 

@@ -1,5 +1,5 @@
 defmodule Mydia.SettingsTest do
-  use Mydia.DataCase, async: true
+  use Mydia.DataCase, async: false
 
   alias Mydia.Settings
   alias Mydia.Settings.QualityProfile

@@ -932,4 +932,10 @@ defmodule MydiaWeb.AdminConfigLive.Index do
       "rules" => rules
     }
   end
+
+  defp format_indexer_type(type) when is_atom(type) do
+    type |> to_string() |> String.capitalize()
+  end
+
+  defp format_indexer_type(type), do: to_string(type)
 end

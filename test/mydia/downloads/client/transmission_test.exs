@@ -50,6 +50,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "add_torrent/3" do
+    @tag timeout: 10000
     test "returns error with unreachable host for magnet link" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -60,6 +61,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
       assert error.type in [:connection_failed, :network_error, :timeout]
     end
 
+    @tag timeout: 10000
     test "returns error with unreachable host for file" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -71,6 +73,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
       assert error.type in [:connection_failed, :network_error, :timeout]
     end
 
+    @tag timeout: 10000
     test "returns error with unreachable host for URL" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -109,6 +112,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "get_status/2" do
+    @tag timeout: 10000
     test "returns error with unreachable host" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -117,6 +121,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
       assert error.type in [:connection_failed, :network_error, :timeout]
     end
 
+    @tag timeout: 10000
     test "accepts string and integer IDs" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -129,6 +134,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "list_torrents/2" do
+    @tag timeout: 10000
     test "returns error with unreachable host" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -137,6 +143,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
       assert error.type in [:connection_failed, :network_error, :timeout]
     end
 
+    @tag timeout: 10000
     test "accepts filter options" do
       # Test that the function accepts the expected options without error
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
@@ -161,6 +168,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "remove_torrent/3" do
+    @tag timeout: 10000
     test "returns error with unreachable host" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -189,6 +197,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "pause_torrent/2" do
+    @tag timeout: 10000
     test "returns error with unreachable host" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -197,6 +206,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
       assert error.type in [:connection_failed, :network_error, :timeout]
     end
 
+    @tag timeout: 10000
     test "accepts string and integer IDs" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)
@@ -208,6 +218,7 @@ defmodule Mydia.Downloads.Client.TransmissionTest do
   end
 
   describe "resume_torrent/2" do
+    @tag timeout: 10000
     test "returns error with unreachable host" do
       unreachable_config = %{@config | host: "nonexistent.invalid", port: 9999}
       timeout_config = put_in(unreachable_config, [:options, :connect_timeout], 100)

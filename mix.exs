@@ -82,6 +82,7 @@ defmodule Mydia.MixProject do
       {:timex, "~> 3.7"},
       {:yaml_elixir, "~> 2.9"},
       {:luerl, "~> 1.2"},
+      {:sweet_xml, "~> 0.7"},
 
       # Telemetry & Monitoring
       {:telemetry_metrics, "~> 1.0"},

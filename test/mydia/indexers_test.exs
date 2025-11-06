@@ -1,5 +1,5 @@
 defmodule Mydia.IndexersTest do
-  use Mydia.DataCase, async: true
+  use Mydia.DataCase, async: false
 
   alias Mydia.Indexers
   alias Mydia.Indexers.SearchResult

@@ -79,6 +79,7 @@ defmodule MydiaWeb.Router do
       live "/search", SearchLive.Index, :index
       live "/downloads", DownloadsLive.Index, :index
       live "/calendar", CalendarLive.Index, :index
+      live "/activity", ActivityLive.Index, :index
     end
   end
 

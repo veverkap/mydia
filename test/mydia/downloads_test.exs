@@ -607,15 +607,121 @@ defmodule Mydia.DownloadsTest do
 
       assert {:ok, _download} = result
     end
+
+    test "prevents episode download when media files already exist", %{
+      search_result: search_result,
+      episode: episode
+    } do
+      # Create media file for episode (simulating completed download)
+      media_file_fixture(%{episode_id: episode.id})
+
+      # Try to initiate download for episode that already has files
+      result = Downloads.initiate_download(search_result, episode_id: episode.id)
+
+      assert {:error, :duplicate_download} = result
+    end
+
+    test "prevents movie download when media files already exist", %{
+      search_result: search_result,
+      movie: movie
+    } do
+      # Create media file for movie (simulating completed download)
+      media_file_fixture(%{media_item_id: movie.id})
+
+      # Try to initiate download for movie that already has files
+      result = Downloads.initiate_download(search_result, media_item_id: movie.id)
+
+      assert {:error, :duplicate_download} = result
+    end
+
+    test "prevents season pack download when some episodes already have media files", %{
+      search_result: search_result,
+      tv_show: tv_show
+    } do
+      # Create episodes for season 2 (to avoid conflict with setup which creates season 1 episode 1)
+      episode1 = episode_fixture(media_item_id: tv_show.id, season_number: 2, episode_number: 1)
+      episode2 = episode_fixture(media_item_id: tv_show.id, season_number: 2, episode_number: 2)
+      _episode3 = episode_fixture(media_item_id: tv_show.id, season_number: 2, episode_number: 3)
+
+      # Create media files for some episodes (but not all)
+      media_file_fixture(%{episode_id: episode1.id})
+      media_file_fixture(%{episode_id: episode2.id})
+
+      # Try to initiate season pack download - should be prevented since some episodes have files
+      season_pack_result = %{
+        search_result
+        | metadata: %{
+            season_pack: true,
+            season_number: 2,
+            episode_count: 3
+          }
+      }
+
+      result = Downloads.initiate_download(season_pack_result, media_item_id: tv_show.id)
+
+      assert {:error, :duplicate_download} = result
+    end
+
+    test "allows season pack download when no episodes have media files", %{
+      search_result: search_result,
+      tv_show: tv_show
+    } do
+      # Create episodes for season 3 but without media files
+      _episode1 = episode_fixture(media_item_id: tv_show.id, season_number: 3, episode_number: 1)
+      _episode2 = episode_fixture(media_item_id: tv_show.id, season_number: 3, episode_number: 2)
+
+      # Try to initiate season pack download - should be allowed
+      season_pack_result = %{
+        search_result
+        | metadata: %{
+            season_pack: true,
+            season_number: 3,
+            episode_count: 2
+          }
+      }
+
+      result = Downloads.initiate_download(season_pack_result, media_item_id: tv_show.id)
+
+      assert {:ok, _download} = result
+    end
+
+    test "allows season pack download for different season even if other season has files", %{
+      search_result: search_result,
+      tv_show: tv_show
+    } do
+      # Create episodes for season 4 with media files
+      episode1 = episode_fixture(media_item_id: tv_show.id, season_number: 4, episode_number: 1)
+      media_file_fixture(%{episode_id: episode1.id})
+
+      # Create episodes for season 5 without media files
+      _episode2 = episode_fixture(media_item_id: tv_show.id, season_number: 5, episode_number: 1)
+
+      # Try to initiate season pack download for season 5 - should be allowed
+      season_pack_result = %{
+        search_result
+        | metadata: %{
+            season_pack: true,
+            season_number: 5,
+            episode_count: 1
+          }
+      }
+
+      result = Downloads.initiate_download(season_pack_result, media_item_id: tv_show.id)
+
+      assert {:ok, _download} = result
+    end
   end
 
   # Helper function to create a download fixture
   defp download_fixture(attrs \\ %{}) do
+    # Generate unique download_client_id to avoid violating unique constraint
+    unique_id = "test-id-#{System.unique_integer([:positive])}"
+
     default_attrs = %{
       title: "Test Download",
       download_url: "magnet:?xt=test",
       download_client: "test-client",
-      download_client_id: "test-id"
+      download_client_id: unique_id
     }
 
     {:ok, download} =

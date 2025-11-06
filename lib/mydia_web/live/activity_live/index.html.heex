@@ -1,0 +1,123 @@
+<Layouts.app flash={@flash}>
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold mb-2">Activity Feed</h1>
+      <p class="text-base-content/70">Recent events and system activity</p>
+    </div>
+    
+<!-- Category filter tabs -->
+    <div class="mb-6">
+      <div class="tabs tabs-boxed bg-base-300">
+        <button
+          class={["tab", @category_filter == "all" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="all"
+        >
+          All
+        </button>
+        <button
+          class={["tab", @category_filter == "media" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="media"
+        >
+          Media
+        </button>
+        <button
+          class={["tab", @category_filter == "downloads" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="downloads"
+        >
+          Downloads
+        </button>
+        <button
+          class={["tab", @category_filter == "library" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="library"
+        >
+          Library
+        </button>
+        <button
+          class={["tab", @category_filter == "system" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="system"
+        >
+          System
+        </button>
+        <button
+          class={["tab", @category_filter == "auth" && "tab-active"]}
+          phx-click="filter_category"
+          phx-value-category="auth"
+        >
+          Auth
+        </button>
+      </div>
+    </div>
+    
+<!-- Events list -->
+    <div id="events" phx-update="stream" class="space-y-3">
+      <!-- Empty state -->
+      <div class="hidden only:block">
+        <div class="card bg-base-100 shadow-sm">
+          <div class="card-body text-center py-12">
+            <.icon name="hero-inbox" class="w-16 h-16 mx-auto mb-4 text-base-content/30" />
+            <h3 class="text-lg font-semibold mb-2">No events yet</h3>
+            <p class="text-base-content/70">
+              <%= cond do %>
+                <% @category_filter == "all" -> %>
+                  Events will appear here as activity happens in your system.
+                <% true -> %>
+                  No {category_name(@category_filter)} events found. Try selecting a different category.
+              <% end %>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+<!-- Event items -->
+      <div
+        :for={{id, event} <- @streams.events}
+        id={id}
+        class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow"
+      >
+        <div class="card-body p-4">
+          <div class="flex items-start gap-4">
+            <!-- Icon -->
+            <div class={[
+              "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+              event.severity == :error && "bg-error/10 text-error",
+              event.severity == :warning && "bg-warning/10 text-warning",
+              event.severity == :info && "bg-info/10 text-info"
+            ]}>
+              <.icon name={event_icon(event)} class="w-5 h-5" />
+            </div>
+            
+<!-- Content -->
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-base-content">
+                {format_event_description(event)}
+              </p>
+
+              <div class="flex items-center gap-3 mt-1 text-sm text-base-content/60">
+                <span>{format_actor(event)}</span>
+                <span>•</span>
+                <span>{relative_time(event.inserted_at)}</span>
+                <span>•</span>
+                <span class="capitalize">{event.category}</span>
+              </div>
+            </div>
+            
+<!-- Severity badge -->
+            <%= if event.severity != :info do %>
+              <div class="flex-shrink-0">
+                <span class={["badge", severity_badge_class(event.severity)]}>
+                  {event.severity}
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

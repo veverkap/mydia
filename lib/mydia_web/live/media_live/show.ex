@@ -7,6 +7,7 @@ defmodule MydiaWeb.MediaLive.Show do
   alias Mydia.Downloads
   alias Mydia.Indexers
   alias Mydia.Indexers.SearchResult
+  alias Mydia.Events
 
   require Logger
 
@@ -14,6 +15,7 @@ defmodule MydiaWeb.MediaLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Mydia.PubSub, "downloads")
+      Phoenix.PubSub.subscribe(Mydia.PubSub, "events:all")
     end
 
     media_item = load_media_item(id)
@@ -22,8 +24,8 @@ defmodule MydiaWeb.MediaLive.Show do
     # Load downloads with real-time status
     downloads_with_status = load_downloads_with_status(media_item)
 
-    # Build timeline events
-    timeline_events = build_timeline_events(media_item, downloads_with_status)
+    # Load timeline events from Events system
+    timeline_events = load_timeline_events(media_item)
 
     # Initialize expanded seasons - expand the first (most recent) season by default
     expanded_seasons =
@@ -857,7 +859,7 @@ defmodule MydiaWeb.MediaLive.Show do
     if download_for_media?(download, socket.assigns.media_item) do
       media_item = load_media_item(socket.assigns.media_item.id)
       downloads_with_status = load_downloads_with_status(media_item)
-      timeline_events = build_timeline_events(media_item, downloads_with_status)
+      timeline_events = load_timeline_events(media_item)
 
       # If auto searching was in progress, show success message
       socket =
@@ -895,7 +897,7 @@ defmodule MydiaWeb.MediaLive.Show do
     # Reload media item and downloads with status
     media_item = load_media_item(socket.assigns.media_item.id)
     downloads_with_status = load_downloads_with_status(media_item)
-    timeline_events = build_timeline_events(media_item, downloads_with_status)
+    timeline_events = load_timeline_events(media_item)
 
     {:noreply,
      socket
@@ -952,6 +954,19 @@ defmodule MydiaWeb.MediaLive.Show do
       end
 
     {:noreply, socket}
+  end
+
+  def handle_info({:event_created, event}, socket) do
+    # Check if this event is related to the current media item
+    if event.resource_type == "media_item" &&
+         event.resource_id == socket.assigns.media_item.id do
+      # Reload timeline events to include the new event
+      timeline_events = load_timeline_events(socket.assigns.media_item)
+
+      {:noreply, assign(socket, :timeline_events, timeline_events)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info(_msg, socket), do: {:noreply, socket}
@@ -1144,6 +1159,57 @@ defmodule MydiaWeb.MediaLive.Show do
         (download_map.episode_id &&
            Enum.any?(media_item.episodes || [], fn ep -> ep.id == download_map.episode_id end))
     end)
+  end
+
+  defp load_timeline_events(media_item) do
+    # Get events from Events system for this media item
+    events = Events.get_resource_events("media_item", media_item.id, limit: 50)
+
+    # Format each event for timeline display
+    events
+    |> Enum.map(fn event ->
+      formatted = Events.format_for_timeline(event)
+
+      # Merge formatted properties with event data needed by template
+      Map.merge(formatted, %{
+        timestamp: event.inserted_at,
+        metadata: format_metadata_for_display(event)
+      })
+    end)
+  end
+
+  defp format_metadata_for_display(event) do
+    metadata = event.metadata || %{}
+
+    case event.type do
+      type when type in ["download.initiated", "download.completed"] ->
+        quality = get_quality_from_metadata(metadata)
+
+        %{
+          quality: quality,
+          indexer: metadata["indexer"]
+        }
+
+      "download.failed" ->
+        %{
+          error: metadata["error_message"]
+        }
+
+      "media_file.imported" ->
+        %{
+          resolution: metadata["resolution"],
+          codec: metadata["codec"],
+          size: metadata["size"]
+        }
+
+      _ ->
+        nil
+    end
+  end
+
+  # Helper to extract quality from metadata (could be nested in download metadata)
+  defp get_quality_from_metadata(metadata) do
+    metadata["quality"] || get_in(metadata, ["download_metadata", "quality"])
   end
 
   defp has_media_files?(media_item) do
@@ -1356,144 +1422,6 @@ defmodule MydiaWeb.MediaLive.Show do
   defp format_download_status(_), do: "Unknown"
 
   ## Timeline Functions
-
-  defp build_timeline_events(media_item, downloads_with_status) do
-    events = []
-
-    # Add media item added event
-    events = [
-      %{
-        type: :media_added,
-        timestamp: media_item.inserted_at,
-        title: "Added to Library",
-        description: "#{media_item.title} was added to your library",
-        icon: "hero-plus-circle",
-        color: "text-info",
-        metadata: nil
-      }
-      | events
-    ]
-
-    # Add download events
-    download_events =
-      downloads_with_status
-      |> Enum.flat_map(fn download ->
-        initiated_event = %{
-          type: :download_initiated,
-          timestamp: download.inserted_at,
-          title: "Download Started",
-          description: download.title,
-          icon: "hero-arrow-down-tray",
-          color: "text-primary",
-          metadata: %{
-            quality: download.metadata["quality"],
-            indexer: download.indexer
-          }
-        }
-
-        completion_events =
-          cond do
-            download.status == "completed" && download.completed_at ->
-              [
-                %{
-                  type: :download_completed,
-                  timestamp: download.completed_at,
-                  title: "Download Completed",
-                  description: download.title,
-                  icon: "hero-check-circle",
-                  color: "text-success",
-                  metadata: %{quality: download.metadata["quality"]}
-                }
-              ]
-
-            download.status == "failed" ->
-              [
-                %{
-                  type: :download_failed,
-                  timestamp: download.updated_at,
-                  title: "Download Failed",
-                  description: download.title,
-                  icon: "hero-x-circle",
-                  color: "text-error",
-                  metadata: %{error: download.error_message}
-                }
-              ]
-
-            download.status == "cancelled" ->
-              [
-                %{
-                  type: :download_cancelled,
-                  timestamp: download.updated_at,
-                  title: "Download Cancelled",
-                  description: download.title,
-                  icon: "hero-minus-circle",
-                  color: "text-warning",
-                  metadata: nil
-                }
-              ]
-
-            true ->
-              []
-          end
-
-        [initiated_event | completion_events]
-      end)
-
-    events = events ++ download_events
-
-    # Add media file import events
-    file_events =
-      media_item.media_files
-      |> Enum.map(fn file ->
-        %{
-          type: :file_imported,
-          timestamp: file.inserted_at,
-          title: "File Imported",
-          description: Path.basename(file.path),
-          icon: "hero-document-check",
-          color: "text-success",
-          metadata: %{
-            resolution: file.resolution,
-            codec: file.codec,
-            size: file.size
-          }
-        }
-      end)
-
-    events = events ++ file_events
-
-    # Add episode refresh events for TV shows
-    episode_events =
-      if media_item.type == "tv_show" && media_item.episodes do
-        # Group episodes by inserted_at date to detect batch imports
-        media_item.episodes
-        |> Enum.group_by(fn ep ->
-          ep.inserted_at
-          |> DateTime.truncate(:second)
-        end)
-        |> Enum.map(fn {timestamp, episodes} ->
-          count = length(episodes)
-
-          %{
-            type: :episodes_refreshed,
-            timestamp: timestamp,
-            title: "Episodes Updated",
-            description: "#{count} episode#{if count > 1, do: "s", else: ""} added/updated",
-            icon: "hero-arrow-path",
-            color: "text-info",
-            metadata: %{count: count}
-          }
-        end)
-      else
-        []
-      end
-
-    events = events ++ episode_events
-
-    # Sort all events by timestamp (newest first)
-    events
-    |> Enum.sort_by(& &1.timestamp, {:desc, DateTime})
-  end
 
   defp format_relative_time(timestamp) do
     now = DateTime.utc_now()

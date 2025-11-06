@@ -360,7 +360,9 @@
                     <% health = Map.get(@indexer_health, indexer.id, %{status: :unknown}) %>
                     <tr>
                       <td class="font-medium">{indexer.name}</td>
-                      <td><span class="badge badge-sm">{indexer.type}</span></td>
+                      <td>
+                        <span class="badge badge-sm">{format_indexer_type(indexer.type)}</span>
+                      </td>
                       <td class="font-mono text-sm">{indexer.base_url}</td>
                       <td>
                         <div class="flex items-center gap-2">

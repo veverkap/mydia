@@ -47,8 +47,21 @@ defmodule Mydia.Media.MediaItem do
     |> validate_required([:type, :title])
     |> validate_inclusion(:type, @type_values)
     |> validate_number(:year, greater_than: 1800, less_than: 2200)
+    |> validate_year_for_movies()
     |> unique_constraint(:tmdb_id)
     |> foreign_key_constraint(:quality_profile_id)
+  end
+
+  # Custom validation to ensure movies have year data
+  defp validate_year_for_movies(changeset) do
+    type = get_field(changeset, :type)
+    year = get_field(changeset, :year)
+
+    if type == "movie" && is_nil(year) do
+      add_error(changeset, :year, "is required for movies")
+    else
+      changeset
+    end
   end
 
   @doc """

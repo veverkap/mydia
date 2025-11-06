@@ -19,6 +19,7 @@ defmodule Mydia.Downloads.UntrackedMatcher do
   require Logger
   alias Mydia.Downloads
   alias Mydia.Downloads.{TorrentParser, TorrentMatcher}
+  alias Mydia.Library
   alias Mydia.Settings
 
   @doc """
@@ -43,8 +44,16 @@ defmodule Mydia.Downloads.UntrackedMatcher do
 
     Logger.info("Found #{length(untracked)} untracked torrent(s)")
 
+    # Filter out torrents that have already been imported to the library
+    # (completed downloads that are now seeding)
+    not_imported = filter_already_imported_torrents(untracked)
+
+    Logger.info(
+      "#{length(not_imported)} torrent(s) not yet imported (#{length(untracked) - length(not_imported)} already in library)"
+    )
+
     # Attempt to match and create downloads for untracked torrents
-    untracked
+    not_imported
     |> Enum.map(&process_untracked_torrent/1)
     |> Enum.filter(&match?({:ok, _}, &1))
     |> Enum.map(fn {:ok, download} -> download end)
@@ -100,6 +109,21 @@ defmodule Mydia.Downloads.UntrackedMatcher do
     # Filter out torrents that are already tracked by ID
     Enum.reject(client_torrents, fn torrent ->
       MapSet.member?(tracked_by_id, {torrent.client_name, torrent.id})
+    end)
+  end
+
+  defp filter_already_imported_torrents(torrents) do
+    Enum.reject(torrents, fn torrent ->
+      imported? = Library.torrent_already_imported?(torrent.client_name, torrent.id)
+
+      if imported? do
+        Logger.debug("Skipping already-imported torrent: #{torrent.name}",
+          client: torrent.client_name,
+          client_id: torrent.id
+        )
+      end
+
+      imported?
     end)
   end
 

@@ -44,5 +44,8 @@ defmodule Mydia.Downloads.Download do
     |> validate_required([:title])
     |> foreign_key_constraint(:media_item_id)
     |> foreign_key_constraint(:episode_id)
+    |> unique_constraint([:download_client, :download_client_id],
+      message: "download already exists for this torrent"
+    )
   end
 end

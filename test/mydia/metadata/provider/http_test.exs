@@ -76,11 +76,9 @@ defmodule Mydia.Metadata.Provider.HTTPTest do
     test "adds default accept and user-agent headers" do
       req = HTTP.new_request(@config)
 
-      accept = Req.Request.get_header(req, "accept")
-      user_agent = Req.Request.get_header(req, "user-agent")
-
-      assert "application/json" in accept
-      assert "Mydia/1.0" in user_agent
+      headers = req.options[:headers]
+      assert {"accept", "application/json"} in headers
+      assert {"user-agent", "Mydia/1.0"} in headers
     end
 
     test "raises error when base_url is missing" do

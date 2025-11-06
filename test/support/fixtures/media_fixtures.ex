@@ -51,4 +51,36 @@ defmodule Mydia.MediaFixtures do
 
     episode
   end
+
+  @doc """
+  Generate a media file.
+  """
+  def media_file_fixture(attrs \\ %{}) do
+    # Convert keyword list to map if needed
+    attrs = Map.new(attrs)
+
+    # Ensure either media_item_id or episode_id is provided
+    attrs =
+      cond do
+        Map.has_key?(attrs, :media_item_id) or Map.has_key?(attrs, :episode_id) ->
+          attrs
+
+        true ->
+          # Create a movie by default
+          media_item = media_item_fixture(%{type: "movie"})
+          Map.put(attrs, :media_item_id, media_item.id)
+      end
+
+    {:ok, media_file} =
+      attrs
+      |> Enum.into(%{
+        path: "/media/test/file-#{System.unique_integer([:positive])}.mkv",
+        size: 1_000_000_000,
+        resolution: "1080p",
+        codec: "h264"
+      })
+      |> Mydia.Library.create_media_file()
+
+    media_file
+  end
 end

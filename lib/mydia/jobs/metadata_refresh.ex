@@ -14,33 +14,80 @@ defmodule Mydia.Jobs.MetadataRefresh do
     max_attempts: 3
 
   require Logger
-  alias Mydia.{Media, Metadata, Repo}
+  alias Mydia.{Media, Metadata, Repo, Events}
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"media_item_id" => media_item_id} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     fetch_episodes = Map.get(args, "fetch_episodes", true)
     config = Metadata.default_relay_config()
 
     Logger.info("Starting metadata refresh", media_item_id: media_item_id)
 
-    case Media.get_media_item!(media_item_id) do
-      nil ->
-        Logger.error("Media item not found", media_item_id: media_item_id)
-        {:error, :not_found}
+    result =
+      case Media.get_media_item!(media_item_id) do
+        nil ->
+          Logger.error("Media item not found", media_item_id: media_item_id)
+          {:error, :not_found}
 
-      media_item ->
-        refresh_media_item(media_item, config, fetch_episodes)
+        media_item ->
+          refresh_media_item(media_item, config, fetch_episodes)
+      end
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("metadata_refresh", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id
+        })
+
+        :ok
+
+      {:error, reason} ->
+        Events.job_failed("metadata_refresh", inspect(reason), %{
+          "media_item_id" => media_item_id
+        })
+
+        {:error, reason}
     end
   rescue
-    Ecto.NoResultsError ->
+    e in Ecto.NoResultsError ->
       Logger.error("Media item not found", media_item_id: media_item_id)
+
+      Events.job_failed("metadata_refresh", "Media item not found", %{
+        "media_item_id" => media_item_id
+      })
+
       {:error, :not_found}
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"refresh_all" => true}}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting metadata refresh for all media items")
-    refresh_all_media()
+
+    result = refresh_all_media()
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      {:ok, count} ->
+        Events.job_executed("metadata_refresh_all", %{
+          "duration_ms" => duration,
+          "items_processed" => count
+        })
+
+        :ok
+
+      :ok ->
+        Events.job_executed("metadata_refresh_all", %{"duration_ms" => duration})
+        :ok
+
+      {:error, reason} ->
+        Events.job_failed("metadata_refresh_all", inspect(reason))
+        {:error, reason}
+    end
   end
 
   ## Private Functions
@@ -120,7 +167,7 @@ defmodule Mydia.Jobs.MetadataRefresh do
       failed: failed
     )
 
-    :ok
+    {:ok, successful}
   end
 
   defp parse_media_type("movie"), do: :movie

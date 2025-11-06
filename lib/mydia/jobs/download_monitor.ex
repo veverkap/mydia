@@ -23,9 +23,11 @@ defmodule Mydia.Jobs.DownloadMonitor do
   require Logger
   alias Mydia.Downloads
   alias Mydia.Downloads.UntrackedMatcher
+  alias Mydia.Events
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting download completion monitoring", args: args)
 
     # Get all downloads with their real-time status from clients
@@ -66,7 +68,18 @@ defmodule Mydia.Jobs.DownloadMonitor do
     untracked_downloads = UntrackedMatcher.find_and_match_untracked()
     Logger.info("Matched #{length(untracked_downloads)} untracked torrent(s) to library items")
 
+    duration = System.monotonic_time(:millisecond) - start_time
+
     Logger.info("Download monitoring completed")
+
+    Events.job_executed("download_monitor", %{
+      "duration_ms" => duration,
+      "completed_count" => length(completed),
+      "failed_count" => length(failed),
+      "missing_count" => length(missing),
+      "untracked_matched" => length(untracked_downloads)
+    })
+
     :ok
   end
 
@@ -79,36 +92,28 @@ defmodule Mydia.Jobs.DownloadMonitor do
       save_path: download_map.save_path
     )
 
-    # Get the download struct from database
-    download = Downloads.get_download!(download_map.id)
+    # Get the download struct from database (with media_item preloaded)
+    download = Downloads.get_download!(download_map.id, preload: [:media_item])
 
-    # Mark as completed
-    case Downloads.mark_download_completed(download) do
-      {:ok, updated} ->
-        Logger.info("Download marked as completed, enqueuing import job",
-          download_id: download_map.id,
-          save_path: download_map.save_path
+    # Mark download as completed in database (prevents reprocessing on next monitor run)
+    {:ok, download} = Downloads.mark_download_completed(download)
+
+    # Track completion event
+    Events.download_completed(download, media_item: download.media_item)
+
+    # Enqueue import job - it will delete the download record after successful import
+    case enqueue_import_job(download, download_map) do
+      {:ok, _job} ->
+        Logger.info("Import job enqueued for completed download",
+          download_id: download.id
         )
 
-        # Enqueue import job
-        case enqueue_import_job(updated, download_map) do
-          {:ok, _job} ->
-            Logger.info("Import job enqueued", download_id: updated.id)
-            :ok
+        :ok
 
-          {:error, reason} ->
-            Logger.error("Failed to enqueue import job",
-              download_id: updated.id,
-              reason: inspect(reason)
-            )
-
-            :ok
-        end
-
-      {:error, changeset} ->
-        Logger.error("Failed to mark download as completed",
+      {:error, reason} ->
+        Logger.error("Failed to enqueue import job",
           download_id: download.id,
-          errors: inspect(changeset.errors)
+          reason: inspect(reason)
         )
 
         :ok
@@ -122,19 +127,26 @@ defmodule Mydia.Jobs.DownloadMonitor do
       error: download_map.error_message
     )
 
-    # Get the download struct from database
-    download = Downloads.get_download!(download_map.id)
+    # Get the download struct from database (with media_item preloaded)
+    download = Downloads.get_download!(download_map.id, preload: [:media_item])
 
-    # Record error message
     error_msg = download_map.error_message || "Download failed in client"
 
-    case Downloads.mark_download_failed(download, error_msg) do
-      {:ok, _updated} ->
-        Logger.info("Download marked as failed", download_id: download_map.id)
+    # Track failure event before deletion
+    Events.download_failed(download, error_msg, media_item: download.media_item)
+
+    # Delete the download record - downloads table is ephemeral
+    case Downloads.delete_download(download) do
+      {:ok, _deleted} ->
+        Logger.info("Download removed from queue (failed)",
+          download_id: download_map.id,
+          error: error_msg
+        )
+
         :ok
 
       {:error, changeset} ->
-        Logger.error("Failed to mark download as failed",
+        Logger.error("Failed to delete failed download",
           download_id: download.id,
           errors: inspect(changeset.errors)
         )
@@ -161,6 +173,7 @@ defmodule Mydia.Jobs.DownloadMonitor do
           download_id: download_map.id
         )
 
+        # TODO: Emit download.removed event when events system exists (task-107)
         :ok
 
       {:error, changeset} ->

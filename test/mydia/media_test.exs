@@ -41,6 +41,34 @@ defmodule Mydia.MediaTest do
       assert {:error, %Ecto.Changeset{}} = Media.create_media_item(@invalid_attrs)
     end
 
+    test "create_media_item/1 requires year for movies" do
+      attrs_without_year = %{
+        type: "movie",
+        title: "Test Movie",
+        tmdb_id: 12345,
+        monitored: true
+      }
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Media.create_media_item(attrs_without_year)
+
+      assert %{year: ["is required for movies"]} = errors_on(changeset)
+    end
+
+    test "create_media_item/1 allows tv_shows without year" do
+      attrs_without_year = %{
+        type: "tv_show",
+        title: "Test Show",
+        tmdb_id: 12345,
+        monitored: true
+      }
+
+      assert {:ok, %MediaItem{} = media_item} = Media.create_media_item(attrs_without_year)
+      assert media_item.type == "tv_show"
+      assert media_item.title == "Test Show"
+      assert media_item.year == nil
+    end
+
     test "update_media_item/2 with valid data updates the media item" do
       media_item = media_item_fixture()
       update_attrs = %{title: "Updated Title", monitored: false}

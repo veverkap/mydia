@@ -1,5 +1,5 @@
 defmodule Mydia.Jobs.MovieSearchTest do
-  use Mydia.DataCase, async: true
+  use Mydia.DataCase, async: false
   use Oban.Testing, repo: Mydia.Repo
 
   alias Mydia.Jobs.MovieSearch
@@ -165,18 +165,6 @@ defmodule Mydia.Jobs.MovieSearchTest do
 
       # We can't directly test the private function, but we can verify
       # the job runs without errors with a movie that has a year
-      result =
-        perform_job(MovieSearch, %{
-          "mode" => "specific",
-          "media_item_id" => movie.id
-        })
-
-      assert result in [:ok, :no_results] or match?({:error, _}, result)
-    end
-
-    test "works without year" do
-      movie = media_item_fixture(%{title: "The Matrix", year: nil})
-
       result =
         perform_job(MovieSearch, %{
           "mode" => "specific",

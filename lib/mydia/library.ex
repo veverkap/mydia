@@ -274,6 +274,22 @@ defmodule Mydia.Library do
   end
 
   @doc """
+  Checks if a torrent from a download client has already been imported to the library.
+
+  Returns true if any media_file has this client_id in its metadata, false otherwise.
+  This is used to prevent re-processing torrents that are seeding after import.
+  """
+  def torrent_already_imported?(client_name, client_id) do
+    query =
+      from f in MediaFile,
+        where:
+          fragment("json_extract(?, '$.download_client') = ?", f.metadata, ^client_name) and
+            fragment("json_extract(?, '$.download_client_id') = ?", f.metadata, ^client_id)
+
+    Repo.exists?(query)
+  end
+
+  @doc """
   Refreshes file metadata for all media files in the library.
 
   This can be a long-running operation. Returns the count of successfully refreshed files.

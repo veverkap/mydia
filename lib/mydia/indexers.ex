@@ -45,7 +45,7 @@ defmodule Mydia.Indexers do
 
     # Register adapters as they are implemented
     Adapter.Registry.register(:prowlarr, Mydia.Indexers.Adapter.Prowlarr)
-    # Adapter.Registry.register(:jackett, Mydia.Indexers.Adapter.Jackett)
+    Adapter.Registry.register(:jackett, Mydia.Indexers.Adapter.Jackett)
 
     Logger.info("Indexer adapter registration complete")
     :ok

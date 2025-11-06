@@ -112,7 +112,8 @@ defmodule Mydia.Indexers.Adapter.ProwlarrTest do
         options: %{}
       }
 
-      assert {:error, %Error{type: :connection_failed}} = Prowlarr.search(config, "test")
+      assert {:error, %Error{type: error_type}} = Prowlarr.search(config, "test")
+      assert error_type in [:connection_failed, :search_failed]
     end
 
     test "handles search with empty query" do

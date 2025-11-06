@@ -1,5 +1,5 @@
 defmodule Mydia.Jobs.LibraryScannerTest do
-  use Mydia.DataCase, async: true
+  use Mydia.DataCase, async: false
   use Oban.Testing, repo: Mydia.Repo
 
   alias Mydia.Jobs.LibraryScanner

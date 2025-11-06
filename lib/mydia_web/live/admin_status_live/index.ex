@@ -206,4 +206,10 @@ defmodule MydiaWeb.AdminStatusLive.Index do
 
   defp enabled_badge(true), do: "badge-success"
   defp enabled_badge(false), do: "badge-ghost"
+
+  defp format_indexer_type(type) when is_atom(type) do
+    type |> to_string() |> String.capitalize()
+  end
+
+  defp format_indexer_type(type), do: to_string(type)
 end

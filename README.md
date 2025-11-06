@@ -15,7 +15,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 
 ### Download Management
 - ⬇️ **Download Client Integration** – Seamless connectivity with qBittorrent and Transmission
-- 🔎 **Indexer Support** – Integrated search via Prowlarr for finding releases
+- 🔎 **Indexer Support** – Integrated search via Prowlarr and Jackett for finding releases
 - 🤖 **Automatic Search & Download** – Background jobs to automatically find and download monitored content
 - 🎯 **Smart Release Ranking** – Pluggable scoring system to select the best matching releases
 - 📥 **Manual Search** – Browse and select specific releases from the UI
@@ -370,6 +370,15 @@ INDEXER_1_BASE_URL=http://prowlarr:9696
 INDEXER_1_API_KEY=your-prowlarr-api-key-here
 ```
 
+Example for Jackett:
+
+```bash
+INDEXER_2_NAME=Jackett
+INDEXER_2_TYPE=jackett
+INDEXER_2_BASE_URL=http://jackett:9117
+INDEXER_2_API_KEY=your-jackett-api-key-here
+```
+
 ### Advanced Configuration
 
 | Variable | Description | Default |
@@ -431,7 +440,7 @@ mix precommit
 
 ### Customization
 
-Create `compose.override.yml` to add services like Transmission, Prowlarr, or custom configurations:
+Create `compose.override.yml` to add services like Transmission, Prowlarr, Jackett, or custom configurations:
 
 ```bash
 cp compose.override.yml.example compose.override.yml

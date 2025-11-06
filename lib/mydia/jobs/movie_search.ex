@@ -33,12 +33,13 @@ defmodule Mydia.Jobs.MovieSearch do
 
   import Ecto.Query, warn: false
 
-  alias Mydia.{Repo, Media, Indexers, Downloads}
+  alias Mydia.{Repo, Media, Indexers, Downloads, Events}
   alias Mydia.Indexers.ReleaseRanker
   alias Mydia.Media.MediaItem
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"mode" => "all_monitored"} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting automatic search for all monitored movies")
 
     movies = load_monitored_movies_without_files()
@@ -48,6 +49,13 @@ defmodule Mydia.Jobs.MovieSearch do
 
     if total_count == 0 do
       Logger.info("No movies to search")
+      duration = System.monotonic_time(:millisecond) - start_time
+
+      Events.job_executed("movie_search", %{
+        "duration_ms" => duration,
+        "items_processed" => 0
+      })
+
       :ok
     else
       results = Enum.map(movies, &search_movie(&1, args))
@@ -55,6 +63,7 @@ defmodule Mydia.Jobs.MovieSearch do
       successful = Enum.count(results, &(&1 == :ok))
       failed = Enum.count(results, &match?({:error, _}, &1))
       no_results = Enum.count(results, &(&1 == :no_results))
+      duration = System.monotonic_time(:millisecond) - start_time
 
       Logger.info("Automatic movie search completed",
         total: total_count,
@@ -63,33 +72,71 @@ defmodule Mydia.Jobs.MovieSearch do
         no_results: no_results
       )
 
+      Events.job_executed("movie_search", %{
+        "duration_ms" => duration,
+        "items_processed" => total_count,
+        "downloads_initiated" => successful,
+        "failed" => failed,
+        "no_results" => no_results
+      })
+
       :ok
     end
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"mode" => "specific", "media_item_id" => media_item_id} = args}) do
+    start_time = System.monotonic_time(:millisecond)
     Logger.info("Starting search for specific movie", media_item_id: media_item_id)
 
-    try do
-      media_item = Media.get_media_item!(media_item_id)
+    result =
+      try do
+        media_item = Media.get_media_item!(media_item_id)
 
-      case media_item do
-        %MediaItem{type: "movie"} = movie ->
-          search_movie(movie, args)
+        case media_item do
+          %MediaItem{type: "movie"} = movie ->
+            search_movie(movie, args)
 
-        %MediaItem{type: type} ->
-          Logger.error("Invalid media type for movie search",
-            media_item_id: media_item_id,
-            type: type
-          )
+          %MediaItem{type: type} ->
+            Logger.error("Invalid media type for movie search",
+              media_item_id: media_item_id,
+              type: type
+            )
 
-          {:error, :invalid_type}
+            {:error, :invalid_type}
+        end
+      rescue
+        Ecto.NoResultsError ->
+          Logger.error("Media item not found", media_item_id: media_item_id)
+          {:error, :not_found}
       end
-    rescue
-      Ecto.NoResultsError ->
-        Logger.error("Media item not found", media_item_id: media_item_id)
-        {:error, :not_found}
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    case result do
+      :ok ->
+        Events.job_executed("movie_search_specific", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id
+        })
+
+        :ok
+
+      :no_results ->
+        Events.job_executed("movie_search_specific", %{
+          "duration_ms" => duration,
+          "media_item_id" => media_item_id,
+          "no_results" => true
+        })
+
+        :no_results
+
+      {:error, reason} ->
+        Events.job_failed("movie_search_specific", inspect(reason), %{
+          "media_item_id" => media_item_id
+        })
+
+        {:error, reason}
     end
   end
 
