@@ -90,22 +90,16 @@ defmodule Mydia.Downloads.UntrackedMatcher do
   end
 
   defp find_untracked_torrents(client_torrents, tracked_downloads) do
-    # Build sets for both (client_name, client_id) pairs and titles
-    # This prevents duplicates when client IDs are reused after torrents are removed
+    # Build set of (client_name, client_id) pairs for tracked downloads
+    # Using hash-based IDs ensures stable identification without reuse issues
     tracked_by_id =
       tracked_downloads
       |> Enum.map(fn d -> {d.download_client, d.download_client_id} end)
       |> MapSet.new()
 
-    tracked_by_title =
-      tracked_downloads
-      |> Enum.map(fn d -> String.downcase(d.title) end)
-      |> MapSet.new()
-
-    # Filter out torrents that are already tracked by either ID or title
+    # Filter out torrents that are already tracked by ID
     Enum.reject(client_torrents, fn torrent ->
-      MapSet.member?(tracked_by_id, {torrent.client_name, torrent.id}) or
-        MapSet.member?(tracked_by_title, String.downcase(torrent.name))
+      MapSet.member?(tracked_by_id, {torrent.client_name, torrent.id})
     end)
   end
 

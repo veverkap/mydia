@@ -91,7 +91,7 @@ defmodule Mydia.Downloads.Client.Transmission do
     rpc_call(config, "torrent-add", arguments)
     |> case do
       {:ok, %{"result" => "success", "arguments" => %{"torrent-added" => torrent_info}}} ->
-        {:ok, to_string(torrent_info["id"])}
+        {:ok, torrent_info["hashString"]}
 
       {:ok, %{"result" => "success", "arguments" => %{"torrent-duplicate" => torrent_info}}} ->
         {:error, Error.duplicate_torrent("Torrent already exists", %{id: torrent_info["id"]})}
@@ -106,11 +106,12 @@ defmodule Mydia.Downloads.Client.Transmission do
 
   @impl true
   def get_status(config, client_id) do
-    # Convert string ID to integer for Transmission
+    # client_id is the torrent hash string
     torrent_id = parse_torrent_id(client_id)
 
     fields = [
       "id",
+      "hashString",
       "name",
       "status",
       "percentDone",
@@ -151,6 +152,7 @@ defmodule Mydia.Downloads.Client.Transmission do
   def list_torrents(config, opts \\ []) do
     fields = [
       "id",
+      "hashString",
       "name",
       "status",
       "percentDone",
@@ -197,7 +199,7 @@ defmodule Mydia.Downloads.Client.Transmission do
 
   @impl true
   def remove_torrent(config, client_id, opts \\ []) do
-    # Convert string ID to integer for Transmission
+    # client_id is the torrent hash string
     torrent_id = parse_torrent_id(client_id)
     delete_files = Keyword.get(opts, :delete_files, false)
 
@@ -221,7 +223,7 @@ defmodule Mydia.Downloads.Client.Transmission do
 
   @impl true
   def pause_torrent(config, client_id) do
-    # Convert string ID to integer for Transmission
+    # client_id is the torrent hash string
     torrent_id = parse_torrent_id(client_id)
     arguments = %{"ids" => [torrent_id]}
 
@@ -240,7 +242,7 @@ defmodule Mydia.Downloads.Client.Transmission do
 
   @impl true
   def resume_torrent(config, client_id) do
-    # Convert string ID to integer for Transmission
+    # client_id is the torrent hash string
     torrent_id = parse_torrent_id(client_id)
     arguments = %{"ids" => [torrent_id]}
 
@@ -373,7 +375,7 @@ defmodule Mydia.Downloads.Client.Transmission do
       end
 
     %{
-      id: to_string(torrent["id"]),
+      id: torrent["hashString"],
       name: torrent_name,
       state: parse_state(torrent["status"]),
       progress: (torrent["percentDone"] || 0.0) * 100.0,
@@ -442,14 +444,7 @@ defmodule Mydia.Downloads.Client.Transmission do
   defp filter_by_tag(torrents, nil), do: torrents
   defp filter_by_tag(torrents, _tag), do: torrents
 
-  defp parse_torrent_id(id) when is_integer(id), do: id
-
-  defp parse_torrent_id(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {parsed_id, _} -> parsed_id
-      :error -> id
-    end
-  end
-
+  # Transmission RPC API accepts both hash strings and numeric IDs
+  # Since we now use hash strings, just pass them through
   defp parse_torrent_id(id), do: id
 end
