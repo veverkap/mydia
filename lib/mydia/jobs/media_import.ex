@@ -24,7 +24,8 @@ defmodule Mydia.Jobs.MediaImport do
   require Logger
   alias Mydia.{Downloads, Library, Media, Settings}
   alias Mydia.Downloads.Client
-  alias Mydia.Library.{FileAnalyzer, FileParser}
+  alias Mydia.Library.{FileAnalyzer, FileNamer, FileParser}
+  alias Mydia.Indexers.QualityParser
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"download_id" => download_id} = args}) do
@@ -456,7 +457,9 @@ defmodule Mydia.Jobs.MediaImport do
     # Ensure destination directory exists
     File.mkdir_p!(dest_dir)
 
-    dest_path = Path.join(dest_dir, file.name)
+    # Generate filename (optionally renamed with TRaSH format)
+    final_filename = generate_filename(download, episode, file.name, args)
+    dest_path = Path.join(dest_dir, final_filename)
 
     # Check if file already exists
     if File.exists?(dest_path) do
@@ -576,6 +579,43 @@ defmodule Mydia.Jobs.MediaImport do
           error ->
             error
         end
+    end
+  end
+
+  defp generate_filename(download, episode, original_filename, args) do
+    # Only rename if explicitly enabled (default: false for safety)
+    if args["rename_files"] == true do
+      # Parse quality information from download title or original filename
+      quality_info =
+        QualityParser.parse(download.title || original_filename)
+
+      media_item = download.media_item
+
+      cond do
+        # TV episode with episode info
+        media_item.type == "tv_show" && not is_nil(episode) ->
+          FileNamer.generate_episode_filename(
+            media_item,
+            episode,
+            quality_info,
+            original_filename
+          )
+
+        # Movie
+        media_item.type == "movie" ->
+          FileNamer.generate_movie_filename(
+            media_item,
+            quality_info,
+            original_filename
+          )
+
+        # Fallback to original filename
+        true ->
+          original_filename
+      end
+    else
+      # Renaming disabled - use original filename
+      original_filename
     end
   end
 

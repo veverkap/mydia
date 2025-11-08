@@ -1,9 +1,10 @@
 ---
 id: task-114.2
 title: Implement TRaSH-compatible file naming on import
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-08 01:00'
+updated_date: '2025-11-08 01:47'
 labels:
   - enhancement
   - file-naming
