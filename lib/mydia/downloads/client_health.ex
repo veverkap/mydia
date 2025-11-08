@@ -241,7 +241,9 @@ defmodule Mydia.Downloads.ClientHealth do
 
   defp get_adapter(:qbittorrent), do: Mydia.Downloads.Client.Qbittorrent
   defp get_adapter(:transmission), do: Mydia.Downloads.Client.Transmission
-  defp get_adapter(:http), do: Mydia.Downloads.Client.Http
+  defp get_adapter(:sabnzbd), do: Mydia.Downloads.Client.Sabnzbd
+  defp get_adapter(:nzbget), do: Mydia.Downloads.Client.Nzbget
+  defp get_adapter(:http), do: Mydia.Downloads.Client.HTTP
 
   defp config_to_map(config) do
     %{
@@ -251,6 +253,7 @@ defmodule Mydia.Downloads.ClientHealth do
       use_ssl: config.use_ssl,
       username: config.username,
       password: config.password,
+      api_key: config.api_key,
       url_base: config.url_base,
       options: config.connection_settings || %{}
     }

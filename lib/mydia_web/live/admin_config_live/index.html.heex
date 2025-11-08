@@ -650,13 +650,27 @@
                 field={@download_client_form[:type]}
                 type="select"
                 label="Type"
-                options={[{"qBittorrent", "qbittorrent"}, {"Transmission", "transmission"}]}
+                options={[
+                  {"qBittorrent", "qbittorrent"},
+                  {"Transmission", "transmission"},
+                  {"SABnzbd", "sabnzbd"},
+                  {"NZBGet", "nzbget"},
+                  {"HTTP", "http"}
+                ]}
                 required
               />
               <.input field={@download_client_form[:host]} type="text" label="Host" required />
               <.input field={@download_client_form[:port]} type="number" label="Port" required />
               <.input field={@download_client_form[:username]} type="text" label="Username" />
               <.input field={@download_client_form[:password]} type="password" label="Password" />
+              <.input field={@download_client_form[:api_key]} type="password" label="API Key" />
+              <.input field={@download_client_form[:url_base]} type="text" label="URL Base" />
+              <.input field={@download_client_form[:category]} type="text" label="Category" />
+              <.input
+                field={@download_client_form[:download_directory]}
+                type="text"
+                label="Download Directory"
+              />
               <.input field={@download_client_form[:use_ssl]} type="checkbox" label="Use SSL" />
               <.input
                 field={@download_client_form[:enabled]}

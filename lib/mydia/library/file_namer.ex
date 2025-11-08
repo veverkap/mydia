@@ -152,7 +152,12 @@ defmodule Mydia.Library.FileNamer do
 
   ## Private Functions
 
-  defp build_quality_tag(%{source: source, resolution: resolution, proper: proper, repack: repack}) do
+  defp build_quality_tag(%{
+         source: source,
+         resolution: resolution,
+         proper: proper,
+         repack: repack
+       }) do
     parts = [
       source,
       resolution,
@@ -169,24 +174,28 @@ defmodule Mydia.Library.FileNamer do
   end
 
   defp build_audio_tag(nil), do: nil
+
   defp build_audio_tag(audio) when is_binary(audio) do
     # Audio format already clean from parser
     "[#{audio}]"
   end
 
   defp build_hdr_tag(%{hdr: false}), do: nil
+
   defp build_hdr_tag(%{hdr: true}) do
     # Just tag as HDR - specific HDR format detection can be added later
     "[HDR]"
   end
 
   defp build_codec_tag(nil), do: nil
+
   defp build_codec_tag(codec) when is_binary(codec) do
     "[#{codec}]"
   end
 
   defp append_release_group(base, nil), do: base
   defp append_release_group(base, ""), do: base
+
   defp append_release_group(base, group) when is_binary(group) do
     "#{base}-#{group}"
   end

@@ -30,6 +30,7 @@ defmodule Mydia.Downloads do
     Registry.register(:transmission, Mydia.Downloads.Client.Transmission)
     Registry.register(:sabnzbd, Mydia.Downloads.Client.Sabnzbd)
     Registry.register(:nzbget, Mydia.Downloads.Client.Nzbget)
+    Registry.register(:http, Mydia.Downloads.Client.HTTP)
 
     Logger.info("Download client adapter registration complete")
     :ok

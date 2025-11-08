@@ -68,7 +68,12 @@ defmodule Mydia.Downloads.UntrackedMatcher do
       Logger.warning("No download clients configured")
       []
     else
-      clients
+      # Only fetch torrents from torrent clients (not Usenet or HTTP clients)
+      torrent_clients = Enum.filter(clients, fn client ->
+        client.type in [:qbittorrent, :transmission]
+      end)
+
+      torrent_clients
       |> Task.async_stream(
         &fetch_client_torrents/1,
         timeout: :infinity,

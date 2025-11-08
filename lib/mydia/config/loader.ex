@@ -458,7 +458,8 @@ defmodule Mydia.Config.Loader do
 
         is_list(value) ->
           Enum.map_join(value, "\n", fn error ->
-            "  - #{current_key}: #{error}"
+            error_str = if is_map(error), do: inspect(error), else: to_string(error)
+            "  - #{current_key}: #{error_str}"
           end)
 
         true ->

@@ -110,14 +110,19 @@ defmodule Mydia.Downloads.Client.Nzbget do
     # Content should be empty string for URL addition, NZBGet will fetch it
     params = [
       nzb_filename,
-      "",  # Empty content means NZBGet should treat NZBFilename as URL
+      # Empty content means NZBGet should treat NZBFilename as URL
+      "",
       category,
       priority,
-      false,  # AddToTop
+      # AddToTop
+      false,
       add_paused,
-      "",  # DupeKey
-      0,   # DupeScore
-      "SCORE"  # DupeMode
+      # DupeKey
+      "",
+      # DupeScore
+      0,
+      # DupeMode
+      "SCORE"
     ]
 
     # Actually, for URLs we should use 'append' with URL in the content field encoded in base64
@@ -144,11 +149,15 @@ defmodule Mydia.Downloads.Client.Nzbget do
       nzb_content_base64,
       category,
       priority,
-      false,  # AddToTop
+      # AddToTop
+      false,
       add_paused,
-      "",  # DupeKey
-      0,   # DupeScore
-      "SCORE"  # DupeMode
+      # DupeKey
+      "",
+      # DupeScore
+      0,
+      # DupeMode
+      "SCORE"
     ]
 
     case rpc_call(config, "append", params) do
@@ -217,7 +226,9 @@ defmodule Mydia.Downloads.Client.Nzbget do
           :completed ->
             Enum.filter(all_items, fn item ->
               status = get_in(item, ["Status"]) || ""
-              status in ["SUCCESS", "DELETED"] && get_in(item, ["TotalArticles"]) == get_in(item, ["SuccessArticles"])
+
+              status in ["SUCCESS", "DELETED"] &&
+                get_in(item, ["TotalArticles"]) == get_in(item, ["SuccessArticles"])
             end)
 
           :active ->
@@ -273,6 +284,7 @@ defmodule Mydia.Downloads.Client.Nzbget do
           # Also delete files from disk using HistoryFinalDelete
           rpc_call(config, "history", ["finaldelete", 0, "", [nzb_id]])
         end
+
         :ok
 
       {:ok, false} ->
@@ -428,7 +440,7 @@ defmodule Mydia.Downloads.Client.Nzbget do
     downloaded_size_mb = file_size_mb - remaining_size_mb
 
     # Calculate progress
-    progress = if file_size_mb > 0, do: (downloaded_size_mb / file_size_mb) * 100, else: 0.0
+    progress = if file_size_mb > 0, do: downloaded_size_mb / file_size_mb * 100, else: 0.0
 
     # Download speed (bytes per second)
     download_speed = get_in(item, ["DownloadRate"]) || 0
@@ -445,11 +457,13 @@ defmodule Mydia.Downloads.Client.Nzbget do
 
     # For history items, use the completion time
     completed_time = get_in(item, ["HistoryTime"]) || 0
-    completed_at = if status in ["SUCCESS", "DELETED"] && completed_time > 0 do
-      DateTime.from_unix!(completed_time)
-    else
-      nil
-    end
+
+    completed_at =
+      if status in ["SUCCESS", "DELETED"] && completed_time > 0 do
+        DateTime.from_unix!(completed_time)
+      else
+        nil
+      end
 
     %{
       id: Integer.to_string(nzb_id),
@@ -457,12 +471,15 @@ defmodule Mydia.Downloads.Client.Nzbget do
       state: parse_state(status),
       progress: progress,
       download_speed: download_speed,
-      upload_speed: 0,  # Usenet doesn't upload
+      # Usenet doesn't upload
+      upload_speed: 0,
       downloaded: round(downloaded_size_mb),
-      uploaded: 0,  # Usenet doesn't upload
+      # Usenet doesn't upload
+      uploaded: 0,
       size: round(file_size_mb),
       eta: eta_seconds,
-      ratio: 0.0,  # Usenet doesn't have ratios
+      # Usenet doesn't have ratios
+      ratio: 0.0,
       save_path: dest_dir,
       added_at: added_at,
       completed_at: completed_at

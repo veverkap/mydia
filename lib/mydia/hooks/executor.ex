@@ -12,14 +12,22 @@ defmodule Mydia.Hooks.Executor do
   def execute_sync(event, data, opts \\ []) do
     hooks = Manager.list_hooks(event)
     config = Application.get_env(:mydia, :runtime_config, %{hooks: %{default_timeout_ms: 5000}})
+
     default_timeout =
       case config do
         %Mydia.Config.Schema{hooks: hooks} when not is_nil(hooks) ->
           hooks.default_timeout_ms || 5000
-        %{hooks: %{default_timeout_ms: timeout}} when is_integer(timeout) -> timeout
-        %{hooks: hooks} when is_map(hooks) -> Map.get(hooks, :default_timeout_ms, 5000)
-        _ -> 5000
+
+        %{hooks: %{default_timeout_ms: timeout}} when is_integer(timeout) ->
+          timeout
+
+        %{hooks: hooks} when is_map(hooks) ->
+          Map.get(hooks, :default_timeout_ms, 5000)
+
+        _ ->
+          5000
       end
+
     timeout = Keyword.get(opts, :timeout, default_timeout)
 
     Logger.debug("Executing #{length(hooks)} hook(s) for event: #{event}")
@@ -74,14 +82,22 @@ defmodule Mydia.Hooks.Executor do
 
   defp execute_lua_hook(hook, event, data, opts) do
     config = Application.get_env(:mydia, :runtime_config, %{hooks: %{default_timeout_ms: 5000}})
+
     default_timeout =
       case config do
         %Mydia.Config.Schema{hooks: hooks} when not is_nil(hooks) ->
           hooks.default_timeout_ms || 5000
-        %{hooks: %{default_timeout_ms: timeout}} when is_integer(timeout) -> timeout
-        %{hooks: hooks} when is_map(hooks) -> Map.get(hooks, :default_timeout_ms, 5000)
-        _ -> 5000
+
+        %{hooks: %{default_timeout_ms: timeout}} when is_integer(timeout) ->
+          timeout
+
+        %{hooks: hooks} when is_map(hooks) ->
+          Map.get(hooks, :default_timeout_ms, 5000)
+
+        _ ->
+          5000
       end
+
     timeout = Keyword.get(opts, :timeout, default_timeout)
 
     event_data = %{

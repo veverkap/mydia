@@ -191,7 +191,9 @@ defmodule Mydia.Downloads.TorrentMatcher do
     {best_title, title_similarity, is_alternative} =
       title_variants
       |> Enum.map(fn {title, is_alt} ->
-        similarity = string_similarity(normalize_string(title), normalize_string(torrent_info.title))
+        similarity =
+          string_similarity(normalize_string(title), normalize_string(torrent_info.title))
+
         {title, similarity, is_alt}
       end)
       |> Enum.max_by(fn {_title, similarity, _is_alt} -> similarity end)
@@ -226,7 +228,8 @@ defmodule Mydia.Downloads.TorrentMatcher do
       end
 
     # Year matching is critical for movies
-    year_diff = if movie.year && torrent_info.year, do: abs(movie.year - torrent_info.year), else: nil
+    year_diff =
+      if movie.year && torrent_info.year, do: abs(movie.year - torrent_info.year), else: nil
 
     year_match =
       cond do
@@ -250,7 +253,9 @@ defmodule Mydia.Downloads.TorrentMatcher do
 
     # Calculate final confidence (weighted average)
     # Title is 70% weight, year is 30% weight (added as boost/penalty)
-    confidence = title_similarity * 0.7 + year_match + sequel_penalty + word_boundary_penalty + alt_title_penalty
+    confidence =
+      title_similarity * 0.7 + year_match + sequel_penalty + word_boundary_penalty +
+        alt_title_penalty
 
     # Clamp between 0 and 1
     max(0.0, min(1.0, confidence))

@@ -214,12 +214,26 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
 
       filtered_items =
         case filter do
-          :all -> all_items
-          :downloading -> Enum.filter(all_items, &(&1["status"] in ["Downloading", "Fetching", "Queued"]))
-          :paused -> Enum.filter(all_items, &(&1["status"] == "Paused"))
-          :completed -> Enum.filter(all_items, &(&1["status"] == "Completed"))
-          :active -> Enum.filter(all_items, &(&1["status"] in ["Downloading", "Fetching", "Verifying", "Repairing"]))
-          _ -> all_items
+          :all ->
+            all_items
+
+          :downloading ->
+            Enum.filter(all_items, &(&1["status"] in ["Downloading", "Fetching", "Queued"]))
+
+          :paused ->
+            Enum.filter(all_items, &(&1["status"] == "Paused"))
+
+          :completed ->
+            Enum.filter(all_items, &(&1["status"] == "Completed"))
+
+          :active ->
+            Enum.filter(
+              all_items,
+              &(&1["status"] in ["Downloading", "Fetching", "Verifying", "Repairing"])
+            )
+
+          _ ->
+            all_items
         end
 
       torrents = Enum.map(filtered_items, &parse_item_status/1)
@@ -453,7 +467,7 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
     downloaded_bytes = round(downloaded_mb * 1024 * 1024)
 
     # Calculate progress
-    progress = if size_mb > 0, do: (downloaded_mb / size_mb) * 100, else: 0.0
+    progress = if size_mb > 0, do: downloaded_mb / size_mb * 100, else: 0.0
 
     # Parse speeds and times
     download_speed_kb = parse_float(get_in(item, ["kbpersec"])) || 0.0
@@ -467,7 +481,9 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
 
     # Parse timestamps
     added_at = parse_timestamp(get_in(item, ["added"]))
-    completed_at = if status == "Completed", do: parse_timestamp(get_in(item, ["completed"])), else: nil
+
+    completed_at =
+      if status == "Completed", do: parse_timestamp(get_in(item, ["completed"])), else: nil
 
     %{
       id: nzo_id,
@@ -475,12 +491,15 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
       state: parse_state(status),
       progress: progress,
       download_speed: download_speed_bytes,
-      upload_speed: 0,  # Usenet doesn't upload
+      # Usenet doesn't upload
+      upload_speed: 0,
       downloaded: downloaded_bytes,
-      uploaded: 0,  # Usenet doesn't upload
+      # Usenet doesn't upload
+      uploaded: 0,
       size: size_bytes,
       eta: eta_seconds,
-      ratio: 0.0,  # Usenet doesn't have ratios
+      # Usenet doesn't have ratios
+      ratio: 0.0,
       save_path: storage,
       added_at: added_at,
       completed_at: completed_at
@@ -504,23 +523,28 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
   end
 
   defp parse_size(size) when is_float(size), do: size
-  defp parse_size(size) when is_integer(size), do: size / 1024 / 1024  # bytes to MB
+  # bytes to MB
+  defp parse_size(size) when is_integer(size), do: size / 1024 / 1024
+
   defp parse_size(size) when is_binary(size) do
     case Float.parse(size) do
       {float, _} -> float
       :error -> 0.0
     end
   end
+
   defp parse_size(_), do: 0.0
 
   defp parse_float(value) when is_float(value), do: value
   defp parse_float(value) when is_integer(value), do: value * 1.0
+
   defp parse_float(value) when is_binary(value) do
     case Float.parse(value) do
       {float, _} -> float
       :error -> 0.0
     end
   end
+
   defp parse_float(_), do: 0.0
 
   defp parse_eta(eta_text) when is_binary(eta_text) do
@@ -538,14 +562,17 @@ defmodule Mydia.Downloads.Client.Sabnzbd do
   rescue
     _ -> nil
   end
+
   defp parse_eta(_), do: nil
 
   defp parse_timestamp(timestamp) when is_integer(timestamp) and timestamp > 0 do
     DateTime.from_unix!(timestamp)
   end
+
   defp parse_timestamp(_), do: nil
 
   defp add_optional_param(params, _key, nil), do: params
+
   defp add_optional_param(params, key, value) do
     params ++ [{key, value}]
   end

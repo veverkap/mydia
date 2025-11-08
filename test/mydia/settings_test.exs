@@ -19,7 +19,19 @@ defmodule Mydia.SettingsTest do
 
       # Verify specific profiles exist with expected properties
       profile_names = Enum.map(profiles, & &1.name) |> MapSet.new()
-      expected_names = MapSet.new(["Any", "SD", "HD-720p", "HD-1080p", "Full HD", "4K/UHD", "Remux-1080p", "Remux-2160p"])
+
+      expected_names =
+        MapSet.new([
+          "Any",
+          "SD",
+          "HD-720p",
+          "HD-1080p",
+          "Full HD",
+          "4K/UHD",
+          "Remux-1080p",
+          "Remux-2160p"
+        ])
+
       assert profile_names == expected_names
     end
 

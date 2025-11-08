@@ -58,9 +58,7 @@ defmodule Mydia.Downloads.TorrentParserEditionTest do
 
     test "detects Theatrical Release" do
       assert {:ok, info} =
-               TorrentParser.parse(
-                 "Blade.Runner.1982.Theatrical.Release.1080p.BluRay.x264-GROUP"
-               )
+               TorrentParser.parse("Blade.Runner.1982.Theatrical.Release.1080p.BluRay.x264-GROUP")
 
       assert info.edition == "Theatrical"
     end
@@ -200,9 +198,7 @@ defmodule Mydia.Downloads.TorrentParserEditionTest do
 
     test "TV shows don't have edition field" do
       assert {:ok, info} =
-               TorrentParser.parse(
-                 "Breaking.Bad.S01E01.Extended.Edition.720p.HDTV.x264-CTU"
-               )
+               TorrentParser.parse("Breaking.Bad.S01E01.Extended.Edition.720p.HDTV.x264-CTU")
 
       assert info.type == :tv
       # Edition is only extracted for movies, not TV shows
