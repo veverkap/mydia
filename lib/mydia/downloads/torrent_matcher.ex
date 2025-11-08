@@ -2,12 +2,18 @@ defmodule Mydia.Downloads.TorrentMatcher do
   @moduledoc """
   Matches parsed torrent information against library items.
 
-  Uses fuzzy string matching to find the best matching media item
-  for a given torrent, along with a confidence score.
+  Uses a multi-layered matching approach:
+  1. ID-based matching (TMDB/IMDB IDs) - highest priority and confidence
+  2. Fuzzy string matching with year validation - fallback when IDs unavailable
+
+  ID-based matching provides the most reliable results and prevents false positives
+  from similar titles (sequels, prequels, etc.).
   """
 
   alias Mydia.Media
   alias Mydia.Media.{MediaItem, Episode}
+
+  require Logger
 
   @type match_result :: %{
           media_item: MediaItem.t(),
@@ -22,32 +28,73 @@ defmodule Mydia.Downloads.TorrentMatcher do
   Returns `{:ok, match}` with the best match above the confidence threshold,
   or `{:error, reason}` if no confident match is found.
 
+  ## Matching Strategy
+
+  1. **ID-based matching** (when available): If the torrent info includes TMDB or IMDB IDs,
+     these are matched against library items first. ID matches have 0.98+ confidence.
+  2. **Title-based matching** (fallback): When IDs are unavailable or don't match,
+     falls back to fuzzy string matching with year validation.
+
   ## Options
     - `:confidence_threshold` - Minimum confidence (0.0 to 1.0) required for a match (default: 0.8)
     - `:monitored_only` - Only match against monitored items (default: true)
+    - `:require_id_match` - Reject matches without ID confirmation (default: false)
   """
   def find_match(torrent_info, opts \\ []) do
     confidence_threshold = Keyword.get(opts, :confidence_threshold, 0.8)
     monitored_only = Keyword.get(opts, :monitored_only, true)
+    require_id_match = Keyword.get(opts, :require_id_match, false)
 
     case torrent_info.type do
       :movie ->
-        find_movie_match(torrent_info, monitored_only, confidence_threshold)
+        find_movie_match(torrent_info, monitored_only, confidence_threshold, require_id_match)
 
       :tv ->
-        find_tv_match(torrent_info, monitored_only, confidence_threshold)
+        find_tv_match(torrent_info, monitored_only, confidence_threshold, require_id_match)
 
       :tv_season ->
-        find_tv_season_match(torrent_info, monitored_only, confidence_threshold)
+        find_tv_season_match(
+          torrent_info,
+          monitored_only,
+          confidence_threshold,
+          require_id_match
+        )
     end
   end
 
   ## Private Functions - Movie Matching
 
-  defp find_movie_match(torrent_info, monitored_only, threshold) do
+  defp find_movie_match(torrent_info, monitored_only, threshold, require_id_match) do
     # Get all movies from the library
     movies = list_movies(monitored_only)
 
+    # Try ID-based matching first if IDs are available
+    id_match_result = try_id_based_match(torrent_info, movies, :movie)
+
+    case id_match_result do
+      {:ok, movie, confidence, reason} ->
+        {:ok,
+         %{
+           media_item: movie,
+           episode: nil,
+           confidence: confidence,
+           match_reason: reason
+         }}
+
+      {:error, :no_id_match} when require_id_match ->
+        Logger.debug(
+          "ID-based match required but not available for: #{torrent_info.title} (#{torrent_info.year})"
+        )
+
+        {:error, :no_match_found}
+
+      {:error, :no_id_match} ->
+        # Fall back to title-based matching
+        find_movie_match_by_title(movies, torrent_info, threshold)
+    end
+  end
+
+  defp find_movie_match_by_title(movies, torrent_info, threshold) do
     # Find potential matches with similarity scores
     matches =
       movies
@@ -103,10 +150,45 @@ defmodule Mydia.Downloads.TorrentMatcher do
 
   ## Private Functions - TV Show Matching
 
-  defp find_tv_match(torrent_info, monitored_only, threshold) do
+  defp find_tv_match(torrent_info, monitored_only, threshold, require_id_match) do
     # Get all TV shows from the library
     tv_shows = list_tv_shows(monitored_only)
 
+    # Try ID-based matching first
+    id_match_result = try_id_based_match(torrent_info, tv_shows, :tv)
+
+    case id_match_result do
+      {:ok, show, confidence, _reason} ->
+        # Found ID match, now find the specific episode
+        case find_episode(show, torrent_info) do
+          {:ok, episode} ->
+            {:ok,
+             %{
+               media_item: show,
+               episode: episode,
+               confidence: confidence,
+               match_reason:
+                 build_tv_match_reason_with_id(show, episode, torrent_info, confidence)
+             }}
+
+          {:error, :episode_not_found} ->
+            {:error, :episode_not_found}
+        end
+
+      {:error, :no_id_match} when require_id_match ->
+        Logger.debug(
+          "ID-based match required but not available for: #{torrent_info.title} S#{torrent_info.season}E#{torrent_info.episode}"
+        )
+
+        {:error, :no_match_found}
+
+      {:error, :no_id_match} ->
+        # Fall back to title-based matching
+        find_tv_match_by_title(tv_shows, torrent_info, threshold)
+    end
+  end
+
+  defp find_tv_match_by_title(tv_shows, torrent_info, threshold) do
     # Find potential show matches
     show_matches =
       tv_shows
@@ -162,10 +244,37 @@ defmodule Mydia.Downloads.TorrentMatcher do
 
   ## Private Functions - TV Season Pack Matching
 
-  defp find_tv_season_match(torrent_info, monitored_only, threshold) do
+  defp find_tv_season_match(torrent_info, monitored_only, threshold, require_id_match) do
     # Get all TV shows from the library
     tv_shows = list_tv_shows(monitored_only)
 
+    # Try ID-based matching first
+    id_match_result = try_id_based_match(torrent_info, tv_shows, :tv_season)
+
+    case id_match_result do
+      {:ok, show, confidence, reason} ->
+        {:ok,
+         %{
+           media_item: show,
+           episode: nil,
+           confidence: confidence,
+           match_reason: reason
+         }}
+
+      {:error, :no_id_match} when require_id_match ->
+        Logger.debug(
+          "ID-based match required but not available for: #{torrent_info.title} S#{torrent_info.season}"
+        )
+
+        {:error, :no_match_found}
+
+      {:error, :no_id_match} ->
+        # Fall back to title-based matching
+        find_tv_season_match_by_title(tv_shows, torrent_info, threshold)
+    end
+  end
+
+  defp find_tv_season_match_by_title(tv_shows, torrent_info, threshold) do
     # Find potential show matches
     show_matches =
       tv_shows
@@ -194,6 +303,84 @@ defmodule Mydia.Downloads.TorrentMatcher do
 
   defp build_tv_season_match_reason(show, torrent_info, confidence) do
     "Matched season pack '#{torrent_info.title}' S#{torrent_info.season} to '#{show.title}' with #{Float.round(confidence * 100, 1)}% confidence"
+  end
+
+  defp build_tv_match_reason_with_id(show, episode, torrent_info, confidence) do
+    "ID-matched '#{torrent_info.title}' S#{torrent_info.season}E#{torrent_info.episode} to '#{show.title}' S#{episode.season_number}E#{episode.episode_number} with #{Float.round(confidence * 100, 1)}% confidence (TMDB/IMDB ID match)"
+  end
+
+  ## Private Functions - ID-Based Matching
+
+  @doc false
+  def try_id_based_match(torrent_info, library_items, media_type) do
+    # Check if torrent_info has TMDB or IMDB ID
+    tmdb_id = Map.get(torrent_info, :tmdb_id)
+    imdb_id = Map.get(torrent_info, :imdb_id)
+
+    cond do
+      # Try TMDB ID first (most reliable)
+      is_integer(tmdb_id) and tmdb_id > 0 ->
+        case find_by_tmdb_id(library_items, tmdb_id) do
+          nil ->
+            Logger.info(
+              "TMDB ID #{tmdb_id} from torrent not found in library for #{torrent_info.title}"
+            )
+
+            {:error, :no_id_match}
+
+          item ->
+            confidence = 0.98
+            reason = build_id_match_reason(item, torrent_info, "TMDB ID #{tmdb_id}", media_type)
+            Logger.info("Matched via TMDB ID #{tmdb_id}: #{torrent_info.title} -> #{item.title}")
+            {:ok, item, confidence, reason}
+        end
+
+      # Try IMDB ID as fallback
+      is_binary(imdb_id) and imdb_id != "" ->
+        case find_by_imdb_id(library_items, imdb_id) do
+          nil ->
+            Logger.info(
+              "IMDB ID #{imdb_id} from torrent not found in library for #{torrent_info.title}"
+            )
+
+            {:error, :no_id_match}
+
+          item ->
+            confidence = 0.98
+            reason = build_id_match_reason(item, torrent_info, "IMDB ID #{imdb_id}", media_type)
+            Logger.info("Matched via IMDB ID #{imdb_id}: #{torrent_info.title} -> #{item.title}")
+            {:ok, item, confidence, reason}
+        end
+
+      # No IDs available - fall back to title matching
+      true ->
+        {:error, :no_id_match}
+    end
+  end
+
+  defp find_by_tmdb_id(items, tmdb_id) do
+    Enum.find(items, fn item ->
+      item.tmdb_id == tmdb_id
+    end)
+  end
+
+  defp find_by_imdb_id(items, imdb_id) do
+    Enum.find(items, fn item ->
+      item.imdb_id == imdb_id
+    end)
+  end
+
+  defp build_id_match_reason(item, torrent_info, id_info, media_type) do
+    case media_type do
+      :movie ->
+        "ID-matched '#{torrent_info.title}' (#{torrent_info.year}) to '#{item.title}' (#{item.year}) via #{id_info} with 98.0% confidence"
+
+      :tv ->
+        "ID-matched '#{torrent_info.title}' S#{torrent_info.season}E#{torrent_info.episode} to '#{item.title}' via #{id_info} with 98.0% confidence"
+
+      :tv_season ->
+        "ID-matched season pack '#{torrent_info.title}' S#{torrent_info.season} to '#{item.title}' via #{id_info} with 98.0% confidence"
+    end
   end
 
   ## Private Functions - String Similarity

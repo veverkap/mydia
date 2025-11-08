@@ -14,12 +14,13 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 📊 **Quality Profiles** – Customizable quality preferences for automated downloads
 
 ### Download Management
-- ⬇️ **Download Client Integration** – Seamless connectivity with qBittorrent and Transmission
+- ⬇️ **Download Client Integration** – Seamless connectivity with torrent clients (qBittorrent, Transmission) and Usenet clients (SABnzbd, NZBGet)
 - 🔎 **Indexer Support** – Integrated search via Prowlarr and Jackett for finding releases
 - 🤖 **Automatic Search & Download** – Background jobs to automatically find and download monitored content
 - 🎯 **Smart Release Ranking** – Pluggable scoring system to select the best matching releases
 - 📥 **Manual Search** – Browse and select specific releases from the UI
 - 📋 **Download Queue** – Real-time monitoring of active downloads with progress tracking
+- 🌐 **Usenet Support** – Native support for Usenet downloads with SABnzbd and NZBGet clients
 
 ### Monitoring & Tracking
 - 🔔 **Release Calendar** – Track upcoming and past releases with timeline view
@@ -329,18 +330,23 @@ Configure multiple download clients using numbered environment variables (`<N>` 
 | Variable Pattern | Description | Example |
 |-----------------|-------------|---------|
 | `DOWNLOAD_CLIENT_<N>_NAME` | Client display name | `qBittorrent` |
-| `DOWNLOAD_CLIENT_<N>_TYPE` | Client type (qbittorrent, transmission, http) | `qbittorrent` |
+| `DOWNLOAD_CLIENT_<N>_TYPE` | Client type (qbittorrent, transmission, sabnzbd, nzbget, http) | `qbittorrent` |
 | `DOWNLOAD_CLIENT_<N>_ENABLED` | Enable this client | `true` |
 | `DOWNLOAD_CLIENT_<N>_PRIORITY` | Client priority (higher = preferred) | `1` |
 | `DOWNLOAD_CLIENT_<N>_HOST` | Client hostname or IP | `qbittorrent` |
 | `DOWNLOAD_CLIENT_<N>_PORT` | Client port | `8080` |
 | `DOWNLOAD_CLIENT_<N>_USE_SSL` | Use SSL/TLS connection | `false` |
-| `DOWNLOAD_CLIENT_<N>_USERNAME` | Authentication username | - |
-| `DOWNLOAD_CLIENT_<N>_PASSWORD` | Authentication password | - |
+| `DOWNLOAD_CLIENT_<N>_USERNAME` | Authentication username (Transmission, qBittorrent, NZBGet) | - |
+| `DOWNLOAD_CLIENT_<N>_PASSWORD` | Authentication password (Transmission, qBittorrent, NZBGet) | - |
+| `DOWNLOAD_CLIENT_<N>_API_KEY` | API key (SABnzbd) | - |
 | `DOWNLOAD_CLIENT_<N>_CATEGORY` | Default download category | - |
 | `DOWNLOAD_CLIENT_<N>_DOWNLOAD_DIRECTORY` | Download output directory | - |
 
-Example for two download clients:
+**Supported Download Clients:**
+- **Torrent Clients**: qBittorrent, Transmission
+- **Usenet Clients**: SABnzbd, NZBGet
+
+Example configurations:
 
 ```bash
 # qBittorrent
@@ -358,6 +364,21 @@ DOWNLOAD_CLIENT_2_HOST=transmission
 DOWNLOAD_CLIENT_2_PORT=9091
 DOWNLOAD_CLIENT_2_USERNAME=admin
 DOWNLOAD_CLIENT_2_PASSWORD=adminpass
+
+# SABnzbd (Usenet)
+DOWNLOAD_CLIENT_3_NAME=SABnzbd
+DOWNLOAD_CLIENT_3_TYPE=sabnzbd
+DOWNLOAD_CLIENT_3_HOST=sabnzbd
+DOWNLOAD_CLIENT_3_PORT=8080
+DOWNLOAD_CLIENT_3_API_KEY=your-sabnzbd-api-key
+
+# NZBGet (Usenet)
+DOWNLOAD_CLIENT_4_NAME=NZBGet
+DOWNLOAD_CLIENT_4_TYPE=nzbget
+DOWNLOAD_CLIENT_4_HOST=nzbget
+DOWNLOAD_CLIENT_4_PORT=6789
+DOWNLOAD_CLIENT_4_USERNAME=nzbget
+DOWNLOAD_CLIENT_4_PASSWORD=tegbzn6789
 ```
 
 ### Indexers

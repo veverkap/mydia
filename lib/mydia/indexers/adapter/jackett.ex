@@ -263,6 +263,10 @@ defmodule Mydia.Indexers.Adapter.Jackett do
             |> add_namespace("torznab", @torznab_ns),
           category:
             ~x"./torznab:attr[@name='category']/@value"s |> add_namespace("torznab", @torznab_ns),
+          tmdb_id:
+            ~x"./torznab:attr[@name='tmdbid']/@value"s |> add_namespace("torznab", @torznab_ns),
+          imdb_id:
+            ~x"./torznab:attr[@name='imdbid']/@value"s |> add_namespace("torznab", @torznab_ns),
           tracker: ~x"./jackettindexer/text()"s
         )
         |> Enum.map(fn item ->
@@ -343,6 +347,20 @@ defmodule Mydia.Indexers.Adapter.Jackett do
       # Parse quality from title
       quality = QualityParser.parse(title)
 
+      # Parse TMDB ID
+      tmdb_id =
+        case item.tmdb_id do
+          "" -> nil
+          id_str -> String.to_integer(id_str)
+        end
+
+      # Parse IMDB ID (format: tt1234567 or just 1234567)
+      imdb_id =
+        case item.imdb_id do
+          "" -> nil
+          id_str -> normalize_imdb_id(id_str)
+        end
+
       # Skip results without download URL
       if download_url == "" do
         Logger.debug("Skipping result without download URL: #{title}")
@@ -358,7 +376,9 @@ defmodule Mydia.Indexers.Adapter.Jackett do
           indexer: indexer,
           category: category,
           published_at: published_at,
-          quality: quality
+          quality: quality,
+          tmdb_id: tmdb_id,
+          imdb_id: imdb_id
         )
       end
     rescue
@@ -375,6 +395,20 @@ defmodule Mydia.Indexers.Adapter.Jackett do
     case Timex.parse(date_string, "{RFC1123}") do
       {:ok, datetime} -> datetime
       {:error, _reason} -> nil
+    end
+  end
+
+  # Normalizes IMDB ID to standard format (tt1234567)
+  defp normalize_imdb_id(id_str) do
+    trimmed = String.trim(id_str)
+
+    cond do
+      # Already in correct format
+      String.starts_with?(trimmed, "tt") -> trimmed
+      # Just the numeric part - add tt prefix
+      String.match?(trimmed, ~r/^\d+$/) -> "tt#{trimmed}"
+      # Invalid format
+      true -> trimmed
     end
   end
 end

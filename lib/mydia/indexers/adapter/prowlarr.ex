@@ -222,6 +222,11 @@ defmodule Mydia.Indexers.Adapter.Prowlarr do
       # Parse quality from title
       quality = QualityParser.parse(title)
 
+      # Extract TMDB and IMDB IDs from indexerFlags or custom fields
+      # Prowlarr may return these in different places depending on the indexer
+      tmdb_id = extract_tmdb_id(item)
+      imdb_id = extract_imdb_id(item)
+
       SearchResult.new(
         title: title,
         size: size,
@@ -232,7 +237,9 @@ defmodule Mydia.Indexers.Adapter.Prowlarr do
         indexer: indexer,
         category: category,
         published_at: published_at,
-        quality: quality
+        quality: quality,
+        tmdb_id: tmdb_id,
+        imdb_id: imdb_id
       )
     rescue
       error ->
@@ -248,4 +255,75 @@ defmodule Mydia.Indexers.Adapter.Prowlarr do
       {:error, _reason} -> nil
     end
   end
+
+  # Extract TMDB ID from Prowlarr response
+  # Prowlarr can return this in various places depending on indexer
+  defp extract_tmdb_id(item) do
+    cond do
+      # Direct field
+      is_integer(item["tmdbId"]) and item["tmdbId"] > 0 ->
+        item["tmdbId"]
+
+      # In indexerFlags or attributes
+      is_map(item["indexerFlags"]) and is_integer(item["indexerFlags"]["tmdbId"]) ->
+        item["indexerFlags"]["tmdbId"]
+
+      # Sometimes in custom fields
+      is_list(item["customFields"]) ->
+        find_custom_field_id(item["customFields"], "tmdbId")
+
+      true ->
+        nil
+    end
+  end
+
+  # Extract IMDB ID from Prowlarr response
+  defp extract_imdb_id(item) do
+    cond do
+      # Direct field
+      is_binary(item["imdbId"]) and item["imdbId"] != "" ->
+        normalize_imdb_id(item["imdbId"])
+
+      # In indexerFlags or attributes
+      is_map(item["indexerFlags"]) and is_binary(item["indexerFlags"]["imdbId"]) ->
+        normalize_imdb_id(item["indexerFlags"]["imdbId"])
+
+      # Sometimes in custom fields
+      is_list(item["customFields"]) ->
+        case find_custom_field_id(item["customFields"], "imdbId") do
+          nil -> nil
+          id -> normalize_imdb_id(id)
+        end
+
+      true ->
+        nil
+    end
+  end
+
+  defp find_custom_field_id(custom_fields, field_name) do
+    custom_fields
+    |> Enum.find(fn field ->
+      is_map(field) and field["name"] == field_name
+    end)
+    |> case do
+      nil -> nil
+      field -> field["value"]
+    end
+  end
+
+  # Normalizes IMDB ID to standard format (tt1234567)
+  defp normalize_imdb_id(id_str) when is_binary(id_str) do
+    trimmed = String.trim(id_str)
+
+    cond do
+      # Already in correct format
+      String.starts_with?(trimmed, "tt") -> trimmed
+      # Just the numeric part - add tt prefix
+      String.match?(trimmed, ~r/^\d+$/) -> "tt#{trimmed}"
+      # Invalid format
+      true -> trimmed
+    end
+  end
+
+  defp normalize_imdb_id(_), do: nil
 end

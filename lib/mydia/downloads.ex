@@ -28,6 +28,8 @@ defmodule Mydia.Downloads do
     # Register available client adapters
     Registry.register(:qbittorrent, Mydia.Downloads.Client.QBittorrent)
     Registry.register(:transmission, Mydia.Downloads.Client.Transmission)
+    Registry.register(:sabnzbd, Mydia.Downloads.Client.Sabnzbd)
+    Registry.register(:nzbget, Mydia.Downloads.Client.Nzbget)
 
     Logger.info("Download client adapter registration complete")
     :ok
@@ -773,6 +775,8 @@ defmodule Mydia.Downloads do
   defp get_adapter_module(:qbittorrent), do: Mydia.Downloads.Client.Qbittorrent
   defp get_adapter_module(:transmission), do: Mydia.Downloads.Client.Transmission
   defp get_adapter_module(:http), do: Mydia.Downloads.Client.HTTP
+  defp get_adapter_module(:sabnzbd), do: Mydia.Downloads.Client.Sabnzbd
+  defp get_adapter_module(:nzbget), do: Mydia.Downloads.Client.Nzbget
   defp get_adapter_module(_), do: nil
 
   defp config_to_map(config) do

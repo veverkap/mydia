@@ -8,7 +8,7 @@ defmodule Mydia.Settings.DownloadClientConfig do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @client_types [:qbittorrent, :transmission, :http]
+  @client_types [:qbittorrent, :transmission, :http, :sabnzbd, :nzbget]
 
   schema "download_client_configs" do
     field :name, :string
