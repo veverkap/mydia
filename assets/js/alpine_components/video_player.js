@@ -41,7 +41,13 @@ export function videoPlayer() {
 
     // Loading and error states
     loading: false,
+    loadingMessage: 'Loading...',
     error: null,
+
+    // Transcoding progress
+    isTranscoding: false,
+    retryAttempt: 0,
+    maxRetries: 0,
 
     // HLS quality levels (populated by hook)
     hlsLevels: [],
@@ -340,6 +346,32 @@ export function videoPlayer() {
       this.countdownVisible = false
       this.countdownSeconds = 15
       this.countdownProgress = 100
+    },
+
+    // === Transcoding Progress ===
+
+    showTranscodingLoading() {
+      this.loading = true
+      this.isTranscoding = true
+      this.loadingMessage = 'Preparing video for playback...'
+      this.retryAttempt = 0
+      this.maxRetries = 0
+    },
+
+    updateTranscodingProgress(attempt, maxAttempts) {
+      this.retryAttempt = attempt
+      this.maxRetries = maxAttempts
+      if (attempt > 1) {
+        this.loadingMessage = `Preparing video... (attempt ${attempt} of ${maxAttempts})`
+      } else {
+        this.loadingMessage = 'Preparing video for playback...'
+      }
+    },
+
+    showDirectPlayLoading() {
+      this.loading = true
+      this.isTranscoding = false
+      this.loadingMessage = 'Loading video...'
     }
   }
 }

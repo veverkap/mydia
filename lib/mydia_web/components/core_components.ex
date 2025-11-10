@@ -787,7 +787,7 @@ defmodule MydiaWeb.CoreComponents do
       >
         <div class="flex flex-col items-center gap-4 animate-pulse">
           <span class="loading loading-spinner loading-lg text-primary"></span>
-          <p class="text-white font-medium">Loading video...</p>
+          <p class="text-white font-medium" x-text="loadingMessage">Loading video...</p>
         </div>
       </div>
 

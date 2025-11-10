@@ -140,6 +140,7 @@ const VideoPlayer = {
 
   async initializePlayer() {
     try {
+      // Show generic loading initially
       this.alpine.showLoading()
 
       // Fetch playback progress
@@ -168,16 +169,20 @@ const VideoPlayer = {
       console.log('Final stream URL:', finalUrl)
 
       if (finalUrl && finalUrl.includes('.m3u8')) {
-        // This is an HLS stream, use HLS.js
+        // This is an HLS stream (transcoding), use HLS.js
         console.log('Detected HLS stream, using HLS.js')
+
+        // Show transcoding-specific loading message
+        this.alpine.showTranscodingLoading()
 
         // Wait for playlist to be ready (handles race condition with FFmpeg)
         await this.waitForPlaylist(finalUrl)
 
         this.setupHLS(finalUrl)
       } else if (response.ok) {
-        // Direct play
+        // Direct play (no transcoding)
         console.log('Using direct play')
+        this.alpine.showDirectPlayLoading()
         this.video.src = streamUrl
       } else {
         // Error response
@@ -221,6 +226,9 @@ const VideoPlayer = {
           return
         }
 
+        // Update transcoding progress in UI
+        this.alpine.updateTranscodingProgress(i + 1, maxRetries)
+
         // Calculate exponential backoff delay
         const delay = Math.min(retryDelay * Math.pow(1.5, i), maxDelay)
         console.log(`Playlist not ready (attempt ${i + 1}/${maxRetries}), retrying in ${delay}ms...`)
@@ -228,6 +236,10 @@ const VideoPlayer = {
         await new Promise(resolve => setTimeout(resolve, delay))
       } catch (error) {
         console.warn(`Error checking playlist (attempt ${i + 1}/${maxRetries}):`, error)
+
+        // Update transcoding progress in UI
+        this.alpine.updateTranscodingProgress(i + 1, maxRetries)
+
         const delay = Math.min(retryDelay * Math.pow(1.5, i), maxDelay)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
