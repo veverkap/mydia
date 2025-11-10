@@ -28,7 +28,10 @@ defmodule MydiaWeb.SessionController do
 
   # Check if OIDC is configured
   defp oidc_configured? do
-    Application.get_env(:ueberauth, Ueberauth) != nil
+    case Application.get_env(:ueberauth, Ueberauth) do
+      nil -> false
+      config -> Keyword.get(config, :providers, []) != []
+    end
   end
 
   @doc """

@@ -125,9 +125,13 @@ defmodule MydiaWeb.AuthController do
   # Determine user role from OIDC claims
   # Can be customized based on your OIDC provider's group/role claims
   defp determine_role(auth) do
-    # Check for role in extra info (customize this based on your OIDC provider)
-    roles = get_in(auth.extra, [:raw_info, :userinfo, "roles"]) || []
-    groups = get_in(auth.extra, [:raw_info, :userinfo, "groups"]) || []
+    # Access raw_info struct fields (not using bracket notation on structs)
+    raw_info = auth.extra.raw_info
+    userinfo = raw_info.userinfo || %{}
+
+    # Check for role in userinfo (customize this based on your OIDC provider)
+    roles = Map.get(userinfo, "roles", [])
+    groups = Map.get(userinfo, "groups", [])
 
     cond do
       "admin" in roles or "administrators" in groups -> "admin"
@@ -147,6 +151,9 @@ defmodule MydiaWeb.AuthController do
 
   # Check if OIDC is configured
   defp oidc_configured? do
-    Application.get_env(:ueberauth, Ueberauth) != nil
+    case Application.get_env(:ueberauth, Ueberauth) do
+      nil -> false
+      config -> Keyword.get(config, :providers, []) != []
+    end
   end
 end

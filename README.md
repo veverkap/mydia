@@ -327,6 +327,18 @@ See [DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) for advanced deployment topic
 | `OIDC_REDIRECT_URI` | OIDC callback URL | Auto-computed |
 | `OIDC_SCOPES` | Space-separated scope list | `openid profile email` |
 
+**OIDC Provider Compatibility:**
+
+Mydia uses standard OAuth2 authentication that works with **minimal provider configuration** - just set client_id, client_secret, and redirect_uris in your provider. No need to configure:
+- `token_endpoint_auth_method` settings
+- `response_modes` lists
+- JWT-based authentication methods
+- PAR (Pushed Authorization Request) settings
+
+This should work with any standard OIDC provider including Keycloak, Authelia, Auth0, Okta, Azure AD, and Google.
+
+See [docs/OIDC_TESTING.md](docs/OIDC_TESTING.md) for detailed setup instructions and provider examples.
+
 **User Roles:**
 
 - **Admin**: Full access to all features including media management, downloads, configuration, and request approval

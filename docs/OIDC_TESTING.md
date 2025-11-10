@@ -2,6 +2,39 @@
 
 This guide walks you through testing OIDC authentication with Keycloak in your local development environment.
 
+## OIDC Configuration Overview
+
+Mydia uses an optimized OIDC configuration that works with **any standard OIDC provider** without requiring special client configuration. The configuration uses:
+
+- **Standard OAuth2 authentication methods** (`client_secret_post`, `client_secret_basic`)
+- **Standard OAuth2 response mode** (`query`)
+- **Standard OIDC scopes** (`openid`, `profile`, `email`)
+
+This means you can use Mydia with **minimal provider configuration** - no need to specify:
+- `token_endpoint_auth_method` settings
+- `response_modes` lists
+- JWT-based authentication methods
+- PAR (Pushed Authorization Request) settings
+
+### Supported Providers
+
+This configuration uses standard OAuth2 methods that should work with any compliant OIDC provider:
+- **Keycloak** - Default configuration should work out of the box
+- **Authelia** - Minimal client configuration required
+- **Auth0** - Should work with default client settings
+- **Okta** - Standard OAuth2 client should work
+- **Azure AD** - Should work with standard app registration
+- **Google** - Should work with OAuth2 client credentials
+- Any other standard OIDC/OAuth2 provider
+
+### How It Works
+
+The OIDC library automatically:
+1. Discovers provider capabilities via the `.well-known/openid-configuration` endpoint
+2. Selects the most compatible authentication method from our preferred list
+3. Uses standard OAuth2 flows that all providers support
+4. Enables PAR only if the provider explicitly supports and requires it
+
 ## Quick Start
 
 1. **Start all services including Keycloak:**
@@ -95,6 +128,42 @@ To test role-based authorization:
    - Login to Mydia
    - Try accessing admin-only routes (e.g., `/admin/config`)
    - Users with `admin` role should have access
+
+## Testing with Authelia (Alternative)
+
+If you prefer to use Authelia instead of Keycloak:
+
+1. **Minimal Authelia client configuration:**
+   ```yaml
+   identity_providers:
+     oidc:
+       clients:
+         - client_id: mydia
+           client_secret: your_secure_secret_here
+           redirect_uris:
+             - http://localhost:4000/auth/oidc/callback
+           scopes:
+             - openid
+             - profile
+             - email
+   ```
+
+   **That's it!** No need to specify:
+   - `token_endpoint_auth_method` (Authelia defaults work)
+   - `response_modes` (standard modes are enabled by default)
+   - Any advanced OIDC features
+
+2. **Configure Mydia environment variables:**
+   ```yaml
+   OIDC_ISSUER: "http://authelia:9091"
+   OIDC_CLIENT_ID: "mydia"
+   OIDC_CLIENT_SECRET: "your_secure_secret_here"
+   ```
+
+3. **Restart the app:**
+   ```bash
+   ./dev restart app
+   ```
 
 ## Testing with Authentik (Alternative)
 

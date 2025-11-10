@@ -124,7 +124,20 @@ config :mydia, Mydia.Auth.Guardian,
 
 # Ueberauth OIDC configuration for development
 # These are read from environment variables set in Docker
-oidc_issuer = System.get_env("OIDC_ISSUER")
+# Support both OIDC_ISSUER and OIDC_DISCOVERY_DOCUMENT_URI
+oidc_issuer =
+  System.get_env("OIDC_ISSUER") ||
+    case System.get_env("OIDC_DISCOVERY_DOCUMENT_URI") do
+      nil ->
+        nil
+
+      discovery_uri ->
+        # Extract issuer from discovery document URI
+        # e.g., "https://auth.example.com/.well-known/openid-configuration" -> "https://auth.example.com"
+        discovery_uri
+        |> String.replace(~r/\/\.well-known\/openid-configuration$/, "")
+    end
+
 oidc_client_id = System.get_env("OIDC_CLIENT_ID")
 oidc_client_secret = System.get_env("OIDC_CLIENT_SECRET")
 
@@ -157,7 +170,15 @@ if oidc_issuer && oidc_client_id && oidc_client_secret do
            scopes: ["openid", "profile", "email"],
            callback_path: "/auth/oidc/callback",
            userinfo: true,
-           uid_field: "sub"
+           uid_field: "sub",
+           # Use standard OAuth2 auth methods for maximum compatibility
+           # These methods (RFC 6749) work with all OIDC providers without requiring
+           # special client configuration (unlike client_secret_jwt or private_key_jwt)
+           preferred_auth_methods: [:client_secret_post, :client_secret_basic],
+           # Use standard OAuth2 response mode (universally supported)
+           # Avoids JARM modes (query.jwt, form_post.jwt) which require explicit
+           # provider configuration and are not needed for most use cases
+           response_mode: "query"
          ]}
     ]
 
