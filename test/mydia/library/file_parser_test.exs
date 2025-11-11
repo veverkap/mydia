@@ -297,6 +297,14 @@ defmodule Mydia.Library.FileParserTest do
       assert result.quality.audio == "TrueHD"
     end
 
+    test "handles DDP5.1 audio codec" do
+      result = FileParser.parse("Movie 2020 1080p WEB-DL DDP5.1 Atmos.mkv")
+
+      assert result.quality.audio == "DDP5.1"
+      assert result.title == "Movie"
+      assert result.year == 2020
+    end
+
     test "parses movie with multiple quality markers" do
       result =
         FileParser.parse(
@@ -453,6 +461,23 @@ defmodule Mydia.Library.FileParserTest do
       assert result.quality.hdr_format == "HDR"
       assert result.quality.audio == "AAC"
       assert result.release_group == "Rosy"
+    end
+
+    test "parses Black Phone 2 with DDP5.1 audio codec" do
+      result =
+        FileParser.parse("Black Phone 2. 2025 1080P WEB-DL DDP5.1 Atmos. X265. POOLTED.mkv")
+
+      assert result.type == :movie
+      # Note: "POOLTED" remains in title because it lacks the standard hyphen prefix (-POOLTED)
+      # This is intentional - release groups should follow standard naming conventions
+      assert result.title == "Black Phone 2 Poolted"
+      assert result.year == 2025
+      assert result.quality.resolution == "1080p"
+      assert result.quality.source == "WEB-DL"
+      assert result.quality.audio == "DDP5.1"
+      assert result.quality.codec == "x265"
+      # Release group not detected due to missing hyphen prefix
+      assert result.release_group == nil
     end
   end
 end

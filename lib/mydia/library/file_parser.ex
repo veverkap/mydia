@@ -39,7 +39,7 @@ defmodule Mydia.Library.FileParser do
   @sources ~w(REMUX BluRay BDRip BRRip WEB WEBRip WEB-DL HDTV DVDRip DVD)
   @codecs ~w(x265 x264 H265 H264 HEVC AVC XviD DivX VP9 AV1 NVENC)
   @hdr_formats ~w(HDR10+ HDR10 DolbyVision DoVi HDR)
-  @audio_codecs ~w(DTS-HD DTS-X DTS TrueHD DD5.1 DD+ Atmos AAC AC3 DD)
+  @audio_codecs ~w(DTS-HD DTS-X DTS TrueHD DDP5.1 DD5.1 DD+ Atmos AAC AC3 DD DDP)
 
   # Additional patterns to strip
   @bit_depth_pattern ~r/\b(8|10|12)[\s-]?bits?\b/i
@@ -335,7 +335,13 @@ defmodule Mydia.Library.FileParser do
     all_patterns
     |> Enum.sort_by(&String.length/1, :desc)
     |> Enum.reduce(text, fn pattern, acc ->
-      String.replace(acc, ~r/\b#{Regex.escape(pattern)}\b/i, " ")
+      # For patterns with dots (like DD5.1), also try matching with space (DD5 1)
+      # since dots are normalized to spaces in filenames
+      normalized_pattern = String.replace(pattern, ".", " ")
+
+      acc
+      |> String.replace(~r/\b#{Regex.escape(pattern)}\b/i, " ")
+      |> String.replace(~r/\b#{Regex.escape(normalized_pattern)}\b/i, " ")
     end)
   end
 
