@@ -99,10 +99,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
     end
 
     test "receives real-time event updates via PubSub", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/activity")
-
-      # Initially no events
-      assert html =~ "No events yet"
+      {:ok, view, _html} = live(conn, ~p"/activity")
 
       # Create a new event (should be broadcast via PubSub)
       {:ok, _event} =
@@ -114,13 +111,23 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"title" => "New Movie", "media_type" => "movie"}
         })
 
-      # Give PubSub a moment to deliver the message
-      :timer.sleep(100)
+      # Poll the view until the event appears (handles PubSub delivery timing)
+      # Retry up to 10 times with 50ms between attempts (500ms total max wait)
+      html =
+        Enum.reduce_while(1..10, nil, fn _attempt, _acc ->
+          html = render(view)
 
-      # The view should have received the update and re-rendered
-      html = render(view)
+          if html =~ "New Movie" && html =~ "Added movie: New Movie" do
+            {:halt, html}
+          else
+            Process.sleep(50)
+            {:cont, html}
+          end
+        end)
+
+      # The view should have received the update and re-rendered with the event
       assert html =~ "New Movie"
-      refute html =~ "No events yet"
+      assert html =~ "Added movie: New Movie"
     end
 
     test "formats event descriptions correctly", %{conn: conn} do
