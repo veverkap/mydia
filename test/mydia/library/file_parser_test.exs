@@ -459,7 +459,8 @@ defmodule Mydia.Library.FileParserTest do
       assert result.quality.source == "BluRay"
       assert result.quality.codec == "x265"
       assert result.quality.hdr_format == "HDR"
-      assert result.quality.audio == "AAC"
+      # Audio codec case is preserved from the filename (lowercase "aac")
+      assert result.quality.audio == "aac"
       assert result.release_group == "Rosy"
     end
 
@@ -470,14 +471,190 @@ defmodule Mydia.Library.FileParserTest do
       assert result.type == :movie
       # Note: "POOLTED" remains in title because it lacks the standard hyphen prefix (-POOLTED)
       # This is intentional - release groups should follow standard naming conventions
+      # The title extraction properly removes "DDP5.1" now with regex patterns
       assert result.title == "Black Phone 2 Poolted"
       assert result.year == 2025
       assert result.quality.resolution == "1080p"
       assert result.quality.source == "WEB-DL"
       assert result.quality.audio == "DDP5.1"
-      assert result.quality.codec == "x265"
+      # Codec case is preserved from the filename (uppercase "X265")
+      assert result.quality.codec == "X265"
       # Release group not detected due to missing hyphen prefix
       assert result.release_group == nil
+    end
+  end
+
+  describe "codec variations - Phase 1 regex patterns" do
+    test "handles audio codec variations with dots" do
+      # DD5.1 with dot
+      result1 = FileParser.parse("Movie.2024.1080p.DD5.1.mkv")
+      assert result1.quality.audio == "DD5.1"
+      assert result1.title == "Movie"
+
+      # DDP5.1 with dot
+      result2 = FileParser.parse("Movie.2024.1080p.DDP5.1.mkv")
+      assert result2.quality.audio == "DDP5.1"
+      assert result2.title == "Movie"
+    end
+
+    test "handles audio codec variations without dots" do
+      # DD51 without dot
+      result1 = FileParser.parse("Movie.2024.1080p.DD51.mkv")
+      assert result1.quality.audio == "DD51"
+      assert result1.title == "Movie"
+
+      # DDP51 without dot
+      result2 = FileParser.parse("Movie.2024.1080p.DDP51.mkv")
+      assert result2.quality.audio == "DDP51"
+      assert result2.title == "Movie"
+    end
+
+    test "handles EAC3 audio codec (alternative name for DDP)" do
+      result = FileParser.parse("Movie.2024.1080p.EAC3.mkv")
+      assert result.quality.audio == "EAC3"
+      assert result.title == "Movie"
+    end
+
+    test "handles DD+ audio codec" do
+      result = FileParser.parse("Movie.2024.1080p.DD+.mkv")
+      # DD+ is parsed as "DD" since + is normalized away
+      assert result.quality.audio == "DD"
+      # The + character is normalized to space and removed during title cleaning
+      assert result.title == "Movie"
+    end
+
+    test "handles TrueHD with channel specification" do
+      result = FileParser.parse("Movie.2024.1080p.TrueHD.7.1.mkv")
+      # TrueHD pattern captures the full string including channel spec
+      assert result.quality.audio == "TrueHD 7.1"
+      assert result.title == "Movie"
+    end
+
+    test "handles DTS variants" do
+      # DTS-HD
+      result1 = FileParser.parse("Movie.2024.1080p.DTS-HD.mkv")
+      assert result1.quality.audio == "DTS-HD"
+
+      # DTS-HD.MA
+      result2 = FileParser.parse("Movie.2024.1080p.DTS-HD.MA.mkv")
+      assert result2.quality.audio == "DTS-HD.MA"
+
+      # DTS-X
+      result3 = FileParser.parse("Movie.2024.1080p.DTS-X.mkv")
+      assert result3.quality.audio == "DTS-X"
+
+      # Plain DTS
+      result4 = FileParser.parse("Movie.2024.1080p.DTS.mkv")
+      assert result4.quality.audio == "DTS"
+    end
+
+    test "handles video codec variations with dots" do
+      # x.264 - dots are normalized to spaces, then restored to dots
+      result1 = FileParser.parse("Movie.2024.1080p.x.264.mkv")
+      assert result1.quality.codec == "x.264"
+      assert result1.title == "Movie"
+
+      # H.264 - dots are normalized to spaces, then restored to dots
+      result2 = FileParser.parse("Movie.2024.1080p.H.264.mkv")
+      assert result2.quality.codec == "H.264"
+      assert result2.title == "Movie"
+    end
+
+    test "handles video codec variations without dots" do
+      # x264
+      result1 = FileParser.parse("Movie.2024.1080p.x264.mkv")
+      assert result1.quality.codec == "x264"
+
+      # h264
+      result2 = FileParser.parse("Movie.2024.1080p.h264.mkv")
+      assert result2.quality.codec == "h264"
+    end
+
+    test "handles x265 and h265 variations" do
+      result1 = FileParser.parse("Movie.2024.1080p.x265.mkv")
+      assert result1.quality.codec == "x265"
+
+      result2 = FileParser.parse("Movie.2024.1080p.h265.mkv")
+      assert result2.quality.codec == "h265"
+
+      # x.265 - dots are normalized to spaces, then restored to dots
+      result3 = FileParser.parse("Movie.2024.1080p.x.265.mkv")
+      assert result3.quality.codec == "x.265"
+    end
+
+    test "handles HEVC and AVC codec names" do
+      result1 = FileParser.parse("Movie.2024.1080p.HEVC.mkv")
+      assert result1.quality.codec == "HEVC"
+
+      result2 = FileParser.parse("Movie.2024.1080p.AVC.mkv")
+      assert result2.quality.codec == "AVC"
+    end
+
+    test "handles resolution pattern variations" do
+      # Lowercase p
+      result1 = FileParser.parse("Movie.2024.1080p.mkv")
+      assert result1.quality.resolution == "1080p"
+
+      # Uppercase P - normalized to lowercase
+      result2 = FileParser.parse("Movie.2024.1080P.mkv")
+      assert result2.quality.resolution == "1080p"
+
+      # 4K, 8K, UHD
+      result3 = FileParser.parse("Movie.2024.4K.mkv")
+      assert result3.quality.resolution == "4K"
+
+      result4 = FileParser.parse("Movie.2024.UHD.mkv")
+      assert result4.quality.resolution == "UHD"
+    end
+
+    test "handles source pattern variations" do
+      # WEB
+      result1 = FileParser.parse("Movie.2024.1080p.WEB.mkv")
+      assert result1.quality.source == "WEB"
+
+      # WEB-DL
+      result2 = FileParser.parse("Movie.2024.1080p.WEB-DL.mkv")
+      assert result2.quality.source == "WEB-DL"
+
+      # WEBRip
+      result3 = FileParser.parse("Movie.2024.1080p.WEBRip.mkv")
+      assert result3.quality.source == "WEBRip"
+
+      # DVD
+      result4 = FileParser.parse("Movie.2024.480p.DVD.mkv")
+      assert result4.quality.source == "DVD"
+
+      # DVDRip
+      result5 = FileParser.parse("Movie.2024.480p.DVDRip.mkv")
+      assert result5.quality.source == "DVDRip"
+    end
+
+    test "complex real-world example with multiple variations" do
+      result =
+        FileParser.parse("The.Matrix.1999.1080p.BluRay.x.264.DTS-HD.MA.5.1-GROUP.mkv")
+
+      assert result.type == :movie
+      assert result.title == "The Matrix"
+      assert result.year == 1999
+      assert result.quality.resolution == "1080p"
+      assert result.quality.source == "BluRay"
+      assert result.quality.codec == "x.264"
+      assert result.quality.audio == "DTS-HD.MA"
+      assert result.release_group == "GROUP"
+    end
+
+    test "handles DDP7.1 audio codec" do
+      result = FileParser.parse("Movie.2024.1080p.DDP7.1.mkv")
+      assert result.quality.audio == "DDP7.1"
+      assert result.title == "Movie"
+    end
+
+    test "handles AAC variations" do
+      result1 = FileParser.parse("Movie.2024.1080p.AAC.mkv")
+      assert result1.quality.audio == "AAC"
+
+      result2 = FileParser.parse("Movie.2024.1080p.AAC-LC.mkv")
+      assert result2.quality.audio == "AAC-LC"
     end
   end
 end

@@ -8,6 +8,9 @@ defmodule Mydia.Library.FileParser do
   - Scene releases: "Movie.Title.2020.2160p.BluRay.x265-GROUP"
   - Multiple episodes: "Show.S01E01-E03.720p.mkv"
 
+  Uses flexible regex-based pattern matching to handle codec variations
+  automatically (e.g., DD5.1, DD51, DDP5.1 all matched by one pattern).
+
   Returns a struct with parsed information and confidence score.
   """
 
@@ -34,12 +37,55 @@ defmodule Mydia.Library.FileParser do
           original_filename: String.t()
         }
 
-  # Quality patterns
-  @resolutions ~w(2160p 1080p 720p 480p 360p 4K 8K UHD)
-  @sources ~w(REMUX BluRay BDRip BRRip WEB WEBRip WEB-DL HDTV DVDRip DVD)
-  @codecs ~w(x265 x264 H265 H264 HEVC AVC XviD DivX VP9 AV1 NVENC)
-  @hdr_formats ~w(HDR10+ HDR10 DolbyVision DoVi HDR)
-  @audio_codecs ~w(DTS-HD DTS-X DTS TrueHD DDP5.1 DD5.1 DD+ Atmos AAC AC3 DD DDP)
+  # Quality patterns - Phase 1: Regex-based patterns
+  # Note: Dots are normalized to spaces in filenames, so we need to handle both
+  # Audio codec pattern - handles all variations with a single flexible pattern
+  @audio_pattern ~r/
+    \b
+    (?:
+      DTS(?:-HD(?:[\s.]MA)?|-X)?          # DTS, DTS-HD, DTS-HD.MA, DTS-HD MA, DTS-X
+      |DD(?:P)?(?:\d+[\s.]?\d*)?          # DD, DDP, DD5.1, DD5 1, DD51, DDP5.1, DDP51, DD7.1, etc.
+      |EAC3(?:\d+[\s.]?\d*)?              # E-AC3 (same as DDP)
+      |TrueHD(?:[\s.]\d+[\s.]?\d*)?       # TrueHD, TrueHD 7.1, TrueHD 7 1
+      |Atmos
+      |AAC(?:-LC)?(?:[\s.]\d+[\s.]?\d*)?  # AAC, AAC-LC, AAC 2.0
+      |AC3
+    )
+    \b
+  /xi
+
+  # Video codec pattern - handles variations like x264, x.264, x 264, h264, h.264
+  @codec_pattern ~r/
+    \b
+    (?:
+      [hxHX][\s.]?26[45]                  # x264, x.264, x 264, h264, h.264, h 264, x265, h265, etc.
+      |HEVC|AVC                            # HEVC, AVC
+      |XviD|DivX                           # Legacy codecs
+      |VP9|AV1                             # Modern codecs
+      |NVENC                               # Hardware encoder
+    )
+    \b
+  /xi
+
+  # Resolution pattern - normalize to lowercase 'p' in extract function
+  @resolution_pattern ~r/\b(?:\d{3,4}[pP]|4K|8K|UHD)\b/i
+
+  # Source pattern
+  @source_pattern ~r/
+    \b
+    (?:
+      REMUX
+      |BluRay|BDRip|BRRip
+      |WEB(?:-DL|Rip)?                   # WEB, WEB-DL, WEBRip
+      |HDTV
+      |DVD(?:Rip)?                       # DVD, DVDRip
+    )
+    \b
+  /xi
+
+  # HDR format pattern - handle HDR10+ (+ can be literal or space after normalization)
+  # Match HDR10+ without word boundary after + since + is not a word character
+  @hdr_pattern ~r/(?:\bHDR10\+|\b(?:DolbyVision|DoVi|HDR10|HDR)\b)/i
 
   # Additional patterns to strip
   @bit_depth_pattern ~r/\b(8|10|12)[\s-]?bits?\b/i
@@ -275,12 +321,102 @@ defmodule Mydia.Library.FileParser do
 
   defp extract_quality(text) do
     %{
-      resolution: find_match(text, @resolutions),
-      source: find_match(text, @sources),
-      codec: find_match(text, @codecs),
-      hdr_format: find_match(text, @hdr_formats),
-      audio: find_match(text, @audio_codecs)
+      resolution: extract_resolution(text),
+      source: extract_with_pattern(text, @source_pattern),
+      codec: extract_codec(text),
+      hdr_format: extract_hdr(text),
+      audio: extract_audio(text)
     }
+  end
+
+  # Resolution extraction - normalize case to lowercase 'p'
+  defp extract_resolution(text) do
+    case Regex.run(@resolution_pattern, text) do
+      [match | _] ->
+        # Normalize resolution to lowercase 'p' format (1080p not 1080P)
+        cond do
+          String.match?(match, ~r/^\d+[pP]$/) ->
+            String.replace(match, ~r/[pP]$/, "p")
+
+          true ->
+            match
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  # Codec extraction - normalize spaces back to dots where appropriate
+  defp extract_codec(text) do
+    case Regex.run(@codec_pattern, text) do
+      [match | _] ->
+        # If it's x 264 or h 264, convert back to x.264 or h.264
+        # but only if there's a space between letter and number
+        if String.match?(match, ~r/^[hxHX]\s26[45]$/i) do
+          String.replace(match, " ", ".")
+        else
+          match
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  # HDR extraction - normalize HDR10+ correctly
+  defp extract_hdr(text) do
+    case Regex.run(@hdr_pattern, text) do
+      [match | _] ->
+        # Normalize HDR10+ (+ can be literal or space after normalization)
+        # Check if the match contains "HDR10" followed by + or space
+        cleaned_match = String.trim(match)
+
+        if String.contains?(cleaned_match, "HDR10+") ||
+             String.contains?(cleaned_match, "HDR10 ") do
+          "HDR10+"
+        else
+          cleaned_match
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  # Audio codec extraction - normalize spaces back to dots for channel specs
+  defp extract_audio(text) do
+    case Regex.run(@audio_pattern, text) do
+      [match | _] ->
+        # Normalize spaces back to dots for channel specifications (5 1 -> 5.1)
+        normalized =
+          if String.match?(match, ~r/\d\s\d/) do
+            String.replace(match, ~r/(\d)\s(\d)/, "\\1.\\2")
+          else
+            match
+          end
+
+        # Normalize DTS-HD MA to DTS-HD.MA
+        normalized =
+          if String.match?(normalized, ~r/DTS-HD\sMA/i) do
+            String.replace(normalized, ~r/(DTS-HD)\s(MA)/i, "\\1.\\2")
+          else
+            normalized
+          end
+
+        normalized
+
+      nil ->
+        nil
+    end
+  end
+
+  # Generic pattern extraction (for source and others)
+  defp extract_with_pattern(text, pattern) do
+    case Regex.run(pattern, text) do
+      [match | _] -> match
+      nil -> nil
+    end
   end
 
   defp extract_release_group(text) do
@@ -297,22 +433,6 @@ defmodule Mydia.Library.FileParser do
     end
   end
 
-  defp find_match(text, patterns) do
-    # Sort patterns by length (longest first) to match more specific patterns first
-    patterns
-    |> Enum.sort_by(&String.length/1, :desc)
-    |> Enum.find(fn pattern ->
-      # For patterns with dots (like DD5.1), also try matching with space (DD5 1)
-      # since dots are normalized to spaces in filenames
-      normalized_pattern = String.replace(pattern, ".", " ")
-
-      String.contains?(text, pattern) ||
-        String.contains?(String.downcase(text), String.downcase(pattern)) ||
-        String.contains?(text, normalized_pattern) ||
-        String.contains?(String.downcase(text), String.downcase(normalized_pattern))
-    end)
-  end
-
   defp clean_for_title_extraction(text, quality, release_group) do
     text
     |> remove_quality_markers(quality)
@@ -326,23 +446,15 @@ defmodule Mydia.Library.FileParser do
   end
 
   defp remove_quality_markers(text, _quality) do
-    # Remove ALL known quality patterns, not just the ones we found
-    # This handles cases where files have multiple quality markers
-    all_patterns =
-      @resolutions ++ @sources ++ @codecs ++ @hdr_formats ++ @audio_codecs
-
-    # Sort by length (longest first) to match more specific patterns first
-    all_patterns
-    |> Enum.sort_by(&String.length/1, :desc)
-    |> Enum.reduce(text, fn pattern, acc ->
-      # For patterns with dots (like DD5.1), also try matching with space (DD5 1)
-      # since dots are normalized to spaces in filenames
-      normalized_pattern = String.replace(pattern, ".", " ")
-
-      acc
-      |> String.replace(~r/\b#{Regex.escape(pattern)}\b/i, " ")
-      |> String.replace(~r/\b#{Regex.escape(normalized_pattern)}\b/i, " ")
-    end)
+    # Remove ALL known quality patterns using regex patterns
+    # This handles variations automatically (DD5.1, DD51, DDP5.1, etc.)
+    # Use :global option to replace all occurrences
+    text
+    |> String.replace(@audio_pattern, " ", global: true)
+    |> String.replace(@codec_pattern, " ", global: true)
+    |> String.replace(@resolution_pattern, " ", global: true)
+    |> String.replace(@source_pattern, " ", global: true)
+    |> String.replace(@hdr_pattern, " ", global: true)
   end
 
   defp remove_release_group(text, nil), do: text
@@ -393,7 +505,7 @@ defmodule Mydia.Library.FileParser do
     |> String.replace(~r/^[-_\s]+|[-_\s]+$/, "")
     |> String.trim()
     |> String.split(~r/\s+/)
-    |> Enum.reject(&(&1 == "" || &1 == "-" || &1 == "_"))
+    |> Enum.reject(&(&1 == "" || &1 == "-" || &1 == "_" || &1 == "+"))
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end
