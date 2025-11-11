@@ -9,6 +9,7 @@ defmodule MydiaWeb.MediaLive.Show do
   alias Mydia.Indexers.SearchResult
   alias Mydia.Events
   alias MydiaWeb.Live.Authorization
+  alias MydiaWeb.MediaLive.Show.Modals
 
   # Import helper modules
   import MydiaWeb.MediaLive.Show.Formatters
