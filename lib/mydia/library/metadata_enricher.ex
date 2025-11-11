@@ -164,15 +164,11 @@ defmodule Mydia.Library.MetadataEnricher do
 
   defp extract_year(metadata) do
     cond do
-      metadata.release_date && is_binary(metadata.release_date) ->
-        metadata.release_date
-        |> String.slice(0..3)
-        |> String.to_integer()
+      metadata.release_date ->
+        extract_year_from_date(metadata.release_date)
 
-      metadata.first_air_date && is_binary(metadata.first_air_date) ->
-        metadata.first_air_date
-        |> String.slice(0..3)
-        |> String.to_integer()
+      metadata.first_air_date ->
+        extract_year_from_date(metadata.first_air_date)
 
       true ->
         nil
@@ -180,6 +176,16 @@ defmodule Mydia.Library.MetadataEnricher do
   rescue
     _ -> nil
   end
+
+  defp extract_year_from_date(%Date{} = date), do: date.year
+
+  defp extract_year_from_date(date_string) when is_binary(date_string) do
+    date_string
+    |> String.slice(0..3)
+    |> String.to_integer()
+  end
+
+  defp extract_year_from_date(_), do: nil
 
   defp maybe_add_quality_profile(attrs, %{parsed_info: %{quality: quality}})
        when map_size(quality) > 0 do

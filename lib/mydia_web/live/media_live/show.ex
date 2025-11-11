@@ -57,6 +57,7 @@ defmodule MydiaWeb.MediaLive.Show do
      |> assign(:page_title, media_item.title)
      |> assign(:show_edit_modal, false)
      |> assign(:show_delete_confirm, false)
+     |> assign(:delete_files, false)
      |> assign(:quality_profiles, quality_profiles)
      |> assign(:edit_form, nil)
      |> assign(:show_file_delete_confirm, false)
@@ -324,22 +325,53 @@ defmodule MydiaWeb.MediaLive.Show do
   end
 
   def handle_event("show_delete_confirm", _params, socket) do
-    {:noreply, assign(socket, :show_delete_confirm, true)}
+    {:noreply,
+     socket
+     |> assign(:show_delete_confirm, true)
+     |> assign(:delete_files, false)}
   end
 
   def handle_event("hide_delete_confirm", _params, socket) do
-    {:noreply, assign(socket, :show_delete_confirm, false)}
+    {:noreply,
+     socket
+     |> assign(:show_delete_confirm, false)
+     |> assign(:delete_files, false)}
+  end
+
+  def handle_event("toggle_delete_files", %{"delete_files" => value}, socket) do
+    delete_files = value == "true"
+
+    require Logger
+    Logger.info("toggle_delete_files", value: value, delete_files: delete_files)
+
+    {:noreply, assign(socket, :delete_files, delete_files)}
   end
 
   def handle_event("delete_media", _params, socket) do
     with :ok <- Authorization.authorize_delete_media(socket) do
       media_item = socket.assigns.media_item
+      delete_files = socket.assigns.delete_files
 
-      case Media.delete_media_item(media_item) do
+      require Logger
+
+      Logger.info("LiveView delete_media event",
+        media_item_id: media_item.id,
+        title: media_item.title,
+        delete_files: delete_files
+      )
+
+      case Media.delete_media_item(media_item, delete_files: delete_files) do
         {:ok, _} ->
+          message =
+            if delete_files do
+              "#{media_item.title} deleted successfully (including files)"
+            else
+              "#{media_item.title} removed from library (files preserved)"
+            end
+
           {:noreply,
            socket
-           |> put_flash(:info, "#{media_item.title} deleted successfully")
+           |> put_flash(:info, message)
            |> push_navigate(to: ~p"/media")}
 
         {:error, _changeset} ->

@@ -21,8 +21,9 @@ defmodule MydiaWeb.ImportMediaLive.Index do
      |> assign(:scan_stats, %{total: 0, matched: 0, unmatched: 0, skipped: 0, orphaned: 0})
      |> assign(:library_paths, Settings.list_library_paths())
      |> assign(:metadata_config, Metadata.default_relay_config())
-     |> assign(:import_progress, %{current: 0, total: 0})
-     |> assign(:import_results, %{success: 0, failed: 0})}
+     |> assign(:import_progress, %{current: 0, total: 0, current_file: nil})
+     |> assign(:import_results, %{success: 0, failed: 0, skipped: 0})
+     |> assign(:detailed_results, [])}
   end
 
   @impl true
@@ -107,7 +108,7 @@ defmodule MydiaWeb.ImportMediaLive.Index do
          |> assign(:step, :importing)
          |> assign(
            :import_progress,
-           %{current: 0, total: MapSet.size(socket.assigns.selected_files)}
+           %{current: 0, total: MapSet.size(socket.assigns.selected_files), current_file: nil}
          )}
       else
         {:noreply, put_flash(socket, :error, "Please select at least one file to import")}
@@ -125,11 +126,125 @@ defmodule MydiaWeb.ImportMediaLive.Index do
      |> assign(:discovered_files, [])
      |> assign(:matched_files, [])
      |> assign(:selected_files, MapSet.new())
-     |> assign(:import_results, %{success: 0, failed: 0})}
+     |> assign(:import_results, %{success: 0, failed: 0, skipped: 0})
+     |> assign(:detailed_results, [])}
   end
 
   def handle_event("cancel", _params, socket) do
     {:noreply, push_navigate(socket, to: ~p"/media")}
+  end
+
+  def handle_event("retry_failed_item", %{"index" => index_str}, socket) do
+    with :ok <- Authorization.authorize_import_media(socket) do
+      index = String.to_integer(index_str)
+      failed_item = Enum.at(socket.assigns.detailed_results, index)
+
+      if failed_item && failed_item.status == :failed do
+        # Find the original matched file from scan
+        matched_file =
+          Enum.find(socket.assigns.matched_files, fn mf ->
+            mf.file.path == failed_item.file_path
+          end)
+
+        if matched_file do
+          # Retry the import
+          new_result = import_file_with_details(matched_file, socket.assigns.metadata_config)
+
+          # Update the detailed results
+          updated_results = List.replace_at(socket.assigns.detailed_results, index, new_result)
+
+          # Recalculate counts
+          success_count = Enum.count(updated_results, &(&1.status == :success))
+          failed_count = Enum.count(updated_results, &(&1.status == :failed))
+          skipped_count = Enum.count(updated_results, &(&1.status == :skipped))
+
+          {:noreply,
+           socket
+           |> assign(:detailed_results, updated_results)
+           |> assign(:import_results, %{
+             success: success_count,
+             failed: failed_count,
+             skipped: skipped_count
+           })
+           |> put_flash(:info, "Retried import for #{failed_item.file_name}")}
+        else
+          {:noreply, put_flash(socket, :error, "Could not find original file data")}
+        end
+      else
+        {:noreply, put_flash(socket, :error, "Invalid retry request")}
+      end
+    else
+      {:unauthorized, socket} -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("retry_all_failed", _params, socket) do
+    with :ok <- Authorization.authorize_import_media(socket) do
+      # Get all failed items with their indices
+      failed_items_with_indices =
+        socket.assigns.detailed_results
+        |> Enum.with_index()
+        |> Enum.filter(fn {result, _idx} -> result.status == :failed end)
+
+      if failed_items_with_indices == [] do
+        {:noreply, put_flash(socket, :info, "No failed items to retry")}
+      else
+        # Retry each failed item
+        updated_results =
+          Enum.reduce(failed_items_with_indices, socket.assigns.detailed_results, fn {failed_item,
+                                                                                      index},
+                                                                                     acc_results ->
+            # Find the original matched file
+            matched_file =
+              Enum.find(socket.assigns.matched_files, fn mf ->
+                mf.file.path == failed_item.file_path
+              end)
+
+            if matched_file do
+              new_result = import_file_with_details(matched_file, socket.assigns.metadata_config)
+              List.replace_at(acc_results, index, new_result)
+            else
+              acc_results
+            end
+          end)
+
+        # Recalculate counts
+        success_count = Enum.count(updated_results, &(&1.status == :success))
+        failed_count = Enum.count(updated_results, &(&1.status == :failed))
+        skipped_count = Enum.count(updated_results, &(&1.status == :skipped))
+
+        {:noreply,
+         socket
+         |> assign(:detailed_results, updated_results)
+         |> assign(:import_results, %{
+           success: success_count,
+           failed: failed_count,
+           skipped: skipped_count
+         })
+         |> put_flash(:info, "Retried #{length(failed_items_with_indices)} failed items")}
+      end
+    else
+      {:unauthorized, socket} -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("export_results", _params, socket) do
+    # Generate JSON export of detailed results
+    export_data = %{
+      timestamp: DateTime.utc_now(),
+      summary: socket.assigns.import_results,
+      results: socket.assigns.detailed_results
+    }
+
+    json_data = Jason.encode!(export_data, pretty: true)
+
+    {:noreply,
+     socket
+     |> push_event("download_export", %{
+       filename: "import_results_#{DateTime.utc_now() |> DateTime.to_unix()}.json",
+       content: json_data,
+       mime_type: "application/json"
+     })}
   end
 
   ## Async Handlers
@@ -248,32 +363,170 @@ defmodule MydiaWeb.ImportMediaLive.Index do
     selected_indices = MapSet.to_list(socket.assigns.selected_files)
     selected_files = Enum.map(selected_indices, &Enum.at(socket.assigns.matched_files, &1))
 
-    # Import each file
-    results =
+    # Import each file and collect detailed results
+    detailed_results =
       Enum.with_index(selected_files)
       |> Enum.map(fn {matched_file, idx} ->
-        # Update progress
-        send(self(), {:update_import_progress, idx + 1})
+        # Update progress with current file
+        file_name = Path.basename(matched_file.file.path)
+        send(self(), {:update_import_progress, idx + 1, file_name})
 
-        import_file(matched_file, socket.assigns.metadata_config)
+        import_file_with_details(matched_file, socket.assigns.metadata_config)
       end)
 
-    success_count = Enum.count(results, &(&1 == :ok))
-    failed_count = length(results) - success_count
+    success_count = Enum.count(detailed_results, &(&1.status == :success))
+    failed_count = Enum.count(detailed_results, &(&1.status == :failed))
+    skipped_count = Enum.count(detailed_results, &(&1.status == :skipped))
 
     {:noreply,
      socket
      |> assign(:importing, false)
      |> assign(:step, :complete)
-     |> assign(:import_results, %{success: success_count, failed: failed_count})}
+     |> assign(:import_results, %{
+       success: success_count,
+       failed: failed_count,
+       skipped: skipped_count
+     })
+     |> assign(:detailed_results, detailed_results)}
   end
 
-  def handle_info({:update_import_progress, current}, socket) do
+  def handle_info({:update_import_progress, current, current_file}, socket) do
     {:noreply,
-     assign(socket, :import_progress, %{socket.assigns.import_progress | current: current})}
+     assign(socket, :import_progress, %{
+       socket.assigns.import_progress
+       | current: current,
+         current_file: current_file
+     })}
   end
 
   ## Private Helpers
+
+  defp import_file_with_details(%{match_result: nil, file: file}, _config) do
+    %{
+      file_path: file.path,
+      file_name: Path.basename(file.path),
+      status: :failed,
+      media_item_title: nil,
+      error_message: "No metadata match found for this file",
+      action_taken: nil,
+      metadata: %{size: file.size}
+    }
+  end
+
+  defp import_file_with_details(%{file: file, match_result: match_result}, config) do
+    # Check if this file is orphaned and needs re-matching
+    media_file_result =
+      if file[:orphaned_media_file_id] do
+        # Use existing orphaned media file - don't update it yet
+        # The enricher will handle associating it with the media item
+        try do
+          media_file = Library.get_media_file!(file.orphaned_media_file_id)
+          {:ok, media_file}
+        rescue
+          _ -> {:error, :not_found}
+        end
+      else
+        # Create new media file record
+        Library.create_scanned_media_file(%{
+          path: file.path,
+          size: file.size,
+          verified_at: DateTime.utc_now()
+        })
+      end
+
+    case media_file_result do
+      {:ok, media_file} ->
+        # Enrich with metadata
+        case Library.MetadataEnricher.enrich(match_result,
+               config: config,
+               media_file_id: media_file.id
+             ) do
+          {:ok, media_item} ->
+            %{
+              file_path: file.path,
+              file_name: Path.basename(file.path),
+              status: :success,
+              media_item_title: match_result.title,
+              error_message: nil,
+              action_taken: build_success_message(match_result, file[:orphaned_media_file_id]),
+              metadata: %{
+                size: file.size,
+                media_item_id: media_item.id,
+                year: match_result.year,
+                type: match_result.parsed_info.type
+              }
+            }
+
+          {:error, reason} ->
+            %{
+              file_path: file.path,
+              file_name: Path.basename(file.path),
+              status: :failed,
+              media_item_title: match_result.title,
+              error_message: "Failed to enrich metadata: #{format_error(reason)}",
+              action_taken: nil,
+              metadata: %{size: file.size}
+            }
+        end
+
+      {:error, changeset} ->
+        error_msg =
+          case changeset do
+            %Ecto.Changeset{errors: errors} ->
+              errors
+              |> Enum.map(fn {field, {msg, _}} -> "#{field} #{msg}" end)
+              |> Enum.join(", ")
+
+            other ->
+              format_error(other)
+          end
+
+        %{
+          file_path: file.path,
+          file_name: Path.basename(file.path),
+          status: :failed,
+          media_item_title: match_result.title,
+          error_message: "Database error: #{error_msg}",
+          action_taken: nil,
+          metadata: %{size: file.size}
+        }
+    end
+  rescue
+    error ->
+      %{
+        file_path: file.path,
+        file_name: Path.basename(file.path),
+        status: :failed,
+        media_item_title: match_result && match_result.title,
+        error_message: "Unexpected error: #{Exception.message(error)}",
+        action_taken: nil,
+        metadata: %{size: file.size}
+      }
+  end
+
+  defp build_success_message(match_result, is_orphaned) do
+    media_type =
+      case match_result.parsed_info.type do
+        :tv_show ->
+          if match_result.parsed_info.season do
+            "TV Show S#{String.pad_leading("#{match_result.parsed_info.season}", 2, "0")}"
+          else
+            "TV Show"
+          end
+
+        _ ->
+          "Movie"
+      end
+
+    action =
+      if is_orphaned do
+        "Re-matched orphaned file as #{media_type}"
+      else
+        "Created #{media_type}"
+      end
+
+    "#{action}: '#{match_result.title}'"
+  end
 
   defp import_file(%{match_result: nil}, _config), do: :error
 

@@ -380,6 +380,11 @@
             <p class="text-sm text-base-content/60 mt-2">
               {@import_progress.current} / {@import_progress.total} files
             </p>
+            <%= if @import_progress.current_file do %>
+              <p class="text-xs text-base-content/50 mt-1 truncate">
+                Current: {@import_progress.current_file}
+              </p>
+            <% end %>
           </div>
         </div>
       </div>
@@ -387,33 +392,182 @@
 
     <%!-- Step 5: Complete --%>
     <%= if @step == :complete do %>
-      <div class="card bg-base-100 shadow-xl">
-        <div class="card-body items-center text-center">
-          <div class="text-success">
-            <.icon name="hero-check-circle" class="w-24 h-24" />
-          </div>
-          <h2 class="card-title text-2xl mt-4">Import Complete!</h2>
-
-          <div class="stats stats-vertical lg:stats-horizontal shadow mt-6">
-            <div class="stat">
-              <div class="stat-title">Successfully Imported</div>
-              <div class="stat-value text-success">{@import_results.success}</div>
+      <div class="mb-6">
+        <%!-- Header --%>
+        <div class="card bg-base-100 shadow-xl mb-6">
+          <div class="card-body items-center text-center">
+            <div class={"text-" <> if(@import_results.failed == 0, do: "success", else: "warning")}>
+              <.icon
+                name={
+                  if(@import_results.failed == 0,
+                    do: "hero-check-circle",
+                    else: "hero-exclamation-triangle"
+                  )
+                }
+                class="w-24 h-24"
+              />
             </div>
-            <div class="stat">
-              <div class="stat-title">Failed</div>
-              <div class="stat-value text-error">{@import_results.failed}</div>
-            </div>
+            <h2 class="card-title text-2xl mt-4">Import Complete!</h2>
+            <p class="text-base-content/60">
+              {@import_results.success + @import_results.failed + @import_results.skipped} items processed
+            </p>
           </div>
+        </div>
 
-          <div class="card-actions mt-6">
-            <button type="button" class="btn btn-outline" phx-click="start_over">
-              <.icon name="hero-arrow-path" class="w-5 h-5" /> Import More Files
+        <%!-- Summary Stats --%>
+        <div class="stats stats-horizontal shadow w-full mb-6">
+          <div class="stat">
+            <div class="stat-title">Successfully Imported</div>
+            <div class="stat-value text-success">{@import_results.success}</div>
+            <div class="stat-desc">Items added to library</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Failed</div>
+            <div class="stat-value text-error">{@import_results.failed}</div>
+            <div class="stat-desc">Items with errors</div>
+          </div>
+          <%= if @import_results.skipped > 0 do %>
+            <div class="stat">
+              <div class="stat-title">Skipped</div>
+              <div class="stat-value text-base-content/50">{@import_results.skipped}</div>
+              <div class="stat-desc">Items skipped</div>
+            </div>
+          <% end %>
+        </div>
+
+        <%!-- Action Buttons --%>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex gap-2">
+            <%= if @import_results.failed > 0 do %>
+              <button type="button" class="btn btn-warning btn-sm" phx-click="retry_all_failed">
+                <.icon name="hero-arrow-path" class="w-4 h-4" /> Retry All Failed
+              </button>
+            <% end %>
+            <button type="button" class="btn btn-ghost btn-sm" phx-click="export_results">
+              <.icon name="hero-arrow-down-tray" class="w-4 h-4" /> Export Details
             </button>
-            <button type="button" class="btn btn-primary" phx-click="cancel">
-              <.icon name="hero-check" class="w-5 h-5" /> Done
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-outline btn-sm" phx-click="start_over">
+              <.icon name="hero-arrow-path" class="w-4 h-4" /> Import More Files
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" phx-click="cancel">
+              <.icon name="hero-check" class="w-4 h-4" /> Done
             </button>
           </div>
         </div>
+
+        <%!-- Detailed Results --%>
+        <%= if @import_results.success > 0 do %>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+              <.icon name="hero-check-circle" class="w-6 h-6 text-success" />
+              Successfully Imported ({@import_results.success})
+            </h3>
+            <div class="space-y-2">
+              <%= for {result, idx} <- Enum.with_index(@detailed_results) do %>
+                <%= if result.status == :success do %>
+                  <div class="card bg-base-100 shadow-sm border border-success/20">
+                    <div class="card-body p-4">
+                      <div class="flex items-start gap-3">
+                        <div class="text-success mt-1">
+                          <.icon name="hero-check-circle" class="w-5 h-5" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="font-semibold text-sm">{result.file_name}</p>
+                          <p class="text-xs text-base-content/60 truncate">{result.file_path}</p>
+                          <%= if result.action_taken do %>
+                            <p class="text-xs text-success mt-1">{result.action_taken}</p>
+                          <% end %>
+                        </div>
+                        <div class="badge badge-success badge-sm">Success</div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= if @import_results.failed > 0 do %>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+              <.icon name="hero-x-circle" class="w-6 h-6 text-error" />
+              Failed ({@import_results.failed})
+            </h3>
+            <div class="space-y-2">
+              <%= for {result, idx} <- Enum.with_index(@detailed_results) do %>
+                <%= if result.status == :failed do %>
+                  <div class="card bg-base-100 shadow-sm border border-error/20">
+                    <div class="card-body p-4">
+                      <div class="flex items-start gap-3">
+                        <div class="text-error mt-1">
+                          <.icon name="hero-x-circle" class="w-5 h-5" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="font-semibold text-sm">{result.file_name}</p>
+                          <p class="text-xs text-base-content/60 truncate">{result.file_path}</p>
+                          <%= if result.error_message do %>
+                            <div class="alert alert-error mt-2 py-2 px-3">
+                              <.icon name="hero-exclamation-triangle" class="w-4 h-4" />
+                              <span class="text-xs">{result.error_message}</span>
+                            </div>
+                          <% end %>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                          <div class="badge badge-error badge-sm">Failed</div>
+                          <button
+                            type="button"
+                            class="btn btn-xs btn-warning"
+                            phx-click="retry_failed_item"
+                            phx-value-index={idx}
+                          >
+                            <.icon name="hero-arrow-path" class="w-3 h-3" /> Retry
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= if @import_results.skipped > 0 do %>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+              <.icon name="hero-arrow-path" class="w-6 h-6 text-base-content/50" />
+              Skipped ({@import_results.skipped})
+            </h3>
+            <div class="space-y-2">
+              <%= for {result, _idx} <- Enum.with_index(@detailed_results) do %>
+                <%= if result.status == :skipped do %>
+                  <div class="card bg-base-100 shadow-sm border border-base-content/10">
+                    <div class="card-body p-4">
+                      <div class="flex items-start gap-3">
+                        <div class="text-base-content/50 mt-1">
+                          <.icon name="hero-arrow-path" class="w-5 h-5" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="font-semibold text-sm">{result.file_name}</p>
+                          <p class="text-xs text-base-content/60 truncate">{result.file_path}</p>
+                          <%= if result.error_message do %>
+                            <p class="text-xs text-base-content/50 mt-1">
+                              {result.error_message}
+                            </p>
+                          <% end %>
+                        </div>
+                        <div class="badge badge-ghost badge-sm">Skipped</div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </div>
     <% end %>
   </div>

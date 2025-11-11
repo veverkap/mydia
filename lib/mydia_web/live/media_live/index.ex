@@ -25,6 +25,7 @@ defmodule MydiaWeb.MediaLive.Index do
      |> assign(:selection_mode, false)
      |> assign(:selected_ids, MapSet.new())
      |> assign(:show_delete_modal, false)
+     |> assign(:delete_files, false)
      |> assign(:show_batch_edit_modal, false)
      |> assign(:quality_profiles, [])
      |> assign(:batch_edit_form, to_form(%{}, as: :batch_edit))
@@ -244,31 +245,56 @@ defmodule MydiaWeb.MediaLive.Index do
   end
 
   def handle_event("show_delete_confirmation", _params, socket) do
-    {:noreply, assign(socket, :show_delete_modal, true)}
+    {:noreply,
+     socket
+     |> assign(:show_delete_modal, true)
+     |> assign(:delete_files, false)}
   end
 
   def handle_event("cancel_delete", _params, socket) do
-    {:noreply, assign(socket, :show_delete_modal, false)}
+    {:noreply,
+     socket
+     |> assign(:show_delete_modal, false)
+     |> assign(:delete_files, false)}
+  end
+
+  def handle_event("toggle_delete_files", %{"delete_files" => value}, socket) do
+    delete_files = value == "true"
+
+    require Logger
+    Logger.info("toggle_delete_files", value: value, delete_files: delete_files)
+
+    {:noreply, assign(socket, :delete_files, delete_files)}
   end
 
   def handle_event("batch_delete_confirmed", _params, socket) do
     selected_ids = MapSet.to_list(socket.assigns.selected_ids)
+    delete_files = socket.assigns.delete_files
 
-    case Media.delete_media_items(selected_ids) do
+    case Media.delete_media_items(selected_ids, delete_files: delete_files) do
       {:ok, count} ->
+        message =
+          if delete_files do
+            "#{count} #{pluralize_items(count)} deleted successfully (including files)"
+          else
+            "#{count} #{pluralize_items(count)} removed from library (files preserved)"
+          end
+
         {:noreply,
          socket
-         |> put_flash(:info, "#{count} #{pluralize_items(count)} deleted successfully")
+         |> put_flash(:info, message)
          |> assign(:selection_mode, false)
          |> assign(:selected_ids, MapSet.new())
          |> assign(:show_delete_modal, false)
+         |> assign(:delete_files, false)
          |> load_media_items(reset: true)}
 
       {:error, _reason} ->
         {:noreply,
          socket
          |> put_flash(:error, "Failed to delete items")
-         |> assign(:show_delete_modal, false)}
+         |> assign(:show_delete_modal, false)
+         |> assign(:delete_files, false)}
     end
   end
 

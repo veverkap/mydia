@@ -111,14 +111,70 @@ defmodule Mydia.Media do
   ## Options
     - `:actor_type` - The type of actor (:user, :system, :job) - defaults to :system
     - `:actor_id` - The ID of the actor (user_id, job name, etc.)
+    - `:delete_files` - Whether to delete physical files from disk (default: false)
+
+  When `:delete_files` is true, will delete all associated media files from disk
+  before removing the database records. When false (default), only removes database
+  records and preserves files on disk.
   """
   def delete_media_item(%MediaItem{} = media_item, opts \\ []) do
+    delete_files = Keyword.get(opts, :delete_files, false)
+
+    Logger.info("delete_media_item called",
+      media_item_id: media_item.id,
+      title: media_item.title,
+      delete_files: delete_files
+    )
+
+    # If we need to delete files, load all media files first
+    # (including files from episodes for TV shows)
+    if delete_files do
+      # Load media item with all media files (both direct and through episodes)
+      media_item_with_files =
+        MediaItem
+        |> where([m], m.id == ^media_item.id)
+        |> preload([:media_files, episodes: :media_files])
+        |> Repo.one!()
+
+      # Collect all media files (movie files + episode files)
+      all_media_files =
+        media_item_with_files.media_files ++
+          Enum.flat_map(media_item_with_files.episodes, & &1.media_files)
+
+      Logger.info("Attempting to delete physical files",
+        media_item_id: media_item.id,
+        file_count: length(all_media_files),
+        file_paths: Enum.map(all_media_files, & &1.path)
+      )
+
+      # Delete physical files from disk
+      case Mydia.Library.delete_media_files_from_disk(all_media_files) do
+        {:ok, success_count, error_count} ->
+          Logger.info("Deleted #{success_count} files from disk (#{error_count} errors)",
+            media_item_id: media_item.id,
+            title: media_item.title
+          )
+
+        {:error, reason} ->
+          Logger.error("Failed to delete files from disk",
+            media_item_id: media_item.id,
+            reason: inspect(reason)
+          )
+      end
+    else
+      Logger.info("Skipping file deletion (delete_files=false)",
+        media_item_id: media_item.id,
+        title: media_item.title
+      )
+    end
+
     # Track event before deletion (we need the media_item data)
     actor_type = Keyword.get(opts, :actor_type, :system)
     actor_id = Keyword.get(opts, :actor_id, "media_context")
 
     Events.media_item_removed(media_item, actor_type, actor_id)
 
+    # Delete the media item (and cascade delete all related DB records)
     Repo.delete(media_item)
   end
 
@@ -195,11 +251,51 @@ defmodule Mydia.Media do
   @doc """
   Deletes multiple media items in a transaction.
 
+  ## Options
+    - `:delete_files` - Whether to delete physical files from disk (default: false)
+
   Returns `{:ok, count}` where count is the number of deleted items,
   or `{:error, reason}` if the transaction fails.
+
+  When `:delete_files` is true, will delete all associated media files from disk
+  before removing the database records. When false (default), only removes database
+  records and preserves files on disk.
   """
-  def delete_media_items(ids) when is_list(ids) do
+  def delete_media_items(ids, opts \\ []) when is_list(ids) do
+    delete_files = Keyword.get(opts, :delete_files, false)
+
     Repo.transaction(fn ->
+      # If we need to delete files, load all media files first
+      if delete_files do
+        # Load all media items with their files
+        media_items =
+          MediaItem
+          |> where([m], m.id in ^ids)
+          |> preload([:media_files, episodes: :media_files])
+          |> Repo.all()
+
+        # Collect all media files from all items
+        all_media_files =
+          Enum.flat_map(media_items, fn item ->
+            item.media_files ++ Enum.flat_map(item.episodes, & &1.media_files)
+          end)
+
+        # Delete physical files from disk
+        case Mydia.Library.delete_media_files_from_disk(all_media_files) do
+          {:ok, success_count, error_count} ->
+            Logger.info(
+              "Batch deleted #{success_count} files from disk (#{error_count} errors)",
+              media_item_count: length(media_items)
+            )
+
+          {:error, reason} ->
+            Logger.error("Failed to batch delete files from disk",
+              reason: inspect(reason)
+            )
+        end
+      end
+
+      # Delete the media items (and cascade delete all related DB records)
       MediaItem
       |> where([m], m.id in ^ids)
       |> Repo.delete_all()

@@ -525,32 +525,65 @@
 
     <%!-- Delete Confirmation Modal --%>
     <.modal id="delete-confirmation-modal" show={@show_delete_modal} on_cancel="cancel_delete">
-      <:title>Delete Selected Items?</:title>
+      <:title>
+        Delete <strong>{MapSet.size(@selected_ids)}</strong>
+        {if MapSet.size(@selected_ids) == 1, do: "Item", else: "Items"}?
+      </:title>
 
-      <div class="space-y-4">
-        <div class="alert alert-warning">
-          <.icon name="hero-exclamation-triangle" class="w-5 h-5" />
-          <span>
-            This action cannot be undone. You are about to delete
-            <strong>{MapSet.size(@selected_ids)}</strong>
-            {if MapSet.size(@selected_ids) == 1, do: "item", else: "items"}.
-          </span>
+      <form phx-change="toggle_delete_files">
+        <div class="space-y-2.5">
+          <label class={[
+            "flex items-start gap-3 p-3.5 rounded-lg border-2 cursor-pointer transition-all hover:shadow-sm",
+            !@delete_files && "border-primary bg-primary/10",
+            @delete_files && "border-base-300 hover:border-primary/50"
+          ]}>
+            <input
+              type="radio"
+              name="delete_files"
+              value="false"
+              class="radio radio-primary mt-0.5 flex-shrink-0"
+              checked={!@delete_files}
+            />
+            <div>
+              <div class="font-medium mb-1">Remove from library only</div>
+              <div class="text-sm opacity-75">Files stay on disk, can be re-imported later</div>
+            </div>
+          </label>
+
+          <label class={[
+            "flex items-start gap-3 p-3.5 rounded-lg border-2 cursor-pointer transition-all hover:shadow-sm",
+            @delete_files && "border-error bg-error/10",
+            !@delete_files && "border-base-300 hover:border-error/50"
+          ]}>
+            <input
+              type="radio"
+              name="delete_files"
+              value="true"
+              class="radio radio-error mt-0.5 flex-shrink-0"
+              checked={@delete_files}
+            />
+            <div>
+              <div class="font-medium mb-1">Delete files from disk</div>
+              <div class="text-sm opacity-75 flex items-center gap-1">
+                <.icon name="hero-exclamation-triangle" class="w-4 h-4" />
+                <span>Permanently deletes all files - cannot be undone</span>
+              </div>
+            </div>
+          </label>
         </div>
-
-        <p class="text-sm text-base-content/70">
-          All associated files, metadata, and download history will be permanently removed.
-        </p>
-      </div>
+      </form>
 
       <:actions>
         <button type="button" class="btn btn-ghost" phx-click="cancel_delete">
           Cancel
         </button>
-        <button type="button" class="btn btn-error" phx-click="batch_delete_confirmed">
+        <button
+          type="button"
+          class={["btn", (@delete_files && "btn-error") || "btn-warning"]}
+          phx-click="batch_delete_confirmed"
+        >
           <.icon name="hero-trash" class="w-4 h-4" />
-          Delete {MapSet.size(@selected_ids)} {if MapSet.size(@selected_ids) == 1,
-            do: "Item",
-            else: "Items"}
+          {if @delete_files, do: "Delete Everything", else: "Remove from Library"}
         </button>
       </:actions>
     </.modal>
