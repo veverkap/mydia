@@ -287,14 +287,14 @@ defmodule Mydia.Library.MetadataEnricher do
 
           case Media.create_episode(attrs) do
             {:ok, episode} ->
-              Logger.debug("Created episode",
+              Logger.info("Created episode",
                 media_item_id: media_item.id,
                 season: season_number,
                 episode: episode_data.episode_number
               )
 
               # If this is the episode from the file we're processing, associate it
-              Logger.debug("Attempting to associate file with newly created episode",
+              Logger.info("Attempting to associate file with newly created episode",
                 episode_id: episode.id,
                 episode_season: episode.season_number,
                 episode_number: episode.episode_number,
@@ -319,14 +319,14 @@ defmodule Mydia.Library.MetadataEnricher do
 
           case Media.update_episode(existing_episode, attrs) do
             {:ok, updated_episode} ->
-              Logger.debug("Updated episode",
+              Logger.info("Updated episode",
                 media_item_id: media_item.id,
                 season: season_number,
                 episode: episode_data.episode_number
               )
 
               # Match the current file to this episode if applicable
-              Logger.debug("Attempting to associate file with updated episode",
+              Logger.info("Attempting to associate file with updated episode",
                 episode_id: updated_episode.id,
                 episode_season: updated_episode.season_number,
                 episode_number: updated_episode.episode_number,
@@ -425,7 +425,7 @@ defmodule Mydia.Library.MetadataEnricher do
           :ok
       end
     else
-      Logger.debug("Episode does not match file",
+      Logger.info("Episode does not match file",
         episode_season: episode.season_number,
         episode_number: episode.episode_number,
         parsed_season: season,
