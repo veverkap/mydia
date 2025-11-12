@@ -25,62 +25,33 @@ The `./dev` script automatically starts services if they're not running and prov
 
 ### Git Guidelines
 
-**CRITICAL: Protecting ALL Uncommitted Changes**
+**Working with uncommitted changes:**
 
-⚠️ **ABSOLUTE RULES - NO EXCEPTIONS:**
+Uncommitted changes from other agents or sessions are normal. Focus on your task and leave unrelated changes alone.
 
-- **NEVER** use `git restore <file>` on files with uncommitted changes
-- **NEVER** use `git reset --hard` or any destructive git command
-- **NEVER** use `git reset` to unstage files when there are staged changes you want to preserve
-- **NEVER** discard, reset, or restore ANY uncommitted changes without EXPLICIT user permission
-- **ALWAYS** check `git status` and `git diff` before ANY git command that might lose changes
-- **ALWAYS** use `git stash` if you need to temporarily save changes (both staged and unstaged)
-- **ALWAYS** ask the user before discarding ANY uncommitted work
+**Basic workflow:**
+- Check status: `git status` and `git diff` to see what you're changing
+- Make your changes directly to files as needed
+- Stage your files: `git add <your-files>`
+- Commit your work when ready
+- If you need to unstage specific files: `git restore --staged <file>`
 
-**If you encounter compilation errors from uncommitted changes:**
-1. **DO NOT** run `git restore` to "fix" them
-2. **DO NOT** discard changes to get a "clean state"
-3. Instead: Ask the user what to do, or work around the errors, or stash the changes first
+**When compilation errors occur:**
+- Errors in your code → fix them
+- Errors in other files → ignore them, continue with your task, another agent will handle it
+- Run specific tests that work: `./dev mix test test/your_test.exs`
 
-**Uncommitted changes may represent hours of work from other agents or sessions. Erasing them is UNACCEPTABLE.**
+**Selective staging:**
 
-**Safe Workflow for Selective Staging:**
+To commit only some files when multiple files are staged:
 
-When you need to commit only some files from a larger set of staged changes:
+```bash
+# Unstage the files you don't want to commit
+git restore --staged file3.ex file4.ex
 
-1. **WRONG** (loses staged changes):
-   ```bash
-   git reset
-   git add file1.ex file2.ex
-   git commit -m "message"
-   ```
-
-2. **CORRECT** (preserves all changes):
-   ```bash
-   # Option A: Unstage specific files you don't want
-   git restore --staged file3.ex file4.ex
-   git commit -m "message"
-
-   # Option B: Create backup before reset
-   git stash --keep-index  # Stash unstaged changes only
-   git commit -m "message"
-   git stash pop  # Restore unstaged changes
-
-   # Option C: Save staged changes before reset
-   git diff --cached > staged-changes.patch
-   git reset
-   git add file1.ex file2.ex
-   git commit -m "message"
-   git apply staged-changes.patch  # Restore other changes if needed
-   ```
-
-**Before ANY `git reset` command:**
-1. Run `git status --porcelain` to see what will be affected
-2. Run `git diff --cached > backup.patch` to save staged changes
-3. Consider using `git restore --staged` instead
-4. If you must use `git reset`, understand exactly what will be lost
-
-**Remember**: Staged changes that are reset are NOT recoverable unless you explicitly backed them up first. There is no "undo" for `git reset` on uncommitted changes.
+# Commit the remaining staged files
+git commit -m "message"
+```
 
 ### Phoenix v1.8 guidelines
 
