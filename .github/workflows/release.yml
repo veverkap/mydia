@@ -32,7 +32,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
+      - name: Determine if beta/rc release
+        id: check_prerelease
+        run: |
+          if [[ "${{ github.ref_name }}" =~ -beta|-rc ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "prerelease_tag=beta" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata (tags, labels) for stable release
+        if: steps.check_prerelease.outputs.is_prerelease == 'false'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -43,6 +54,16 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest
 
+      - name: Extract metadata (tags, labels) for beta/rc release
+        if: steps.check_prerelease.outputs.is_prerelease == 'true'
+        id: meta_beta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=beta
+
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6
@@ -51,8 +72,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.check_prerelease.outputs.is_prerelease == 'true' && steps.meta_beta.outputs.tags || steps.meta.outputs.tags }}
+          labels: ${{ steps.check_prerelease.outputs.is_prerelease == 'true' && steps.meta_beta.outputs.labels || steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
