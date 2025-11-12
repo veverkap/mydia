@@ -7,14 +7,16 @@ config :mydia, Mydia.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   # SQLite-specific optimizations
-  timeout: 5000,
+  # Increased timeout to handle long-running library scans (60 seconds)
+  timeout: 60_000,
   journal_mode: :wal,
   # 64MB cache
   cache_size: -64000,
   temp_store: :memory,
   synchronous: :normal,
   foreign_keys: :on,
-  busy_timeout: 5000
+  # Increased busy_timeout to handle concurrent writes during library scans
+  busy_timeout: 30_000
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

@@ -32,14 +32,16 @@ if config_env() == :prod do
     database: database_path,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
     # SQLite-specific optimizations for production
-    timeout: 5000,
+    # Increased timeout to handle long-running library scans (60 seconds)
+    timeout: 60_000,
     journal_mode: :wal,
     # 64MB cache
     cache_size: -64000,
     temp_store: :memory,
     synchronous: :normal,
     foreign_keys: :on,
-    busy_timeout: 5000
+    # Increased busy_timeout to handle concurrent writes during library scans
+    busy_timeout: 30_000
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

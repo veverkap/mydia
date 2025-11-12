@@ -45,13 +45,15 @@ database:
   pool_size: 5
 
   # Query timeout in milliseconds
-  timeout: 5000
+  # Increased to 60 seconds to handle long-running library scans
+  timeout: 60000
 
   # SQLite cache size in KB (negative means KB, positive means pages)
   cache_size: -64000
 
   # SQLite busy timeout in milliseconds
-  busy_timeout: 5000
+  # Increased to 30 seconds to handle concurrent writes during library scans
+  busy_timeout: 30000
 
   # SQLite journal mode (delete, truncate, persist, memory, wal)
   # WAL (Write-Ahead Logging) is recommended for better concurrency
