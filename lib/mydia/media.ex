@@ -528,14 +528,23 @@ defmodule Mydia.Media do
     {status, nil}
   end
 
-  def get_media_status(%MediaItem{type: "tv_show", monitored: false}), do: {:not_monitored, nil}
+  def get_media_status(%MediaItem{type: "tv_show", monitored: false, episodes: episodes}) do
+    # For non-monitored TV shows, still show episode counts
+    total_episodes = length(episodes)
+    downloaded_count = Enum.count(episodes, fn ep -> length(ep.media_files) > 0 end)
+
+    {:not_monitored, %{downloaded: downloaded_count, total: total_episodes}}
+  end
 
   def get_media_status(%MediaItem{type: "tv_show", episodes: episodes}) do
     monitored_episodes = Enum.filter(episodes, & &1.monitored)
     total_monitored = length(monitored_episodes)
 
     if total_monitored == 0 do
-      {:not_monitored, %{downloaded: 0, total: 0}}
+      # No monitored episodes - show all episodes count instead
+      total_episodes = length(episodes)
+      downloaded_count = Enum.count(episodes, fn ep -> length(ep.media_files) > 0 end)
+      {:not_monitored, %{downloaded: downloaded_count, total: total_episodes}}
     else
       downloaded_count =
         monitored_episodes
@@ -646,12 +655,12 @@ defmodule Mydia.Media do
               if season[:season_number] == 0 and season_monitoring != "all" do
                 count
               else
-                Logger.info("Creating episodes for season #{season[:season_number]}")
+                Logger.info("Processing episodes for season #{season[:season_number]}")
 
                 case create_episodes_for_season(media_item, season, config, force) do
                   {:ok, created} ->
                     Logger.info(
-                      "Created #{created} episodes for season #{season[:season_number]}"
+                      "Processed #{created} episodes for season #{season[:season_number]}"
                     )
 
                     count + created
@@ -666,7 +675,7 @@ defmodule Mydia.Media do
               end
             end)
 
-          Logger.info("Total episodes created: #{episode_count}")
+          Logger.info("Total episodes processed: #{episode_count}")
           {:ok, episode_count}
 
         {:error, reason} ->
@@ -826,7 +835,15 @@ defmodule Mydia.Media do
                   {:error, _changeset} -> count
                 end
               else
-                count
+                # Update existing episode with fresh metadata
+                case update_episode(existing, %{
+                       title: episode[:name],
+                       air_date: parse_air_date(episode[:air_date]),
+                       metadata: episode
+                     }) do
+                  {:ok, _episode} -> count + 1
+                  {:error, _changeset} -> count
+                end
               end
             end
           end)
