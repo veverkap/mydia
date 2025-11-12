@@ -52,3 +52,6 @@ compose.override.yml
 !/hooks/after_media_added/
 !/hooks/after_media_added/01_example_anime_settings.lua
 
+# Backlog.md task management (managed via MCP)
+/backlog/
+
