@@ -118,16 +118,18 @@
 
     <%!-- Search Bar --%>
     <.form for={%{}} phx-submit="search" id="search-form" class="mb-6">
-      <div class="join w-full">
-        <.input
-          type="text"
-          name="search"
-          value={@search_query}
-          placeholder={"Search for " <> if(@media_type == :movie, do: "movies...", else: "TV shows...")}
-          class="input input-bordered w-full join-item"
-          required
-        />
-        <button type="submit" class="btn btn-primary join-item" disabled={@searching}>
+      <div class="flex w-full">
+        <div class="flex-1">
+          <.input
+            type="text"
+            name="search"
+            value={@search_query}
+            placeholder={"Search for " <> if(@media_type == :movie, do: "movies...", else: "TV shows...")}
+            class="input input-bordered w-full rounded-r-none"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary rounded-l-none" disabled={@searching}>
           <%= if @searching do %>
             <span class="loading loading-spinner loading-sm"></span> Searching...
           <% else %>

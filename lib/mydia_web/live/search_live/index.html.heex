@@ -17,15 +17,17 @@
 
     <%!-- Search Bar --%>
     <form phx-submit="search" id="indexer-search-form" class="mb-6">
-      <div class="join w-full">
-        <.input
-          type="text"
-          name="search"
-          value={@search_query}
-          placeholder="Search for movies, TV shows, or specific releases..."
-          class="input input-bordered w-full join-item"
-        />
-        <button type="submit" class="btn btn-primary join-item" disabled={@searching}>
+      <div class="flex w-full">
+        <div class="flex-1">
+          <.input
+            type="text"
+            name="search"
+            value={@search_query}
+            placeholder="Search for movies, TV shows, or specific releases..."
+            class="input input-bordered w-full rounded-r-none"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary rounded-l-none" disabled={@searching}>
           <%= if @searching do %>
             <span class="loading loading-spinner loading-sm"></span> Searching...
           <% else %>
