@@ -8,7 +8,7 @@
 >
   <div class="max-w-7xl mx-auto">
     <%!-- Header --%>
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-4 md:mb-6">
       <div>
         <h1 class="text-3xl font-bold">{@page_title}</h1>
         <p class="text-base-content/70 mt-1">
@@ -21,7 +21,7 @@
     </div>
 
     <%!-- Configuration Toolbar --%>
-    <div class="collapse collapse-arrow bg-base-100 rounded-lg mb-6 shadow-lg">
+    <div class="collapse collapse-arrow bg-base-100 rounded-lg mb-4 md:mb-6 shadow-lg">
       <input type="checkbox" id="quick-add-settings-toggle" />
       <div class="collapse-title text-sm font-semibold text-base-content/70">
         Quick Add Settings
@@ -117,7 +117,7 @@
     </div>
 
     <%!-- Search Bar --%>
-    <.form for={%{}} phx-submit="search" id="search-form" class="mb-6">
+    <.form for={%{}} phx-submit="search" id="search-form" class="mb-4 md:mb-6">
       <div class="flex w-full">
         <div class="flex-1">
           <.input
@@ -150,12 +150,13 @@
     <%!-- Results Grid --%>
     <%= if @search_results != [] do %>
       <div>
-        <h2 class="text-xl font-bold mb-4">
+        <h2 class="text-xl font-bold mb-3 md:mb-4">
           Search Results ({length(@search_results)})
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
           <%= for {result, index} <- Enum.with_index(@search_results) do %>
-            <% media_item_id = Map.get(@added_item_ids, result[:id]) %>
+            <% tmdb_id = result[:provider_id] && String.to_integer(result[:provider_id]) %>
+            <% media_item_id = Map.get(@added_item_ids, tmdb_id) %>
             <% is_added = !is_nil(media_item_id) %>
             <% is_adding = @adding_index == index %>
             <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">

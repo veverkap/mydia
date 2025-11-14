@@ -184,7 +184,7 @@
           <thead>
             <tr class="bg-base-300">
               <th class="w-2/5">Release Title</th>
-              <th class="w-1/6">Quality & Size</th>
+              <th class="w-1/5">Quality & Size</th>
               <th class="w-1/6 hidden md:table-cell">Health</th>
               <th class="w-1/6 hidden lg:table-cell">Source</th>
               <th class="w-32">Actions</th>
@@ -222,8 +222,8 @@
               </td>
               <%!-- Quality & Size Column --%>
               <td>
-                <div class="flex flex-col gap-1">
-                  <span class="badge badge-primary badge-sm">
+                <div class="flex flex-col gap-1.5">
+                  <span class="badge badge-primary text-xs whitespace-normal leading-tight py-2 h-auto">
                     {get_quality_badge(result)}
                   </span>
                   <span class="text-xs font-mono text-base-content/70">

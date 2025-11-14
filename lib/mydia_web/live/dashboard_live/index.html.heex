@@ -200,7 +200,7 @@
           <span>No trending movies available at the moment.</span>
         </div>
       <% true -> %>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           <%= for movie <- @trending_movies do %>
             <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow relative">
               <%= if movie.in_library do %>
@@ -276,8 +276,8 @@
   </div>
   
 <!-- Trending TV Shows -->
-  <div class="mb-8">
-    <div class="flex items-center justify-between mb-4">
+  <div class="mb-6 md:mb-8">
+    <div class="flex items-center justify-between mb-3 md:mb-4">
       <h2 class="text-2xl font-bold">Trending TV Shows</h2>
       <.link navigate="/tv" class="btn btn-sm btn-ghost">
         View All <.icon name="hero-arrow-right" class="w-4 h-4 ml-1" />
@@ -295,7 +295,7 @@
           <span>No trending TV shows available at the moment.</span>
         </div>
       <% true -> %>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           <%= for show <- @trending_tv do %>
             <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow relative">
               <%= if show.in_library do %>
@@ -372,10 +372,10 @@
   
 <!-- User Activity Section (for users with monitored content) -->
   <%= if @recent_episodes != [] || @upcoming_episodes != [] do %>
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold mb-4">Your Activity</h2>
+    <div class="mb-6 md:mb-8">
+      <h2 class="text-2xl font-bold mb-3 md:mb-4">Your Activity</h2>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         <!-- Recent Episodes -->
         <%= if @recent_episodes != [] do %>
           <div class="card bg-base-100 shadow-sm">
