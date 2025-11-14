@@ -161,7 +161,7 @@
     <div class="flex flex-col md:flex-row gap-3 md:gap-4 mb-4 md:mb-6">
       <%!-- Search input --%>
       <div class="flex-1">
-        <form phx-change="search" id="library-search-form">
+        <.form for={%{}} as={:search} phx-change="search" id="library-search-form" class="w-full">
           <input
             type="text"
             name="search"
@@ -170,11 +170,11 @@
             phx-debounce="300"
             class="input input-bordered w-full"
           />
-        </form>
+        </.form>
       </div>
 
       <%!-- Filters and Sort --%>
-      <form phx-change="filter" id="library-filter-form" class="join">
+      <.form for={%{}} as={:filter} phx-change="filter" id="library-filter-form" class="join">
         <select
           name="monitored"
           class="select select-bordered join-item"
@@ -234,7 +234,7 @@
             </optgroup>
           <% end %>
         </select>
-      </form>
+      </.form>
     </div>
 
     <%!-- Empty state (shown when no items) --%>
