@@ -65,9 +65,9 @@ defmodule Mydia.Library.MetadataEnricher do
                 Logger.info("""
                 Adding media_file_id to match_result for episode association:
                   media_file_id: #{inspect(media_file_id)}
-                  season: #{inspect(get_in(match_result, [:parsed_info, :season]))}
-                  episodes: #{inspect(get_in(match_result, [:parsed_info, :episodes]))}
-                  parsed_info keys: #{inspect(Map.keys(match_result.parsed_info))}
+                  season: #{inspect(match_result.parsed_info.season)}
+                  episodes: #{inspect(match_result.parsed_info.episodes)}
+                  parsed_info type: #{inspect(match_result.parsed_info.type)}
                 """)
 
                 Map.put(match_result, :media_file_id, media_file_id)
