@@ -179,6 +179,44 @@ Ensure the data volume has correct permissions:
 docker exec mydia ls -la /data
 ```
 
+## Database Backups
+
+Mydia automatically creates database backups before running migrations to protect your data:
+
+### Automatic Backups
+
+- **When**: Automatically created before applying any pending migrations
+- **Location**: Stored alongside the database file (e.g., `/config/mydia_dev_backup_YYYYMMDD_HHMMSS.db`)
+- **Format**: Timestamped filename `mydia_<env>_backup_YYYYMMDD_HHMMSS.db`
+- **Retention**: Last 10 backups are kept, older backups are automatically cleaned up
+- **Validation**: Backup integrity is verified before proceeding with migrations
+
+### Manual Backups
+
+Create a manual backup before major changes:
+
+```bash
+# Stop the container
+docker compose down
+
+# Copy the database file
+cp /path/to/config/mydia.db /path/to/backups/mydia_manual_backup_$(date +%Y%m%d_%H%M%S).db
+
+# Restart the container
+docker compose up -d
+```
+
+### Disabling Automatic Backups
+
+While not recommended, you can disable automatic backups:
+
+```yaml
+environment:
+  - SKIP_BACKUPS=true
+```
+
+**Warning**: Only disable backups if you have your own backup strategy in place.
+
 ## Upgrading
 
 To upgrade to a new version:
@@ -186,8 +224,8 @@ To upgrade to a new version:
 1. Pull the new image
 2. Stop the current container
 3. Start a new container with the new image
-
-Migrations will run automatically on startup.
+4. Automatic database backup is created (if migrations are pending)
+5. Migrations run automatically on startup
 
 ### With Docker Compose
 
@@ -211,6 +249,67 @@ To upgrade to a specific version, specify the version tag:
 docker pull ghcr.io/getmydia/mydia:v1.0.0
 # Update your docker-compose.yml or docker run command to use the specific version
 ```
+
+### Upgrade Safety
+
+- **Automatic Backups**: A timestamped backup is created before migrations run
+- **Backup Location**: Check `/config/mydia_*_backup_*.db` for backup files
+- **Verification**: The system verifies backup integrity before proceeding
+- **Logging**: Watch startup logs to see backup creation and migration progress
+
+Example startup logs:
+```
+[info] Checking for pending migrations...
+[info] Found 2 pending migrations, creating database backup...
+[info] Created backup: /config/mydia_prod_backup_20251115_143022.db
+[info] Backup verification successful
+[info] Running migrations...
+[info] Migration completed successfully
+```
+
+### Rollback Procedure
+
+If an upgrade causes issues, you can roll back to the previous version:
+
+**Option 1: Roll back to previous image (recommended)**
+
+```bash
+# Stop the container
+docker compose down
+
+# Restore from automatic backup
+cp /path/to/config/mydia_prod_backup_20251115_143022.db /path/to/config/mydia.db
+
+# Update docker-compose.yml to use previous version
+# image: ghcr.io/getmydia/mydia:v1.0.0  # previous version
+
+# Start the container
+docker compose up -d
+```
+
+**Option 2: Use a specific backup**
+
+If you need to restore from a specific backup:
+
+```bash
+# Stop the container
+docker compose down
+
+# List available backups
+ls -lh /path/to/config/mydia_*_backup_*.db
+
+# Restore chosen backup
+cp /path/to/config/mydia_prod_backup_20251114_120000.db /path/to/config/mydia.db
+
+# Start the container with the appropriate image version
+docker compose up -d
+```
+
+**Important Notes:**
+- Always restore a backup that matches the version you're rolling back to
+- Automatic backups are timestamped - use the most recent one before the upgrade
+- Keep at least 2-3 manual backups before major version upgrades
+- Test the rollback procedure in a non-production environment first
 
 ## Release Process
 

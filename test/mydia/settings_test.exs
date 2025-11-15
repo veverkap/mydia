@@ -251,18 +251,19 @@ defmodule Mydia.SettingsTest do
           monitored: true
         })
 
-      # List should include both database and runtime paths
+      # List should include both database paths and paths synced from runtime
       all_paths = Settings.list_library_paths()
 
-      # Should have at least 3 paths (1 DB + 2 runtime)
+      # Should have at least 3 paths (1 DB + 2 runtime that were synced to DB)
       assert length(all_paths) >= 3
 
       # Database path should be included
       assert Enum.any?(all_paths, &(&1.id == db_path.id))
 
-      # Runtime paths should be included
-      assert Enum.any?(all_paths, &(&1.id == "runtime::library_path::/media/movies"))
-      assert Enum.any?(all_paths, &(&1.id == "runtime::library_path::/media/tv"))
+      # Runtime paths should be synced to database and included
+      # Note: Runtime paths are synced to database on startup, so they have DB IDs
+      assert Enum.any?(all_paths, &(&1.path == "/media/movies"))
+      assert Enum.any?(all_paths, &(&1.path == "/media/tv"))
     end
   end
 
@@ -427,6 +428,379 @@ defmodule Mydia.SettingsTest do
 
       assert indexer.id == db_indexer.id
       assert indexer.name == "test-indexer"
+    end
+  end
+
+  describe "library path validation on update" do
+    setup do
+      # Create a library path with a unique test path
+      test_id = :crypto.strong_rand_bytes(8) |> Base.encode16()
+      test_path = "/media/test_movies_#{test_id}"
+
+      {:ok, library_path} =
+        Settings.create_library_path(%{
+          path: test_path,
+          type: :movies,
+          monitored: true
+        })
+
+      %{library_path: library_path}
+    end
+
+    test "allows path update when no media files exist", %{library_path: library_path} do
+      # Update the path (no files to validate)
+      assert {:ok, updated} =
+               Settings.update_library_path(library_path, %{path: "/new/media/movies"})
+
+      assert updated.path == "/new/media/movies"
+    end
+
+    test "allows path update when all files exist at new location", %{
+      library_path: library_path
+    } do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create some test files in both old and new locations
+      test_files = ["Movie1.mkv", "Movie2.mkv", "Movie3.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+        File.touch!(Path.join(new_path, file))
+      end
+
+      # Create media file records with relative paths
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      # Update path should succeed because files exist at new location
+      assert {:ok, updated} = Settings.update_library_path(library_path, %{path: new_path})
+      assert updated.path == new_path
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+
+    test "prevents path update when files don't exist at new location", %{
+      library_path: library_path
+    } do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create test files only in old location
+      test_files = ["Movie1.mkv", "Movie2.mkv", "Movie3.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+      end
+
+      # Create media file records with relative paths
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      # Update path should fail because files don't exist at new location
+      assert {:error, changeset} =
+               Settings.update_library_path(library_path, %{path: new_path})
+
+      assert changeset.errors[:path] != nil
+
+      {message, _} = changeset.errors[:path]
+
+      assert message =~ "Files not accessible at new location"
+      assert message =~ "Checked 3 files, 0 found"
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+
+    test "prevents path update when some files missing at new location", %{
+      library_path: library_path
+    } do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create test files in old location
+      test_files = ["Movie1.mkv", "Movie2.mkv", "Movie3.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+      end
+
+      # Only create some files in new location
+      File.touch!(Path.join(new_path, "Movie1.mkv"))
+      # Movie2.mkv and Movie3.mkv are missing
+
+      # Create media file records with relative paths
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      # Update path should fail because not all files exist at new location
+      assert {:error, changeset} =
+               Settings.update_library_path(library_path, %{path: new_path})
+
+      assert changeset.errors[:path] != nil
+
+      {message, _} = changeset.errors[:path]
+
+      assert message =~ "Files not accessible at new location"
+      assert message =~ "Checked 3 files, 1 found"
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+
+    test "allows other field updates without path validation", %{library_path: library_path} do
+      # Update monitored status (not the path)
+      assert {:ok, updated} =
+               Settings.update_library_path(library_path, %{monitored: false})
+
+      assert updated.monitored == false
+      assert updated.path == library_path.path
+    end
+
+    test "samples up to 10 files for validation", %{library_path: library_path} do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create 15 test files (more than the sample size)
+      test_files = for i <- 1..15, do: "Movie#{i}.mkv"
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+        File.touch!(Path.join(new_path, file))
+      end
+
+      # Create media file records for all 15 files
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      # Update path should succeed
+      # The validation should only check a sample of 10 files
+      assert {:ok, updated} = Settings.update_library_path(library_path, %{path: new_path})
+      assert updated.path == new_path
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+  end
+
+  describe "validate_new_library_path/2" do
+    setup do
+      # Create a library path with a unique test path
+      test_id = :crypto.strong_rand_bytes(8) |> Base.encode16()
+      test_path = "/media/test_validate_#{test_id}"
+
+      {:ok, library_path} =
+        Settings.create_library_path(%{
+          path: test_path,
+          type: :movies,
+          monitored: true
+        })
+
+      %{library_path: library_path}
+    end
+
+    test "returns :ok when no media files exist", %{library_path: library_path} do
+      assert :ok = Settings.validate_new_library_path(library_path, "/new/path")
+    end
+
+    test "returns :ok when all files are accessible", %{library_path: library_path} do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create test files in both locations
+      test_files = ["Movie1.mkv", "Movie2.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+        File.touch!(Path.join(new_path, file))
+      end
+
+      # Create media file records
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      assert :ok = Settings.validate_new_library_path(library_path, new_path)
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+
+    test "returns error when files are not accessible", %{library_path: library_path} do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create test files only in old location
+      test_files = ["Movie1.mkv", "Movie2.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+      end
+
+      # Create media file records
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      assert {:error, message} = Settings.validate_new_library_path(library_path, new_path)
+      assert message =~ "Files not accessible at new location"
+      assert message =~ "Checked 2 files, 0 found"
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
+    end
+
+    test "returns error with helpful message when some files are missing", %{
+      library_path: library_path
+    } do
+      # Create test directory structure
+      test_dir = System.tmp_dir!()
+      old_path = Path.join(test_dir, "old_movies")
+      new_path = Path.join(test_dir, "new_movies")
+
+      File.mkdir_p!(old_path)
+      File.mkdir_p!(new_path)
+
+      # Update library path to use test directory
+      {:ok, library_path} = Settings.update_library_path(library_path, %{path: old_path})
+
+      # Create test files
+      test_files = ["Movie1.mkv", "Movie2.mkv", "Movie3.mkv"]
+
+      for file <- test_files do
+        File.touch!(Path.join(old_path, file))
+      end
+
+      # Only create one file in new location
+      File.touch!(Path.join(new_path, "Movie1.mkv"))
+
+      # Create media file records
+      for file <- test_files do
+        {:ok, _media_file} =
+          %Mydia.Library.MediaFile{}
+          |> Mydia.Library.MediaFile.scan_changeset(%{
+            library_path_id: library_path.id,
+            relative_path: file,
+            size: 1000
+          })
+          |> Ecto.Changeset.put_change(:path, Path.join(old_path, file))
+          |> Repo.insert()
+      end
+
+      assert {:error, message} = Settings.validate_new_library_path(library_path, new_path)
+      assert message =~ "Checked 3 files, 1 found"
+      assert message =~ "Ensure files have been moved to the new location"
+
+      # Cleanup
+      File.rm_rf!(old_path)
+      File.rm_rf!(new_path)
     end
   end
 end

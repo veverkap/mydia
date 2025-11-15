@@ -230,6 +230,23 @@ See the **[Environment Variables Reference](#-environment-variables-reference)**
 >
 > **Note:** If your downloads and libraries must be on different filesystems, mydia will automatically fall back to copying files. This works fine but uses more storage space and takes longer.
 
+### Library Path Management
+
+Mydia uses **relative path storage** for media files, which provides several benefits:
+
+- **Flexible Library Relocation**: You can change your library root paths (e.g., from `/mnt/media/Movies` to `/new/storage/Movies`) without breaking existing file references
+- **Path Independence**: Media file records are stored relative to their library path, making the database portable
+- **Automatic Migration**: When you update library paths via the Admin UI, Mydia validates that existing files are accessible at the new location before making changes
+- **Seamless Upgrades**: The migration from absolute to relative paths happens automatically on first startup after upgrade
+
+Library paths can be configured via:
+1. Environment variables (`MOVIES_PATH`, `TV_PATH`) - Highest priority
+2. Admin UI (Database settings)
+3. YAML configuration file (`config/config.yml`)
+4. Schema defaults - Lowest priority
+
+Changes to library paths are validated against your existing media files to prevent broken references. If you need to relocate your library, update the environment variables or Admin UI settings, and Mydia will verify file accessibility before applying the changes.
+
 ## 👤 User / Group Identifiers
 
 When using volumes (`-v` flags), permissions issues can arise between the host and container. To avoid this, specify the user `PUID` and group `PGID` to ensure files created by the container are owned by your user.
@@ -274,6 +291,27 @@ docker pull ghcr.io/getmydia/mydia:latest
 ```
 
 **Note:** Migrations run automatically on startup. Your data in `/config` is preserved across updates.
+
+### Database Backups
+
+Mydia automatically creates database backups before running migrations to ensure your data is safe during updates:
+
+- **Automatic Backups**: When migrations are pending, a timestamped backup is created before running them
+- **Backup Location**: Stored alongside the database file (e.g., `/config/mydia_dev_backup_YYYYMMDD_HHMMSS.db`)
+- **Automatic Cleanup**: Only the 10 most recent backups are kept to save disk space
+- **Manual Restore**: If needed, you can restore from a backup by:
+  1. Stop the container
+  2. Replace the database file with your chosen backup
+  3. Restart the container
+
+To disable automatic backups (not recommended):
+```bash
+# In docker-compose.yml or docker run command
+environment:
+  - SKIP_BACKUPS=true
+```
+
+For more details about backup and restore procedures, see [docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md).
 
 ### Beta Releases
 
