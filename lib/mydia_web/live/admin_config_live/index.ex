@@ -40,6 +40,9 @@ defmodule MydiaWeb.AdminConfigLive.Index do
         %{"category" => category, "settings" => settings},
         socket
       ) do
+    # Convert category string to atom for schema compatibility
+    category_atom = category_string_to_atom(category)
+
     # Process each changed setting with validation
     results =
       settings
@@ -49,7 +52,7 @@ defmodule MydiaWeb.AdminConfigLive.Index do
           validate_config_setting(%{
             key: key,
             value: value,
-            category: category
+            category: category_atom
           })
 
         if changeset.valid? do
@@ -99,12 +102,15 @@ defmodule MydiaWeb.AdminConfigLive.Index do
         %{"key" => key, "value" => value, "category" => category},
         socket
       ) do
+    # Convert category string to atom for schema compatibility
+    category_atom = category_string_to_atom(category)
+
     # Handle boolean toggle with validation
     changeset =
       validate_config_setting(%{
         key: key,
         value: to_string(value),
-        category: category
+        category: category_atom
       })
 
     if changeset.valid? do
@@ -992,12 +998,25 @@ defmodule MydiaWeb.AdminConfigLive.Index do
     types = %{
       key: :string,
       value: :string,
-      category: :string
+      category: :atom
     }
 
     {%{}, types}
     |> Ecto.Changeset.cast(attrs, Map.keys(types))
     |> Ecto.Changeset.validate_required([:key, :value, :category])
+  end
+
+  defp category_string_to_atom(category_string) do
+    case category_string do
+      "Server" -> :server
+      "Database" -> :general
+      "Authentication" -> :auth
+      "Media" -> :media
+      "Downloads" -> :downloads
+      "Crash Reporting" -> :crash_reporting
+      "Notifications" -> :notifications
+      _ -> :general
+    end
   end
 
   defp upsert_config_setting(attrs) do

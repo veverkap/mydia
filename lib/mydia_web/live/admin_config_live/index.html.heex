@@ -69,12 +69,15 @@
               <%= if category == "Crash Reporting" do %>
                 <div class="text-sm text-base-content/70 mb-4">
                   <p class="mb-2">
-                    Crashes are stored locally for 30 days and viewable at <a
+                    Crashes are stored locally for 30 days and viewable in <a
                       href="/admin/errors"
                       class="link link-primary"
-                    >/admin/errors</a>.
-                    Enable sharing below to send sanitized reports to developers via metadata-relay—all
-                    secrets and credentials are automatically removed.
+                    >ErrorTracker</a>.
+                  </p>
+                  <p>
+                    Enable sharing below to send anonymous reports to developers via metadata-relay.
+                    Shared reports only contain the error message and stack trace—all secrets,
+                    credentials, and other information are automatically removed before transmission.
                   </p>
                 </div>
                 <%!-- Pending Reports Queue --%>
