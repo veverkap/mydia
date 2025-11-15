@@ -17,6 +17,12 @@ config :metadata_relay, MetadataRelayWeb.Endpoint,
   http: [port: port],
   server: true
 
+# Crash report API key (all environments)
+crash_report_api_key = System.get_env("CRASH_REPORT_API_KEY")
+
+config :metadata_relay,
+  crash_report_api_key: crash_report_api_key
+
 if config_env() == :prod do
   # API keys from environment
   tmdb_api_key = System.get_env("TMDB_API_KEY")
@@ -24,5 +30,6 @@ if config_env() == :prod do
 
   config :metadata_relay,
     tmdb_api_key: tmdb_api_key,
-    tvdb_api_key: tvdb_api_key
+    tvdb_api_key: tvdb_api_key,
+    crash_report_api_key: crash_report_api_key
 end

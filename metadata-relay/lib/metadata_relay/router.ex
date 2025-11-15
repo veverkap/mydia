@@ -155,6 +155,11 @@ defmodule MetadataRelay.Router do
     handle_tvdb_request(conn, fn -> TVDBHandler.get_artwork(id, params) end)
   end
 
+  # Crash Report Ingestion
+  post "/crashes/report" do
+    handle_crash_report(conn)
+  end
+
   # 404 catch-all
   match _ do
     send_resp(conn, 404, "Not found")
@@ -224,4 +229,174 @@ defmodule MetadataRelay.Router do
     conn.query_params
     |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
   end
+
+  defp handle_crash_report(conn) do
+    # Check rate limit first (by IP address)
+    client_ip = get_client_ip(conn)
+
+    case MetadataRelay.RateLimiter.check_rate_limit(client_ip) do
+      {:error, :rate_limited} ->
+        error_response = %{
+          error: "Too many requests",
+          message: "Rate limit exceeded. Please try again later."
+        }
+
+        conn
+        |> put_resp_header("retry-after", "60")
+        |> put_resp_content_type("application/json")
+        |> send_resp(429, Jason.encode!(error_response))
+
+      {:ok, _remaining} ->
+        # Check API authentication
+        api_key = get_req_header(conn, "authorization") |> List.first()
+        expected_key = Application.get_env(:metadata_relay, :crash_report_api_key)
+
+        cond do
+          is_nil(expected_key) or expected_key == "" ->
+            # API key not configured - reject requests
+            error_response = %{
+              error: "Service unavailable",
+              message: "Crash reporting is not configured"
+            }
+
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(503, Jason.encode!(error_response))
+
+          is_nil(api_key) or api_key != "Bearer #{expected_key}" ->
+            # Authentication failed
+            error_response = %{
+              error: "Unauthorized",
+              message: "Invalid or missing API key"
+            }
+
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(401, Jason.encode!(error_response))
+
+          true ->
+            # Authentication successful - process the report
+            process_crash_report(conn)
+        end
+    end
+  end
+
+  defp get_client_ip(conn) do
+    # Get the client IP from the connection
+    # Check X-Forwarded-For header first (for proxied requests)
+    case get_req_header(conn, "x-forwarded-for") do
+      [forwarded | _] ->
+        forwarded
+        |> String.split(",")
+        |> List.first()
+        |> String.trim()
+
+      [] ->
+        # Fall back to remote_ip
+        conn.remote_ip
+        |> :inet.ntoa()
+        |> to_string()
+    end
+  end
+
+  defp process_crash_report(conn) do
+    with {:ok, body} <- validate_crash_report(conn.body_params),
+         {:ok, _occurrence} <- store_crash_report(body) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(201, Jason.encode!(%{status: "created", message: "Crash report received"}))
+    else
+      {:error, :invalid_json} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(400, Jason.encode!(%{error: "Invalid JSON", message: "Request body must be valid JSON"}))
+
+      {:error, {:validation, errors}} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(400, Jason.encode!(%{error: "Validation failed", errors: errors}))
+
+      {:error, reason} ->
+        error_response = %{
+          error: "Internal server error",
+          message: "Failed to store crash report: #{inspect(reason)}"
+        }
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(500, Jason.encode!(error_response))
+    end
+  end
+
+  defp validate_crash_report(params) when is_map(params) do
+    required_fields = ["error_type", "error_message", "stacktrace"]
+
+    errors =
+      required_fields
+      |> Enum.reject(&Map.has_key?(params, &1))
+      |> Enum.map(&"Missing required field: #{&1}")
+
+    # Validate stacktrace is a list
+    stacktrace_errors =
+      case Map.get(params, "stacktrace") do
+        st when is_list(st) -> []
+        _ -> ["stacktrace must be a list"]
+      end
+
+    all_errors = errors ++ stacktrace_errors
+
+    if all_errors == [] do
+      {:ok, params}
+    else
+      {:error, {:validation, all_errors}}
+    end
+  end
+
+  defp validate_crash_report(_), do: {:error, :invalid_json}
+
+  defp store_crash_report(body) do
+    # Create a runtime error from the crash report data
+    error_type = Map.get(body, "error_type", "RuntimeError")
+    error_message = Map.get(body, "error_message", "Unknown error")
+
+    # Reconstruct stacktrace from the crash report
+    stacktrace =
+      body
+      |> Map.get("stacktrace", [])
+      |> Enum.map(&parse_stacktrace_entry/1)
+      |> Enum.filter(& &1)
+
+    # Create context from additional metadata
+    context = %{
+      version: Map.get(body, "version"),
+      environment: Map.get(body, "environment"),
+      occurred_at: Map.get(body, "occurred_at"),
+      metadata: Map.get(body, "metadata", %{})
+    }
+
+    # Create exception struct
+    exception = %RuntimeError{message: "#{error_type}: #{error_message}"}
+
+    # Report to ErrorTracker
+    case ErrorTracker.report(exception, stacktrace, context) do
+      :noop ->
+        {:error, :error_tracker_disabled}
+
+      occurrence ->
+        {:ok, occurrence}
+    end
+  end
+
+  defp parse_stacktrace_entry(%{"file" => file, "line" => line, "function" => function}) do
+    # Convert crash report format to Elixir stacktrace format
+    # Format: {module, function, arity, [file: path, line: number]}
+    {String.to_atom(function), 0, [file: String.to_charlist(file), line: line]}
+  end
+
+  defp parse_stacktrace_entry(%{"file" => file, "line" => line}) do
+    # Minimal format without function
+    {:unknown, 0, [file: String.to_charlist(file), line: line]}
+  end
+
+  defp parse_stacktrace_entry(_), do: nil
 end

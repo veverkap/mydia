@@ -19,6 +19,8 @@ defmodule MetadataRelay.Application do
       {Phoenix.PubSub, name: MetadataRelay.PubSub},
       # Cache adapter (Redis or in-memory)
       {cache_adapter, cache_opts},
+      # Rate limiter for crash reports
+      MetadataRelay.RateLimiter,
       # TVDB authentication GenServer
       MetadataRelay.TVDB.Auth,
       # Phoenix endpoint (serves both API and ErrorTracker dashboard)
