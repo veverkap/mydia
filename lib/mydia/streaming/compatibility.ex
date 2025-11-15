@@ -100,7 +100,7 @@ defmodule Mydia.Streaming.Compatibility do
   end
 
   # Extracts container format from metadata or file path
-  defp get_container_format(%MediaFile{metadata: metadata, path: path}) do
+  defp get_container_format(%MediaFile{metadata: metadata} = media_file) do
     # First try to get from metadata
     case metadata do
       %{"container" => container} when is_binary(container) ->
@@ -115,11 +115,17 @@ defmodule Mydia.Streaming.Compatibility do
         |> String.trim()
 
       _ ->
-        # Fall back to file extension
-        path
-        |> Path.extname()
-        |> String.trim_leading(".")
-        |> String.downcase()
+        # Fall back to file extension from absolute path
+        case MediaFile.absolute_path(media_file) do
+          nil ->
+            "unknown"
+
+          absolute_path ->
+            absolute_path
+            |> Path.extname()
+            |> String.trim_leading(".")
+            |> String.downcase()
+        end
     end
   end
 

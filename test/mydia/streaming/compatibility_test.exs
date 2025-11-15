@@ -10,7 +10,8 @@ defmodule Mydia.Streaming.CompatibilityTest do
         codec: "h264",
         audio_codec: "aac",
         metadata: %{"container" => "mp4"},
-        path: "/path/to/video.mp4"
+        relative_path: "video.mp4",
+        library_path: %Mydia.Settings.LibraryPath{path: "/path/to"}
       }
 
       assert Compatibility.check_compatibility(media_file) == :direct_play
@@ -153,7 +154,8 @@ defmodule Mydia.Streaming.CompatibilityTest do
         codec: "h264",
         audio_codec: "aac",
         metadata: %{},
-        path: "/path/to/video"
+        relative_path: "video",
+        library_path: %Mydia.Settings.LibraryPath{path: "/path/to"}
       }
 
       assert Compatibility.check_compatibility(media_file) == :needs_transcoding
@@ -164,7 +166,8 @@ defmodule Mydia.Streaming.CompatibilityTest do
         codec: "h264",
         audio_codec: "aac",
         metadata: %{},
-        path: "/path/to/video.mp4"
+        relative_path: "video.mp4",
+        library_path: %Mydia.Settings.LibraryPath{path: "/path/to"}
       }
 
       assert Compatibility.check_compatibility(media_file) == :direct_play
