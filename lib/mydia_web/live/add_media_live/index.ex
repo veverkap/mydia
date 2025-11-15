@@ -1,6 +1,8 @@
 defmodule MydiaWeb.AddMediaLive.Index do
   use MydiaWeb, :live_view
 
+  require Logger
+
   alias Mydia.{Media, Metadata, Settings}
   alias MydiaWeb.Live.Authorization
 
@@ -198,9 +200,23 @@ defmodule MydiaWeb.AddMediaLive.Index do
 
         case Media.create_media_item(attrs) do
           {:ok, media_item} ->
-            # Create episodes for TV shows if monitored
-            if socket.assigns.media_type == :tv_show and config.monitored do
-              create_episodes_for_media(media_item, full_metadata, config)
+            # Create episodes for TV shows using season monitoring preference
+            if socket.assigns.media_type == :tv_show do
+              season_monitoring = config[:season_monitoring] || "all"
+
+              case Media.refresh_episodes_for_tv_show(media_item,
+                     season_monitoring: season_monitoring
+                   ) do
+                {:ok, count} ->
+                  Logger.info("Created #{count} episodes for #{media_item.title}")
+
+                {:error, reason} ->
+                  Logger.error(
+                    "Failed to fetch episodes for #{media_item.title}: #{inspect(reason)}"
+                  )
+
+                  # Continue anyway - the media item was created successfully
+              end
             end
 
             # Stay on page with success message
@@ -399,87 +415,6 @@ defmodule MydiaWeb.AddMediaLive.Index do
       |> Map.new(&{&1.tmdb_id, &1.id})
     end
   end
-
-  defp create_episodes_for_media(media_item, metadata, config) do
-    season_monitoring = config.season_monitoring || "all"
-
-    # Get seasons from metadata
-    seasons = metadata.seasons || []
-
-    # Determine which seasons to monitor
-    seasons_to_monitor =
-      case season_monitoring do
-        "all" -> seasons
-        "first" -> Enum.take(seasons, 1)
-        "future" -> filter_future_seasons(seasons)
-        "none" -> []
-        _ -> []
-      end
-
-    # Fetch and create episodes for each season
-    Enum.each(seasons_to_monitor, fn season ->
-      create_season_episodes(media_item, season)
-    end)
-  end
-
-  defp filter_future_seasons(seasons) do
-    today = Date.utc_today()
-
-    Enum.filter(seasons, fn season ->
-      case season[:air_date] do
-        nil ->
-          false
-
-        date_str ->
-          case Date.from_iso8601(date_str) do
-            {:ok, date} -> Date.compare(date, today) == :gt
-            _ -> false
-          end
-      end
-    end)
-  end
-
-  defp create_season_episodes(media_item, season) do
-    # Fetch season details with episodes
-    config = Metadata.default_relay_config()
-
-    case Metadata.fetch_season(
-           config,
-           to_string(media_item.tmdb_id),
-           season[:season_number]
-         ) do
-      {:ok, season_data} ->
-        episodes = season_data.episodes || []
-
-        Enum.each(episodes, fn episode ->
-          Media.create_episode(%{
-            media_item_id: media_item.id,
-            season_number: episode.season_number,
-            episode_number: episode.episode_number,
-            title: episode.name,
-            air_date: parse_air_date(episode.air_date),
-            metadata: episode,
-            monitored: true
-          })
-        end)
-
-      {:error, _reason} ->
-        # Log error but don't fail the entire operation
-        :ok
-    end
-  end
-
-  defp parse_air_date(nil), do: nil
-  defp parse_air_date(%Date{} = date), do: date
-
-  defp parse_air_date(date_str) when is_binary(date_str) do
-    case Date.from_iso8601(date_str) do
-      {:ok, date} -> date
-      _ -> nil
-    end
-  end
-
-  defp parse_air_date(_), do: nil
 
   defp media_library_path(:movie), do: ~p"/movies"
   defp media_library_path(:tv_show), do: ~p"/tv"
