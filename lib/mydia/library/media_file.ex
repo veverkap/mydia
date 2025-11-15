@@ -31,6 +31,28 @@ defmodule Mydia.Library.MediaFile do
   end
 
   @doc """
+  Resolves the absolute file path from relative_path and library_path.
+
+  The library_path association must be preloaded.
+
+  ## Examples
+
+      iex> file = %MediaFile{relative_path: "Movie.mkv", library_path: %LibraryPath{path: "/movies"}}
+      iex> MediaFile.absolute_path(file)
+      "/movies/Movie.mkv"
+
+      iex> file = %MediaFile{relative_path: "Movie.mkv", library_path: nil}
+      iex> MediaFile.absolute_path(file)
+      nil
+  """
+  def absolute_path(%__MODULE__{relative_path: relative_path, library_path: library_path})
+      when not is_nil(relative_path) and not is_nil(library_path) do
+    Path.join(library_path.path, relative_path)
+  end
+
+  def absolute_path(%__MODULE__{}), do: nil
+
+  @doc """
   Changeset for creating or updating a media file.
   """
   def changeset(media_file, attrs) do
@@ -39,7 +61,8 @@ defmodule Mydia.Library.MediaFile do
       :media_item_id,
       :episode_id,
       :quality_profile_id,
-      :path,
+      :relative_path,
+      :library_path_id,
       :size,
       :resolution,
       :codec,
@@ -49,12 +72,11 @@ defmodule Mydia.Library.MediaFile do
       :verified_at,
       :metadata
     ])
-    |> validate_required([:path])
+    |> validate_required([:relative_path, :library_path_id])
     |> validate_one_parent()
     |> validate_library_type_compatibility()
     |> validate_number(:size, greater_than: 0)
     |> validate_number(:bitrate, greater_than: 0)
-    |> unique_constraint(:path)
     |> check_constraint(:media_item_id,
       name: :media_files_parent_check,
       message: "cannot set both media_item_id and episode_id"
@@ -62,6 +84,7 @@ defmodule Mydia.Library.MediaFile do
     |> foreign_key_constraint(:media_item_id)
     |> foreign_key_constraint(:episode_id)
     |> foreign_key_constraint(:quality_profile_id)
+    |> foreign_key_constraint(:library_path_id)
   end
 
   @doc """
@@ -75,7 +98,8 @@ defmodule Mydia.Library.MediaFile do
       :media_item_id,
       :episode_id,
       :quality_profile_id,
-      :path,
+      :relative_path,
+      :library_path_id,
       :size,
       :resolution,
       :codec,
@@ -85,12 +109,11 @@ defmodule Mydia.Library.MediaFile do
       :verified_at,
       :metadata
     ])
-    |> validate_required([:path])
+    |> validate_required([:relative_path, :library_path_id])
     |> validate_parent_exclusivity()
     |> validate_library_type_compatibility()
     |> validate_number(:size, greater_than: 0)
     |> validate_number(:bitrate, greater_than: 0)
-    |> unique_constraint(:path)
     |> check_constraint(:media_item_id,
       name: :media_files_parent_check,
       message: "cannot set both media_item_id and episode_id"
@@ -98,6 +121,7 @@ defmodule Mydia.Library.MediaFile do
     |> foreign_key_constraint(:media_item_id)
     |> foreign_key_constraint(:episode_id)
     |> foreign_key_constraint(:quality_profile_id)
+    |> foreign_key_constraint(:library_path_id)
   end
 
   # Ensure either media_item_id or episode_id is set, but not both
@@ -134,71 +158,66 @@ defmodule Mydia.Library.MediaFile do
   defp validate_library_type_compatibility(changeset) do
     media_item_id = get_field(changeset, :media_item_id)
     episode_id = get_field(changeset, :episode_id)
-    path = get_field(changeset, :path)
+    library_path_id = get_field(changeset, :library_path_id)
 
-    # Skip validation if path is missing (will be caught by validate_required)
-    # or if neither parent association is set (orphaned file)
-    if is_nil(path) or (is_nil(media_item_id) and is_nil(episode_id)) do
+    # Skip validation if neither parent association is set (orphaned file)
+    # or if library_path_id is missing (will be caught by validate_required)
+    if (is_nil(media_item_id) and is_nil(episode_id)) or is_nil(library_path_id) do
       changeset
     else
-      validate_media_type_against_library_path(changeset, path, media_item_id, episode_id)
+      validate_media_type_against_library_path_id(
+        changeset,
+        library_path_id,
+        media_item_id,
+        episode_id
+      )
     end
   end
 
-  defp validate_media_type_against_library_path(changeset, file_path, media_item_id, episode_id) do
-    library_path = find_library_path_for_file(file_path)
-
-    cond do
-      # If no library path found, allow the operation
-      # (file might be outside configured library paths)
-      is_nil(library_path) ->
+  defp validate_media_type_against_library_path_id(
+         changeset,
+         library_path_id,
+         media_item_id,
+         episode_id
+       ) do
+    case Mydia.Repo.get(Mydia.Settings.LibraryPath, library_path_id) do
+      nil ->
+        # Library path not found, let foreign key constraint handle it
         changeset
 
-      # If library is :mixed, allow both types
-      library_path.type == :mixed ->
-        changeset
+      library_path ->
+        cond do
+          # If library is :mixed, allow both types
+          library_path.type == :mixed ->
+            changeset
 
-      # Movie in :series library
-      not is_nil(media_item_id) and library_path.type == :series ->
-        media_type = get_media_type_for_item(media_item_id)
+          # Movie in :series library
+          not is_nil(media_item_id) and library_path.type == :series ->
+            media_type = get_media_type_for_item(media_item_id)
 
-        if media_type == "movie" do
-          add_error(
-            changeset,
-            :media_item_id,
-            "cannot add movies to a library path configured for TV series only (path: #{library_path.path})"
-          )
-        else
-          changeset
+            if media_type == "movie" do
+              add_error(
+                changeset,
+                :media_item_id,
+                "cannot add movies to a library path configured for TV series only (path: #{library_path.path})"
+              )
+            else
+              changeset
+            end
+
+          # TV show in :movies library
+          not is_nil(episode_id) and library_path.type == :movies ->
+            add_error(
+              changeset,
+              :episode_id,
+              "cannot add TV episodes to a library path configured for movies only (path: #{library_path.path})"
+            )
+
+          # All other cases are valid
+          true ->
+            changeset
         end
-
-      # TV show in :movies library
-      not is_nil(episode_id) and library_path.type == :movies ->
-        add_error(
-          changeset,
-          :episode_id,
-          "cannot add TV episodes to a library path configured for movies only (path: #{library_path.path})"
-        )
-
-      # All other cases are valid
-      true ->
-        changeset
     end
-  end
-
-  # Finds the library path that contains the given file path
-  # Prefers the longest matching prefix (most specific path)
-  defp find_library_path_for_file(file_path) do
-    library_paths = Mydia.Settings.list_library_paths()
-
-    library_paths
-    |> Enum.filter(fn library_path ->
-      String.starts_with?(file_path, library_path.path)
-    end)
-    |> Enum.max_by(
-      fn library_path -> String.length(library_path.path) end,
-      fn -> nil end
-    )
   end
 
   # Gets the media type (movie or tv_show) for a media item by ID

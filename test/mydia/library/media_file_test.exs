@@ -4,13 +4,59 @@ defmodule Mydia.Library.MediaFileTest do
   alias Mydia.Library.MediaFile
   alias Mydia.Settings.LibraryPath
 
+  describe "absolute_path/1" do
+    test "resolves absolute path from relative_path and library_path" do
+      library_path = %LibraryPath{path: "/media/movies"}
+
+      media_file = %MediaFile{
+        relative_path: "The Matrix (1999)/The Matrix (1999) [1080p].mkv",
+        library_path: library_path
+      }
+
+      assert MediaFile.absolute_path(media_file) ==
+               "/media/movies/The Matrix (1999)/The Matrix (1999) [1080p].mkv"
+    end
+
+    test "returns nil when library_path is not preloaded" do
+      media_file = %MediaFile{
+        relative_path: "Movie.mkv",
+        library_path: nil
+      }
+
+      assert MediaFile.absolute_path(media_file) == nil
+    end
+
+    test "returns nil when relative_path is nil" do
+      library_path = %LibraryPath{path: "/media/movies"}
+
+      media_file = %MediaFile{
+        relative_path: nil,
+        library_path: library_path
+      }
+
+      assert MediaFile.absolute_path(media_file) == nil
+    end
+
+    test "handles paths with special characters" do
+      library_path = %LibraryPath{path: "/media/series"}
+
+      media_file = %MediaFile{
+        relative_path: "It's Always Sunny (2005)/Season 01/S01E01 - Charlie's Mom.mkv",
+        library_path: library_path
+      }
+
+      assert MediaFile.absolute_path(media_file) ==
+               "/media/series/It's Always Sunny (2005)/Season 01/S01E01 - Charlie's Mom.mkv"
+    end
+  end
+
   describe "library type compatibility validation" do
     setup do
-      # Create library paths with different types
+      # Create library paths with different types (using unique paths to avoid conflicts)
       {:ok, movies_library} =
         %LibraryPath{}
         |> LibraryPath.changeset(%{
-          path: "/media/movies",
+          path: "/test/movies",
           type: :movies,
           monitored: true
         })
@@ -19,7 +65,7 @@ defmodule Mydia.Library.MediaFileTest do
       {:ok, series_library} =
         %LibraryPath{}
         |> LibraryPath.changeset(%{
-          path: "/media/series",
+          path: "/test/series",
           type: :series,
           monitored: true
         })
@@ -28,7 +74,7 @@ defmodule Mydia.Library.MediaFileTest do
       {:ok, mixed_library} =
         %LibraryPath{}
         |> LibraryPath.changeset(%{
-          path: "/media/mixed",
+          path: "/test/mixed",
           type: :mixed,
           monitored: true
         })
@@ -47,7 +93,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{movies_library.path}/The Matrix (1999)/The Matrix (1999) [1080p].mkv",
+          relative_path: "The Matrix (1999)/The Matrix (1999) [1080p].mkv",
+          library_path_id: movies_library.id,
           media_item_id: movie.id,
           size: 1_000_000_000
         })
@@ -61,7 +108,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{series_library.path}/The Matrix (1999)/The Matrix (1999) [1080p].mkv",
+          relative_path: "The Matrix (1999)/The Matrix (1999) [1080p].mkv",
+          library_path_id: series_library.id,
           media_item_id: movie.id,
           size: 1_000_000_000
         })
@@ -79,7 +127,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{series_library.path}/Breaking Bad/Season 01/S01E01.mkv",
+          relative_path: "Breaking Bad/Season 01/S01E01.mkv",
+          library_path_id: series_library.id,
           episode_id: episode.id,
           size: 1_000_000_000
         })
@@ -94,7 +143,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{movies_library.path}/Breaking Bad/Season 01/S01E01.mkv",
+          relative_path: "Breaking Bad/Season 01/S01E01.mkv",
+          library_path_id: movies_library.id,
           episode_id: episode.id,
           size: 1_000_000_000
         })
@@ -111,7 +161,8 @@ defmodule Mydia.Library.MediaFileTest do
       movie_changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{mixed_library.path}/movies/The Matrix (1999).mkv",
+          relative_path: "movies/The Matrix (1999).mkv",
+          library_path_id: mixed_library.id,
           media_item_id: movie.id,
           size: 1_000_000_000
         })
@@ -124,7 +175,8 @@ defmodule Mydia.Library.MediaFileTest do
       episode_changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{mixed_library.path}/tv/Breaking Bad/S01E01.mkv",
+          relative_path: "tv/Breaking Bad/S01E01.mkv",
+          library_path_id: mixed_library.id,
           episode_id: episode.id,
           size: 1_000_000_000
         })
@@ -132,25 +184,36 @@ defmodule Mydia.Library.MediaFileTest do
       assert episode_changeset.valid?
     end
 
-    test "allows files outside configured library paths" do
+    test "requires library_path_id when using new format" do
       movie = insert(:media_item, type: "movie")
 
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "/some/other/path/movie.mkv",
+          relative_path: "movie.mkv",
           media_item_id: movie.id,
           size: 1_000_000_000
         })
 
-      assert changeset.valid?
+      refute changeset.valid?
+      assert :library_path_id in Keyword.keys(changeset.errors)
     end
 
     test "allows orphaned files (no parent association)" do
+      {:ok, library} =
+        %LibraryPath{}
+        |> LibraryPath.changeset(%{
+          path: "/test/orphaned",
+          type: :mixed,
+          monitored: true
+        })
+        |> Repo.insert()
+
       changeset =
         %MediaFile{}
         |> MediaFile.scan_changeset(%{
-          path: "/media/series/orphaned.mkv",
+          relative_path: "orphaned.mkv",
+          library_path_id: library.id,
           size: 1_000_000_000
         })
 
@@ -163,7 +226,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.scan_changeset(%{
-          path: "#{series_library.path}/movie.mkv",
+          relative_path: "movie.mkv",
+          library_path_id: series_library.id,
           media_item_id: movie.id,
           size: 1_000_000_000
         })
@@ -182,7 +246,8 @@ defmodule Mydia.Library.MediaFileTest do
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{movies_library.path}/Breaking Bad/series.mkv",
+          relative_path: "Breaking Bad/series.mkv",
+          library_path_id: movies_library.id,
           media_item_id: tv_show.id,
           size: 1_000_000_000
         })
@@ -192,54 +257,80 @@ defmodule Mydia.Library.MediaFileTest do
       assert changeset.valid?
     end
 
-    test "finds library path with longest matching prefix", %{series_library: series_library} do
-      # Create a nested library path
-      {:ok, nested_library} =
+    test "validates library_path_id exists via foreign key", %{series_library: series_library} do
+      movie = insert(:media_item, type: "movie")
+
+      changeset =
+        %MediaFile{}
+        |> MediaFile.changeset(%{
+          relative_path: "movie.mkv",
+          library_path_id: series_library.id,
+          media_item_id: movie.id,
+          size: 1_000_000_000
+        })
+
+      # Should be valid but type mismatch should fail
+      refute changeset.valid?
+    end
+  end
+
+  describe "validation edge cases" do
+    test "handles nil relative_path gracefully" do
+      {:ok, library} =
         %LibraryPath{}
         |> LibraryPath.changeset(%{
-          path: "#{series_library.path}/subcategory",
+          path: "/test/validation",
           type: :movies,
           monitored: true
         })
         |> Repo.insert()
 
-      # File in the nested path should use nested library's rules
       movie = insert(:media_item, type: "movie")
 
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "#{nested_library.path}/movie.mkv",
-          media_item_id: movie.id,
-          size: 1_000_000_000
-        })
-
-      # Should pass because the nested library is :movies
-      assert changeset.valid?
-    end
-  end
-
-  describe "validation edge cases" do
-    test "handles nil path gracefully" do
-      movie = insert(:media_item, type: "movie")
-
-      changeset =
-        %MediaFile{}
-        |> MediaFile.changeset(%{
+          library_path_id: library.id,
           media_item_id: movie.id,
           size: 1_000_000_000
         })
 
       # Should fail on validate_required, not on library type validation
       refute changeset.valid?
-      assert :path in Keyword.keys(changeset.errors)
+      assert :relative_path in Keyword.keys(changeset.errors)
     end
 
-    test "handles missing media_item gracefully" do
+    test "handles missing library_path_id gracefully" do
+      movie = insert(:media_item, type: "movie")
+
       changeset =
         %MediaFile{}
         |> MediaFile.changeset(%{
-          path: "/media/movies/movie.mkv",
+          relative_path: "movie.mkv",
+          media_item_id: movie.id,
+          size: 1_000_000_000
+        })
+
+      # Should fail on validate_required
+      refute changeset.valid?
+      assert :library_path_id in Keyword.keys(changeset.errors)
+    end
+
+    test "handles missing media_item gracefully" do
+      {:ok, library} =
+        %LibraryPath{}
+        |> LibraryPath.changeset(%{
+          path: "/test/validation2",
+          type: :movies,
+          monitored: true
+        })
+        |> Repo.insert()
+
+      changeset =
+        %MediaFile{}
+        |> MediaFile.changeset(%{
+          relative_path: "movie.mkv",
+          library_path_id: library.id,
           media_item_id: Ecto.UUID.generate(),
           size: 1_000_000_000
         })
