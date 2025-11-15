@@ -75,7 +75,6 @@ defmodule Mydia.Downloads.TorrentMatcher do
 
   alias Mydia.Downloads.Structs.TorrentMatchResult
   alias Mydia.Media
-  alias Mydia.Media.{MediaItem, Episode}
 
   require Logger
 

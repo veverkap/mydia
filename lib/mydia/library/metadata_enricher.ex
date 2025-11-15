@@ -232,18 +232,13 @@ defmodule Mydia.Library.MetadataEnricher do
 
   defp associate_media_file(media_item, media_file_id) do
     # Update the media file to associate it with this media item
-    case Mydia.Library.get_media_file!(media_file_id) do
-      media_file ->
-        Mydia.Library.update_media_file(media_file, %{media_item_id: media_item.id})
+    media_file = Mydia.Library.get_media_file!(media_file_id)
+    Mydia.Library.update_media_file(media_file, %{media_item_id: media_item.id})
 
-        Logger.debug("Associated media file with media item",
-          media_file_id: media_file_id,
-          media_item_id: media_item.id
-        )
-
-      _ ->
-        :ok
-    end
+    Logger.debug("Associated media file with media item",
+      media_file_id: media_file_id,
+      media_item_id: media_item.id
+    )
   rescue
     _ -> :ok
   end
@@ -398,7 +393,7 @@ defmodule Mydia.Library.MetadataEnricher do
          %{
            parsed_info: %{season: season, episodes: episode_numbers},
            media_file_id: media_file_id
-         } = match_result
+         }
        )
        when is_binary(media_file_id) do
     Logger.info("maybe_associate_episode_file called with valid pattern match",
@@ -418,27 +413,24 @@ defmodule Mydia.Library.MetadataEnricher do
         media_file_id: media_file_id
       )
 
-      case Mydia.Library.get_media_file!(media_file_id)
-           |> Mydia.Repo.preload(:library_path) do
-        media_file ->
-          case Mydia.Library.update_media_file(media_file, %{episode_id: episode.id}) do
-            {:ok, _updated_file} ->
-              Logger.info("Successfully associated episode with media file",
-                episode_id: episode.id,
-                media_file_id: media_file_id,
-                file_path: Mydia.Library.MediaFile.absolute_path(media_file)
-              )
+      media_file =
+        Mydia.Library.get_media_file!(media_file_id)
+        |> Mydia.Repo.preload(:library_path)
 
-            {:error, changeset} ->
-              Logger.error("Failed to associate episode with media file",
-                episode_id: episode.id,
-                media_file_id: media_file_id,
-                errors: inspect(changeset.errors)
-              )
-          end
+      case Mydia.Library.update_media_file(media_file, %{episode_id: episode.id}) do
+        {:ok, _updated_file} ->
+          Logger.info("Successfully associated episode with media file",
+            episode_id: episode.id,
+            media_file_id: media_file_id,
+            file_path: Mydia.Library.MediaFile.absolute_path(media_file)
+          )
 
-        _ ->
-          :ok
+        {:error, changeset} ->
+          Logger.error("Failed to associate episode with media file",
+            episode_id: episode.id,
+            media_file_id: media_file_id,
+            errors: inspect(changeset.errors)
+          )
       end
     else
       Logger.info("Episode does not match file",

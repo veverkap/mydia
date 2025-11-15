@@ -76,14 +76,6 @@ defmodule Mydia.Jobs.MetadataRefresh do
         )
 
         :ok
-
-      {:error, reason} ->
-        Logger.error("Metadata refresh all failed",
-          error: inspect(reason),
-          duration_ms: duration
-        )
-
-        {:error, reason}
     end
   end
 

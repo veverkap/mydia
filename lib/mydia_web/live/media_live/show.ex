@@ -1,13 +1,10 @@
 defmodule MydiaWeb.MediaLive.Show do
   use MydiaWeb, :live_view
   alias Mydia.Media
-  alias Mydia.Media.EpisodeStatus
   alias Mydia.Settings
   alias Mydia.Library
   alias Mydia.Downloads
-  alias Mydia.Indexers
   alias Mydia.Indexers.SearchResult
-  alias Mydia.Events
   alias MydiaWeb.Live.Authorization
   alias MydiaWeb.MediaLive.Show.Modals
   alias MydiaWeb.MediaLive.Show.Components

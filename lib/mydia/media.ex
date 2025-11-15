@@ -149,19 +149,13 @@ defmodule Mydia.Media do
       )
 
       # Delete physical files from disk
-      case Mydia.Library.delete_media_files_from_disk(all_media_files) do
-        {:ok, success_count, error_count} ->
-          Logger.info("Deleted #{success_count} files from disk (#{error_count} errors)",
-            media_item_id: media_item.id,
-            title: media_item.title
-          )
+      {:ok, success_count, error_count} =
+        Mydia.Library.delete_media_files_from_disk(all_media_files)
 
-        {:error, reason} ->
-          Logger.error("Failed to delete files from disk",
-            media_item_id: media_item.id,
-            reason: inspect(reason)
-          )
-      end
+      Logger.info("Deleted #{success_count} files from disk (#{error_count} errors)",
+        media_item_id: media_item.id,
+        title: media_item.title
+      )
     else
       Logger.info("Skipping file deletion (delete_files=false)",
         media_item_id: media_item.id,
@@ -282,18 +276,13 @@ defmodule Mydia.Media do
           end)
 
         # Delete physical files from disk
-        case Mydia.Library.delete_media_files_from_disk(all_media_files) do
-          {:ok, success_count, error_count} ->
-            Logger.info(
-              "Batch deleted #{success_count} files from disk (#{error_count} errors)",
-              media_item_count: length(media_items)
-            )
+        {:ok, success_count, error_count} =
+          Mydia.Library.delete_media_files_from_disk(all_media_files)
 
-          {:error, reason} ->
-            Logger.error("Failed to batch delete files from disk",
-              reason: inspect(reason)
-            )
-        end
+        Logger.info(
+          "Batch deleted #{success_count} files from disk (#{error_count} errors)",
+          media_item_count: length(media_items)
+        )
       end
 
       # Delete the media items (and cascade delete all related DB records)

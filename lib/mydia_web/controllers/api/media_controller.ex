@@ -8,7 +8,6 @@ defmodule MydiaWeb.Api.MediaController do
   use MydiaWeb, :controller
 
   alias Mydia.{Media, Metadata, Repo}
-  alias Mydia.Library.MetadataEnricher
   alias Mydia.Accounts.Authorization
   alias Mydia.Auth.Guardian
   require Logger

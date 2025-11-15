@@ -436,18 +436,6 @@ defmodule Mydia.Downloads do
     end
   end
 
-  # Check if a client type matches a download type
-  defp client_type_matches?(client_type, download_type) do
-    torrent_clients = [:transmission, :qbittorrent]
-    usenet_clients = [:nzbget, :sabnzbd]
-
-    case download_type do
-      :torrent -> client_type in torrent_clients
-      :nzb -> client_type in usenet_clients
-      _ -> true
-    end
-  end
-
   defp apply_download_filters(query, opts) do
     Enum.reduce(opts, query, fn
       {:media_item_id, media_item_id}, query ->
@@ -650,7 +638,7 @@ defmodule Mydia.Downloads do
     |> Enum.find(&(&1.name == name && &1.enabled))
   end
 
-  defp select_client_by_priority(download_type \\ nil) do
+  defp select_client_by_priority(download_type) do
     # Torrent clients
     torrent_clients = [:transmission, :qbittorrent]
     # Usenet clients
@@ -689,35 +677,6 @@ defmodule Mydia.Downloads do
 
       {:error, _} = error ->
         error
-    end
-  end
-
-  defp add_torrent_to_client(adapter, client_config, search_result, opts) do
-    client_map_config = config_to_map(client_config)
-
-    # For HTTP(S) URLs, download the torrent file and pass it as content
-    # This avoids redirect issues that download clients can't handle
-    with {:ok, torrent_input_result} <- prepare_torrent_input(search_result.download_url) do
-      # Extract torrent input and detected type
-      {torrent_input, detected_type} =
-        case torrent_input_result do
-          {:file, body, type} -> {{:file, body}, type}
-          other -> {other, nil}
-        end
-
-      category = Keyword.get(opts, :category, client_config.category)
-
-      torrent_opts =
-        []
-        |> maybe_add_opt(:category, category)
-
-      case Client.add_torrent(adapter, client_map_config, torrent_input, torrent_opts) do
-        {:ok, client_id} ->
-          {:ok, client_id, detected_type}
-
-        {:error, error} ->
-          {:error, {:client_error, error}}
-      end
     end
   end
 

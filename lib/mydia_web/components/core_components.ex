@@ -412,6 +412,8 @@ defmodule MydiaWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :string, default: "size-4"
+  attr :"x-show", :string, default: nil
+  attr :"x-cloak", :boolean, default: false
   attr :rest, :global
 
   def icon(%{name: "hero-" <> _} = assigns) do
@@ -1007,7 +1009,9 @@ defmodule MydiaWeb.CoreComponents do
       iex> format_duration(45, suffix: " left")
       "45s left"
   """
-  def format_duration(seconds, opts \\ []) when is_integer(seconds) do
+  def format_duration(seconds, opts \\ [])
+
+  def format_duration(seconds, opts) when is_integer(seconds) do
     suffix = Keyword.get(opts, :suffix, "")
     hours = div(seconds, 3600)
     minutes = div(rem(seconds, 3600), 60)

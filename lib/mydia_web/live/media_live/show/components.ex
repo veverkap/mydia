@@ -6,8 +6,6 @@ defmodule MydiaWeb.MediaLive.Show.Components do
   import MydiaWeb.MediaLive.Show.Formatters
   import MydiaWeb.MediaLive.Show.Helpers
 
-  alias MydiaWeb.MediaLive.Show.Modals
-
   @doc """
   Hero section with backdrop image, poster, and quick action buttons.
   """

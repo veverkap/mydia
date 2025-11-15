@@ -932,18 +932,6 @@ defmodule MydiaWeb.ImportMediaLive.Index do
   end
 
   # Parse helper functions for edit form
-  defp parse_optional_int(""), do: {:ok, nil}
-
-  defp parse_optional_int(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} -> {:ok, int}
-      _ -> {:error, "Invalid number format"}
-    end
-  end
-
-  defp parse_optional_int(value) when is_integer(value), do: {:ok, value}
-  defp parse_optional_int(nil), do: {:ok, nil}
-
   defp parse_episode_list(""), do: {:ok, []}
 
   defp parse_episode_list(value) when is_binary(value) do
@@ -969,11 +957,6 @@ defmodule MydiaWeb.ImportMediaLive.Index do
   end
 
   defp parse_episode_list(value) when is_list(value), do: {:ok, value}
-
-  defp normalize_media_type_string("tv"), do: "tv_show"
-  defp normalize_media_type_string("movie"), do: "movie"
-  defp normalize_media_type_string(type) when is_atom(type), do: to_string(type)
-  defp normalize_media_type_string(type), do: type
 
   # Suggest directories based on partial path input
   defp suggest_directories(path) when is_binary(path) do

@@ -867,8 +867,8 @@ defmodule Mydia.Events do
 
     parts = [job_name]
 
-    if items, do: parts = parts ++ ["processed #{items} items"]
-    if duration, do: parts = parts ++ ["in #{duration}ms"]
+    parts = if items, do: parts ++ ["processed #{items} items"], else: parts
+    parts = if duration, do: parts ++ ["in #{duration}ms"], else: parts
 
     Enum.join(parts, " - ")
   end

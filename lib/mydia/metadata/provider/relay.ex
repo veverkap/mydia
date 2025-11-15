@@ -70,8 +70,6 @@ defmodule Mydia.Metadata.Provider.Relay do
     SearchResult,
     MediaMetadata,
     SeasonData,
-    EpisodeData,
-    ImageData,
     ImagesResponse
   }
 
@@ -294,15 +292,7 @@ defmodule Mydia.Metadata.Provider.Relay do
     ImagesResponse.from_api_response(data)
   end
 
-  defp parse_image(image) do
-    ImageData.from_api_response(image)
-  end
-
   defp parse_season(data) do
     SeasonData.from_api_response(data)
-  end
-
-  defp parse_episode(episode) do
-    EpisodeData.from_api_response(episode)
   end
 end

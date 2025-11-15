@@ -6,7 +6,6 @@ defmodule MydiaWeb.SearchLive.Index do
   alias Mydia.Metadata
   alias Mydia.Media
   alias Mydia.Downloads
-  alias Mydia.Jobs.{MovieSearch, TVShowSearch}
 
   require Logger
 
@@ -1038,64 +1037,4 @@ defmodule MydiaWeb.SearchLive.Index do
 
   defp format_client_error(error) when is_binary(error), do: error
   defp format_client_error(error), do: inspect(error)
-
-  defp maybe_queue_auto_search(media_item) do
-    # Get auto_search_on_add setting from config
-    config = Mydia.Config.get()
-    auto_search_on_add = config.media.auto_search_on_add
-
-    if auto_search_on_add do
-      Logger.info("Auto-search enabled, queueing search job",
-        media_item_id: media_item.id,
-        title: media_item.title,
-        type: media_item.type
-      )
-
-      # Queue the appropriate search job based on media type
-      job =
-        case media_item.type do
-          "movie" ->
-            %{mode: "specific", media_item_id: media_item.id}
-            |> MovieSearch.new()
-
-          "tv_show" ->
-            %{mode: "show", media_item_id: media_item.id}
-            |> TVShowSearch.new()
-
-          _ ->
-            Logger.warning("Unknown media type for auto-search", type: media_item.type)
-            nil
-        end
-
-      if job do
-        case Oban.insert(job) do
-          {:ok, _oban_job} ->
-            Logger.info("Auto-search job queued successfully",
-              media_item_id: media_item.id,
-              title: media_item.title
-            )
-
-            :ok
-
-          {:error, reason} ->
-            Logger.error("Failed to queue auto-search job",
-              media_item_id: media_item.id,
-              title: media_item.title,
-              reason: inspect(reason)
-            )
-
-            :error
-        end
-      else
-        :ok
-      end
-    else
-      Logger.debug("Auto-search disabled, skipping auto-queue",
-        media_item_id: media_item.id,
-        title: media_item.title
-      )
-
-      :ok
-    end
-  end
 end

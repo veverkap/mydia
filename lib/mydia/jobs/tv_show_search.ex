@@ -91,14 +91,6 @@ defmodule Mydia.Jobs.TVShowSearch do
 
         :ok
 
-      :no_results ->
-        Logger.info("Episode search completed with no results",
-          duration_ms: duration,
-          episode_id: episode_id
-        )
-
-        :ok
-
       {:error, reason} ->
         Logger.error("Episode search failed",
           error: inspect(reason),
@@ -167,15 +159,6 @@ defmodule Mydia.Jobs.TVShowSearch do
     case result do
       :ok ->
         Logger.info("Season search completed",
-          duration_ms: duration,
-          media_item_id: media_item_id,
-          season_number: season_number
-        )
-
-        :ok
-
-      :no_results ->
-        Logger.info("Season search completed with no results",
           duration_ms: duration,
           media_item_id: media_item_id,
           season_number: season_number
@@ -701,7 +684,6 @@ defmodule Mydia.Jobs.TVShowSearch do
             new_counts =
               case result do
                 :ok -> {current_count + 1, ok_count + 1, err_count, skip_count}
-                :no_results -> {current_count + 1, ok_count + 1, err_count, skip_count}
                 {:error, _} -> {current_count + 1, ok_count, err_count + 1, skip_count}
               end
 

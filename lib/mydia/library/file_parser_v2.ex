@@ -705,14 +705,7 @@ defmodule Mydia.Library.FileParser.V2 do
 
   ## Standardization Layer (Phase 3)
 
-  @doc """
-  Standardizes quality metadata to canonical forms.
-
-  ## Examples
-
-      iex> standardize_quality(%{audio: "DDP5.1", codec: "x264"})
-      %{audio: "Dolby Digital Plus 5.1", codec: "H.264/AVC"}
-  """
+  # Standardizes quality metadata to canonical forms.
   defp standardize_quality(%Quality{} = quality) do
     %Quality{
       audio: standardize_audio(quality.audio),

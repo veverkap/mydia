@@ -37,10 +37,6 @@ defmodule Mydia.Jobs.EventCleanup do
         )
 
         :ok
-
-      {:error, reason} ->
-        Logger.error("Event cleanup failed", reason: reason)
-        {:error, reason}
     end
   end
 end

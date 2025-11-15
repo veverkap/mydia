@@ -101,33 +101,7 @@ defmodule Mydia.Downloads.Client.Nzbget do
   end
 
   defp do_add_nzb(config, {:url, url}, opts) do
-    # NZBGet's append method parameters: [NZBFilename, Content, Category, Priority, AddToTop, AddPaused, DupeKey, DupeScore, DupeMode]
-    # For URL-based addition, we use the URL as both filename and content (NZBGet will fetch it)
-    nzb_filename = extract_filename_from_url(url)
-    category = Keyword.get(opts, :category, "")
-    priority = map_priority(Keyword.get(opts, :priority))
-    add_paused = Keyword.get(opts, :paused, false)
-
-    # Content should be empty string for URL addition, NZBGet will fetch it
-    params = [
-      nzb_filename,
-      # Empty content means NZBGet should treat NZBFilename as URL
-      "",
-      category,
-      priority,
-      # AddToTop
-      false,
-      add_paused,
-      # DupeKey
-      "",
-      # DupeScore
-      0,
-      # DupeMode
-      "SCORE"
-    ]
-
-    # Actually, for URLs we should use 'append' with URL in the content field encoded in base64
-    # Let's use a different approach: download the NZB and send as file
+    # Actually, for URLs we download the NZB and send as file
     case fetch_nzb_from_url(url) do
       {:ok, nzb_content} ->
         do_add_nzb(config, {:file, nzb_content}, opts)
@@ -511,24 +485,6 @@ defmodule Mydia.Downloads.Client.Nzbget do
       "MOVING" -> :checking
       "EXECUTING_SCRIPT" -> :checking
       _ -> :error
-    end
-  end
-
-  defp extract_filename_from_url(url) do
-    # Try to extract filename from URL
-    case URI.parse(url) do
-      %URI{path: path} when is_binary(path) ->
-        path
-        |> String.split("/")
-        |> List.last()
-        |> case do
-          nil -> "download.nzb"
-          "" -> "download.nzb"
-          filename -> filename
-        end
-
-      _ ->
-        "download.nzb"
     end
   end
 

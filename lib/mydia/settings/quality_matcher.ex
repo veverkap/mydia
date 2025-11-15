@@ -172,7 +172,6 @@ defmodule Mydia.Settings.QualityMatcher do
   defp score_quality_match(%SearchResult{quality: nil}, _profile), do: 0
 
   defp score_quality_match(%SearchResult{quality: quality}, %QualityProfile{} = profile) do
-    rules = profile.rules || %{}
     preferred_quality = profile.upgrade_until_quality || List.last(profile.qualities)
 
     cond do

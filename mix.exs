@@ -12,7 +12,9 @@ defmodule Mydia.MixProject do
       deps: deps(),
       licenses: ["AGPL-3.0-or-later"],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      # Enforce warnings as errors to maintain code quality
+      warnings_as_errors: Mix.env() != :prod
     ]
   end
 

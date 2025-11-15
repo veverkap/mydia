@@ -102,7 +102,7 @@ defmodule Mydia.Library.MetadataMatcher do
           retry_opts = Keyword.delete(search_opts, :year)
 
           case Metadata.search(config, parsed.title, retry_opts) do
-            {:ok, results} when length(results) > 0 ->
+            {:ok, results} when results != [] ->
               select_best_movie_match(results, parsed)
 
             _ ->
@@ -165,7 +165,7 @@ defmodule Mydia.Library.MetadataMatcher do
           retry_opts = Keyword.delete(search_opts, :year)
 
           case Metadata.search(config, parsed.title, retry_opts) do
-            {:ok, results} when length(results) > 0 ->
+            {:ok, results} when results != [] ->
               select_best_tv_match(results, parsed)
 
             _ ->
@@ -179,7 +179,7 @@ defmodule Mydia.Library.MetadataMatcher do
 
       {:ok, results} ->
         case select_best_tv_match(results, parsed) do
-          {:ok, match} = success ->
+          {:ok, _match} = success ->
             success
 
           {:error, :low_confidence_match} ->
@@ -217,7 +217,7 @@ defmodule Mydia.Library.MetadataMatcher do
       [media_type: :tv_show] |> Keyword.merge(Keyword.take(opts, [:language, :include_adult]))
 
     case Metadata.search(config, parsed.title, search_opts) do
-      {:ok, results} when length(results) > 0 ->
+      {:ok, results} when results != [] ->
         # Find best matching series
         case find_best_series_match(results, parsed) do
           {:ok, series} ->
