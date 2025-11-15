@@ -89,10 +89,23 @@ defmodule Mydia.Library.Scanner do
     - `:new_files` - Files found on disk but not in database
     - `:modified_files` - Files that have changed (size or modified time)
     - `:deleted_files` - Files in database but not found on disk
+
+  When library_path is provided, compares files using relative paths.
   """
-  def detect_changes(scan_result, existing_files) do
+  def detect_changes(scan_result, existing_files, library_path \\ nil) do
+    # Convert scanned files to use absolute paths for comparison
     scanned_paths = MapSet.new(scan_result.files, & &1.path)
-    existing_paths = MapSet.new(existing_files, & &1.path)
+
+    # Convert existing files' relative paths to absolute paths for comparison
+    existing_paths =
+      if library_path do
+        MapSet.new(existing_files, fn file ->
+          Path.join(library_path.path, file.relative_path)
+        end)
+      else
+        # Fallback for legacy code that still uses absolute paths
+        MapSet.new(existing_files, & &1.path)
+      end
 
     new_paths = MapSet.difference(scanned_paths, existing_paths)
     deleted_paths = MapSet.difference(existing_paths, scanned_paths)
@@ -104,11 +117,25 @@ defmodule Mydia.Library.Scanner do
 
     deleted_files =
       Enum.filter(existing_files, fn file ->
-        MapSet.member?(deleted_paths, file.path)
+        absolute_path =
+          if library_path do
+            Path.join(library_path.path, file.relative_path)
+          else
+            file.path
+          end
+
+        MapSet.member?(deleted_paths, absolute_path)
       end)
 
     # Check for modifications among files that exist in both
-    existing_by_path = Map.new(existing_files, &{&1.path, &1})
+    existing_by_path =
+      if library_path do
+        Map.new(existing_files, fn file ->
+          {Path.join(library_path.path, file.relative_path), file}
+        end)
+      else
+        Map.new(existing_files, &{&1.path, &1})
+      end
 
     modified_files =
       scan_result.files

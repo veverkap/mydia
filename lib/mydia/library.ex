@@ -40,11 +40,21 @@ defmodule Mydia.Library do
   end
 
   @doc """
-  Gets a media file by path.
+  Gets a media file by path (legacy - absolute path).
   """
   def get_media_file_by_path(path, opts \\ []) do
     MediaFile
     |> where([f], f.path == ^path)
+    |> maybe_preload(opts[:preload])
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets a media file by its relative path and library_path_id.
+  """
+  def get_media_file_by_relative_path(library_path_id, relative_path, opts \\ []) do
+    MediaFile
+    |> where([f], f.library_path_id == ^library_path_id and f.relative_path == ^relative_path)
     |> maybe_preload(opts[:preload])
     |> Repo.one()
   end
@@ -742,8 +752,12 @@ defmodule Mydia.Library do
       {:episode_id, episode_id}, query ->
         where(query, [f], f.episode_id == ^episode_id)
 
+      {:library_path_id, library_path_id}, query ->
+        # Filter files by library_path_id (for relative path scans)
+        where(query, [f], f.library_path_id == ^library_path_id)
+
       {:path_prefix, prefix}, query ->
-        # Filter files by path prefix (for library path scans)
+        # Filter files by path prefix (legacy - for absolute paths)
         like_pattern = "#{prefix}%"
         where(query, [f], like(f.path, ^like_pattern))
 

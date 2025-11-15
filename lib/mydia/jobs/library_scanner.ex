@@ -188,10 +188,10 @@ defmodule Mydia.Jobs.LibraryScanner do
   defp process_scan_result(library_path, scan_result) do
     # Get existing files from database - only files within this library path
     # This prevents deleting files from other library paths during scan
-    existing_files = Library.list_media_files(path_prefix: library_path.path)
+    existing_files = Library.list_media_files(library_path_id: library_path.id)
 
     # Detect changes
-    changes = Library.Scanner.detect_changes(scan_result, existing_files)
+    changes = Library.Scanner.detect_changes(scan_result, existing_files, library_path)
 
     # Process changes in a transaction (file operations only, no metadata enrichment)
     transaction_result =
@@ -199,13 +199,21 @@ defmodule Mydia.Jobs.LibraryScanner do
         # Add new files (without metadata enrichment)
         new_media_files =
           Enum.map(changes.new_files, fn file_info ->
+            # Calculate relative path from library root
+            relative_path = Path.relative_to(file_info.path, library_path.path)
+
             case Library.create_scanned_media_file(%{
-                   path: file_info.path,
+                   library_path_id: library_path.id,
+                   relative_path: relative_path,
                    size: file_info.size,
                    verified_at: DateTime.utc_now()
                  }) do
               {:ok, media_file} ->
-                Logger.debug("Added new media file", path: file_info.path)
+                Logger.debug("Added new media file",
+                  path: file_info.path,
+                  relative_path: relative_path
+                )
+
                 {:ok, media_file, file_info}
 
               {:error, changeset} ->
@@ -220,9 +228,18 @@ defmodule Mydia.Jobs.LibraryScanner do
 
         # Update modified files
         Enum.each(changes.modified_files, fn file_info ->
-          case Library.get_media_file_by_path(file_info.path) do
+          # Calculate relative path to find the file in database
+          relative_path = Path.relative_to(file_info.path, library_path.path)
+
+          case Library.get_media_file_by_relative_path(
+                 library_path.id,
+                 relative_path
+               ) do
             nil ->
-              Logger.warning("Modified file not found in database", path: file_info.path)
+              Logger.warning("Modified file not found in database",
+                path: file_info.path,
+                relative_path: relative_path
+              )
 
             media_file ->
               {:ok, _} =
@@ -238,7 +255,15 @@ defmodule Mydia.Jobs.LibraryScanner do
         # Mark deleted files
         Enum.each(changes.deleted_files, fn media_file ->
           {:ok, _} = Library.delete_media_file(media_file)
-          Logger.debug("Deleted media file record", path: media_file.path)
+
+          absolute_path =
+            if media_file.relative_path do
+              Path.join(library_path.path, media_file.relative_path)
+            else
+              media_file.path
+            end
+
+          Logger.debug("Deleted media file record", path: absolute_path)
         end)
 
         %{changes: changes, scan_result: scan_result, new_media_files: new_media_files}
@@ -296,11 +321,19 @@ defmodule Mydia.Jobs.LibraryScanner do
 
             fixed_count =
               Enum.count(completely_orphaned, fn media_file ->
+                # Resolve absolute path for comparison
+                absolute_path =
+                  if media_file.relative_path do
+                    Path.join(library_path.path, media_file.relative_path)
+                  else
+                    media_file.path
+                  end
+
                 file_info =
-                  Enum.find(result.scan_result.files, fn f -> f.path == media_file.path end)
+                  Enum.find(result.scan_result.files, fn f -> f.path == absolute_path end)
 
                 if file_info do
-                  Logger.debug("Re-enriching orphaned file", path: media_file.path)
+                  Logger.debug("Re-enriching orphaned file", path: absolute_path)
                   process_media_file(media_file, file_info, metadata_config)
                   true
                 else
@@ -380,18 +413,38 @@ defmodule Mydia.Jobs.LibraryScanner do
 
         # Log detected mismatches
         if movies_in_series_libs != [] do
+          sample_paths =
+            Enum.take(movies_in_series_libs, 3)
+            |> Enum.map(fn file ->
+              if file.relative_path do
+                Path.join(library_path.path, file.relative_path)
+              else
+                file.path
+              end
+            end)
+
           Logger.warning("Detected movies in series-only library",
             count: length(movies_in_series_libs),
             library_path: library_path.path,
-            sample_paths: Enum.take(movies_in_series_libs, 3) |> Enum.map(& &1.path)
+            sample_paths: sample_paths
           )
         end
 
         if tv_in_movies_libs != [] do
+          sample_paths =
+            Enum.take(tv_in_movies_libs, 3)
+            |> Enum.map(fn file ->
+              if file.relative_path do
+                Path.join(library_path.path, file.relative_path)
+              else
+                file.path
+              end
+            end)
+
           Logger.warning("Detected TV shows in movies-only library",
             count: length(tv_in_movies_libs),
             library_path: library_path.path,
-            sample_paths: Enum.take(tv_in_movies_libs, 3) |> Enum.map(& &1.path)
+            sample_paths: sample_paths
           )
         end
 
@@ -588,13 +641,24 @@ defmodule Mydia.Jobs.LibraryScanner do
 
   # Attempts to fix an orphaned TV show file by matching it to an episode
   defp fix_orphaned_tv_file(media_file, metadata_config) do
+    # Resolve path for logging - define at top level so it's available in rescue
+    path_for_log = media_file.relative_path || media_file.path
+
     Logger.debug("Attempting to fix orphaned TV file",
-      path: media_file.path,
+      path: path_for_log,
       media_item_id: media_file.media_item_id
     )
 
     # Parse the filename to extract season/episode info
-    parsed = FileParser.parse(Path.basename(media_file.path))
+    # Use relative_path if available, otherwise fall back to path
+    filename =
+      if media_file.relative_path do
+        Path.basename(media_file.relative_path)
+      else
+        Path.basename(media_file.path)
+      end
+
+    parsed = FileParser.parse(filename)
 
     case parsed do
       %{type: :tv_show, season: season, episodes: episodes}
@@ -669,15 +733,18 @@ defmodule Mydia.Jobs.LibraryScanner do
 
       _ ->
         Logger.debug("Could not parse season/episode info from filename",
-          path: media_file.path
+          path: path_for_log
         )
 
         false
     end
   rescue
     error ->
+      # Recalculate path for error logging
+      error_path = media_file.relative_path || media_file.path
+
       Logger.error("Exception while fixing orphaned TV file",
-        path: media_file.path,
+        path: error_path,
         error: Exception.message(error)
       )
 
@@ -687,7 +754,14 @@ defmodule Mydia.Jobs.LibraryScanner do
   # Re-validates a TV file's episode association by re-parsing the filename
   defp revalidate_tv_file_association(media_file) do
     # Parse the filename to see what season/episode it claims to be
-    parsed = FileParser.parse(Path.basename(media_file.path))
+    filename =
+      if media_file.relative_path do
+        Path.basename(media_file.relative_path)
+      else
+        Path.basename(media_file.path)
+      end
+
+    parsed = FileParser.parse(filename)
 
     case parsed do
       %{type: :tv_show, season: season, episodes: episodes}
@@ -698,8 +772,11 @@ defmodule Mydia.Jobs.LibraryScanner do
         # Check if this matches the current association
         if media_file.episode.season_number != season or
              media_file.episode.episode_number != episode_number do
+          path_for_log =
+            media_file.relative_path || media_file.path
+
           Logger.info("File association mismatch detected",
-            path: media_file.path,
+            path: path_for_log,
             current_season: media_file.episode.season_number,
             current_episode: media_file.episode.episode_number,
             parsed_season: season,
@@ -723,10 +800,12 @@ defmodule Mydia.Jobs.LibraryScanner do
 
             new_episode ->
               # Update the association
+              path_for_log = media_file.relative_path || media_file.path
+
               case Library.update_media_file(media_file, %{episode_id: new_episode.id}) do
                 {:ok, _updated_file} ->
                   Logger.info("Updated file association",
-                    path: media_file.path,
+                    path: path_for_log,
                     old_episode:
                       "S#{media_file.episode.season_number}E#{media_file.episode.episode_number}",
                     new_episode: "S#{new_episode.season_number}E#{new_episode.episode_number}"
@@ -736,7 +815,7 @@ defmodule Mydia.Jobs.LibraryScanner do
 
                 {:error, reason} ->
                   Logger.error("Failed to update file association",
-                    path: media_file.path,
+                    path: path_for_log,
                     reason: reason
                   )
 
@@ -754,8 +833,10 @@ defmodule Mydia.Jobs.LibraryScanner do
     end
   rescue
     error ->
+      path_for_log = media_file.relative_path || media_file.path
+
       Logger.error("Exception while revalidating file association",
-        path: media_file.path,
+        path: path_for_log,
         error: Exception.message(error)
       )
 
@@ -766,10 +847,13 @@ defmodule Mydia.Jobs.LibraryScanner do
   # For TV shows, files should have episode_id set, not media_item_id
   # So we need to clear media_item_id when setting episode_id
   defp associate_file_with_episode(media_file, episode) do
+    # Define path_for_log at top level so it's available in rescue block
+    path_for_log = media_file.relative_path || media_file.path
+
     case Library.update_media_file(media_file, %{episode_id: episode.id, media_item_id: nil}) do
       {:ok, _updated_file} ->
         Logger.info("Associated file with episode",
-          path: media_file.path,
+          path: path_for_log,
           episode: "S#{episode.season_number}E#{episode.episode_number}"
         )
 
@@ -777,7 +861,7 @@ defmodule Mydia.Jobs.LibraryScanner do
 
       {:error, reason} ->
         Logger.error("Failed to associate file with episode",
-          path: media_file.path,
+          path: path_for_log,
           reason: inspect(reason)
         )
 
@@ -785,8 +869,11 @@ defmodule Mydia.Jobs.LibraryScanner do
     end
   rescue
     error ->
+      # Recalculate path for error logging
+      error_path = media_file.relative_path || media_file.path
+
       Logger.error("Exception while associating file with episode",
-        path: media_file.path,
+        path: error_path,
         error: Exception.message(error)
       )
 
