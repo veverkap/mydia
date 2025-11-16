@@ -86,6 +86,7 @@ defmodule Mydia.MixProject do
       {:yaml_elixir, "~> 2.9"},
       {:luerl, "~> 1.2"},
       {:sweet_xml, "~> 0.7"},
+      {:floki, "~> 0.36"},
 
       # Streaming & Media Processing
       {:membrane_core, "~> 1.1"},
