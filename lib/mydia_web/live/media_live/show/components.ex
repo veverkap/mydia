@@ -628,4 +628,96 @@ defmodule MydiaWeb.MediaLive.Show.Components do
     <% end %>
     """
   end
+
+  @doc """
+  Subtitles section showing available and downloaded subtitles for media files.
+  """
+  attr :media_item, :map, required: true
+  attr :subtitle_feature_enabled, :boolean, required: true
+  attr :media_file_subtitles, :map, default: %{}
+
+  def subtitles_section(assigns) do
+    ~H"""
+    <%= if @subtitle_feature_enabled && length(@media_item.media_files) > 0 do %>
+      <div class="card bg-base-200 shadow-lg mb-6">
+        <div class="card-body">
+          <h2 class="card-title mb-4">Subtitles</h2>
+
+          <%!-- Media files with subtitle controls --%>
+          <div class="space-y-4">
+            <%= for media_file <- @media_item.media_files do %>
+              <% file_subtitles = Map.get(@media_file_subtitles, media_file.id, []) %>
+              <div class="card bg-base-100 shadow">
+                <div class="card-body p-4">
+                  <%!-- File info header --%>
+                  <div class="flex items-start justify-between gap-4 mb-3">
+                    <div class="flex-1 min-w-0">
+                      <% absolute_path = Mydia.Library.MediaFile.absolute_path(media_file) %>
+                      <p
+                        class="text-sm font-mono text-base-content/80 break-all"
+                        title={absolute_path}
+                      >
+                        {Path.basename(absolute_path)}
+                      </p>
+                      <div class="flex gap-2 mt-1">
+                        <span class="badge badge-primary badge-xs">
+                          {media_file.resolution || "Unknown"}
+                        </span>
+                        <span class="badge badge-ghost badge-xs">
+                          {media_file.codec || "Unknown"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      phx-click="open_subtitle_search"
+                      phx-value-media-file-id={media_file.id}
+                      class="btn btn-primary btn-sm"
+                    >
+                      <.icon name="hero-magnifying-glass" class="w-4 h-4" /> Search
+                    </button>
+                  </div>
+
+                  <%!-- Downloaded subtitles --%>
+                  <%= if length(file_subtitles) > 0 do %>
+                    <div class="divider my-2">Downloaded Subtitles</div>
+                    <ul class="space-y-2">
+                      <%= for subtitle <- file_subtitles do %>
+                        <li class="flex items-center justify-between gap-2 p-2 bg-base-200 rounded">
+                          <div class="flex items-center gap-2 flex-1">
+                            <span class="badge badge-outline badge-sm">{subtitle.language}</span>
+                            <span class="text-sm">{subtitle.format}</span>
+                            <%= if subtitle.rating do %>
+                              <div class="flex items-center gap-1">
+                                <.icon name="hero-star-solid" class="w-3 h-3 text-warning" />
+                                <span class="text-xs">{subtitle.rating}/10</span>
+                              </div>
+                            <% end %>
+                          </div>
+                          <button
+                            type="button"
+                            phx-click="delete_subtitle"
+                            phx-value-subtitle-id={subtitle.id}
+                            class="btn btn-ghost btn-xs btn-square text-error"
+                            title="Delete subtitle"
+                          >
+                            <.icon name="hero-trash" class="w-4 h-4" />
+                          </button>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% else %>
+                    <p class="text-sm text-base-content/60 italic">
+                      No subtitles downloaded yet
+                    </p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    """
+  end
 end

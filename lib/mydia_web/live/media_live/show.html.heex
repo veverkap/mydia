@@ -99,6 +99,12 @@
             media_item={@media_item}
             refreshing_file_metadata={@refreshing_file_metadata}
           />
+          <%!-- Subtitles Section --%>
+          <Components.subtitles_section
+            media_item={@media_item}
+            subtitle_feature_enabled={@subtitle_feature_enabled}
+            media_file_subtitles={@media_file_subtitles}
+          />
           <%!-- Timeline Section --%>
           <Components.timeline_section timeline_events={@timeline_events} />
         </div>
@@ -149,6 +155,15 @@
     <Modals.rename_files_modal
       rename_previews={@rename_previews}
       renaming_files={@renaming_files}
+    />
+  <% end %>
+  <%= if @show_subtitle_search_modal && @selected_media_file do %>
+    <Modals.subtitle_search_modal
+      media_file={@selected_media_file}
+      searching={@searching_subtitles}
+      subtitle_search_results={@subtitle_search_results}
+      downloading_subtitle={@downloading_subtitle}
+      selected_languages={@selected_languages}
     />
   <% end %>
 </Layouts.app>

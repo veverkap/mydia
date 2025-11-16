@@ -7,6 +7,7 @@ defmodule MydiaWeb.MediaLive.Show.Loaders do
   alias Mydia.Media
   alias Mydia.Downloads
   alias Mydia.Events
+  alias Mydia.Subtitles
 
   def load_media_item(id) do
     preload_list = build_preload_list()
@@ -67,5 +68,15 @@ defmodule MydiaWeb.MediaLive.Show.Loaders do
     else
       {nil, nil}
     end
+  end
+
+  # Load subtitles for all media files in a media item
+  # Returns a map of media_file_id => list of subtitles
+  def load_media_file_subtitles(media_item) do
+    media_item.media_files
+    |> Enum.map(fn media_file ->
+      {media_file.id, Subtitles.list_subtitles(media_file.id)}
+    end)
+    |> Map.new()
   end
 end
