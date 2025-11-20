@@ -379,15 +379,22 @@ defmodule MetadataRelay.Router do
   defp parse_stacktrace_entry(%{"file" => file, "line" => line, "function" => function}) do
     # Convert crash report format to Elixir stacktrace format
     # Format: {module, function, arity, [file: path, line: number]}
-    {String.to_atom(function), 0, [file: String.to_charlist(file), line: line]}
+    location = build_location(file, line)
+    {String.to_atom(function), 0, location}
   end
 
   defp parse_stacktrace_entry(%{"file" => file, "line" => line}) do
     # Minimal format without function
-    {:unknown, 0, [file: String.to_charlist(file), line: line]}
+    location = build_location(file, line)
+    {:unknown, 0, location}
   end
 
   defp parse_stacktrace_entry(_), do: nil
+
+  defp build_location(nil, nil), do: []
+  defp build_location(nil, line), do: [line: line]
+  defp build_location(file, nil), do: [file: String.to_charlist(file)]
+  defp build_location(file, line), do: [file: String.to_charlist(file), line: line]
 
   defp handle_subtitles_request(conn, handler_fn) do
     case handler_fn.() do
