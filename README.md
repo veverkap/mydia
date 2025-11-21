@@ -1,5 +1,7 @@
 # 🎬 Mydia
 
+[![Test & Quality](https://github.com/getmydia/mydia/actions/workflows/test.yml/badge.svg)](https://github.com/getmydia/mydia/actions/workflows/test.yml)
+
 > Your personal media companion, built with Phoenix LiveView
 
 A modern, self-hosted media management platform for tracking, organizing, and monitoring your media library.
