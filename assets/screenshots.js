@@ -1,19 +1,19 @@
-const { chromium } = require('@playwright/test');
+const { chromium } = require("@playwright/test");
 
 /**
  * Screenshot configuration
  */
 const config = {
-  baseUrl: process.env.BASE_URL || 'http://localhost:4000',
-  outputDir: process.env.OUTPUT_DIR || '../screenshots',
+  baseUrl: process.env.BASE_URL || "http://localhost:4000",
+  outputDir: process.env.OUTPUT_DIR || "../screenshots",
   viewport: {
     width: 1920,
-    height: 1080
+    height: 1080,
   },
   credentials: {
-    username: process.env.USERNAME || 'admin',
-    password: process.env.PASSWORD || 'admin'
-  }
+    username: process.env.USERNAME || "admin",
+    password: process.env.PASSWORD || "admin",
+  },
 };
 
 /**
@@ -22,70 +22,82 @@ const config = {
  */
 const screenshots = [
   {
-    name: 'homepage',
-    path: '/',
-    description: 'Homepage / Dashboard',
-    waitFor: '.main-content, [phx-main]'
+    name: "homepage",
+    path: "/",
+    description: "Homepage / Dashboard",
+    waitFor: ".main-content, [phx-main]",
   },
   {
-    name: 'movies',
-    path: '/movies',
-    description: 'Movies Library',
-    waitFor: 'h1, h2, main'
+    name: "movies",
+    path: "/movies",
+    description: "Movies Library",
+    waitFor: "h1, h2, main",
   },
   {
-    name: 'tv-shows',
-    path: '/tv',
-    description: 'TV Shows Library',
-    waitFor: 'h1, h2, main'
+    name: "tv-shows",
+    path: "/tv",
+    description: "TV Shows Library",
+    waitFor: "h1, h2, main",
   },
   {
-    name: 'calendar',
-    path: '/calendar',
-    description: 'Calendar view',
-    waitFor: 'h1, h2, main'
+    name: "calendar",
+    path: "/calendar",
+    description: "Calendar view",
+    waitFor: "h1, h2, main",
   },
   {
-    name: 'search',
-    path: '/search',
-    description: 'Search page',
-    waitFor: 'h1, input[type="search"], form, main'
-  }
+    name: "search",
+    path: "/search",
+    description: "Search page",
+    waitFor: 'h1, input[type="search"], form, main',
+  },
 ];
 
 /**
  * Main screenshot function
  */
 async function takeScreenshots() {
-  console.log('🎬 Starting Mydia screenshot capture...\n');
+  console.log("🎬 Starting Mydia screenshot capture...\n");
 
   const browser = await chromium.launch({
-    headless: true
+    headless: true,
   });
 
   const context = await browser.newContext({
     viewport: config.viewport,
-    deviceScaleFactor: 1
+    deviceScaleFactor: 1,
   });
 
   const page = await context.newPage();
 
   try {
     // Login first
-    console.log('🔐 Logging in...');
+    console.log("🔐 Logging in...");
     await page.goto(`${config.baseUrl}/auth/local/login`);
 
     // Try to login if login form exists
-    const loginForm = await page.locator('form').first().isVisible().catch(() => false);
+    const loginForm = await page
+      .locator("form")
+      .first()
+      .isVisible()
+      .catch(() => false);
 
     if (loginForm) {
-      await page.fill('input[name="user[username]"]', config.credentials.username);
-      await page.fill('input[name="user[password]"]', config.credentials.password);
+      await page.fill(
+        'input[name="user[username]"]',
+        config.credentials.username,
+      );
+      await page.fill(
+        'input[name="user[password]"]',
+        config.credentials.password,
+      );
       await page.click('button[type="submit"]');
-      await page.waitForURL(/\/(media|movies|tv)?/, { timeout: 5000 }).catch(() => {});
-      console.log('✓ Logged in successfully\n');
+      await page
+        .waitForURL(/\/(media|movies|tv)?/, { timeout: 5000 })
+        .catch(() => {});
+      console.log("✓ Logged in successfully\n");
     } else {
-      console.log('ℹ No login required\n');
+      console.log("ℹ No login required\n");
     }
 
     // Take screenshots
@@ -96,9 +108,13 @@ async function takeScreenshots() {
 
       // Wait for content to load
       if (screenshot.waitFor) {
-        await page.waitForSelector(screenshot.waitFor, { timeout: 10000 }).catch(() => {
-          console.log(`  ⚠ Warning: Selector "${screenshot.waitFor}" not found`);
-        });
+        await page
+          .waitForSelector(screenshot.waitFor, { timeout: 10000 })
+          .catch(() => {
+            console.log(
+              `  ⚠ Warning: Selector "${screenshot.waitFor}" not found`,
+            );
+          });
       }
 
       // Additional wait for LiveView to settle
@@ -108,16 +124,15 @@ async function takeScreenshots() {
       const filename = `${config.outputDir}/${screenshot.name}.png`;
       await page.screenshot({
         path: filename,
-        fullPage: screenshot.fullPage || false
+        fullPage: screenshot.fullPage || false,
       });
 
       console.log(`  ✓ Saved to ${filename}\n`);
     }
 
-    console.log('✅ All screenshots captured successfully!');
-
+    console.log("✅ All screenshots captured successfully!");
   } catch (error) {
-    console.error('❌ Error taking screenshots:', error.message);
+    console.error("❌ Error taking screenshots:", error.message);
     throw error;
   } finally {
     await browser.close();

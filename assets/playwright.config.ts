@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for Mydia E2E tests
@@ -11,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   // Test directory
-  testDir: './e2e/tests',
+  testDir: "./e2e/tests",
 
   // Maximum time one test can run
   timeout: 30 * 1000,
@@ -27,24 +27,24 @@ export default defineConfig({
 
   // Reporter configuration
   reporter: [
-    ['html', { outputFolder: 'e2e-results/html' }],
-    ['json', { outputFile: 'e2e-results/results.json' }],
-    ['list']
+    ["html", { outputFolder: "e2e-results/html" }],
+    ["json", { outputFile: "e2e-results/results.json" }],
+    ["list"],
   ],
 
   // Shared settings for all tests
   use: {
     // Base URL for tests - points to Phoenix app
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:4000',
+    baseURL: process.env.E2E_BASE_URL || "http://localhost:4000",
 
     // Collect trace on first retry of failed tests
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     // Screenshot on failure
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
 
     // Video on failure
-    video: 'retain-on-failure',
+    video: "retain-on-failure",
 
     // Timeout for each action (click, fill, etc.)
     actionTimeout: 10 * 1000,
@@ -54,13 +54,16 @@ export default defineConfig({
   // By default, only chromium runs. Use --project=<name> to run others
   projects: [
     {
-      name: 'chromium',
+      name: "chromium",
       use: {
-        ...devices['Desktop Chrome'],
+        ...devices["Desktop Chrome"],
         // Ensure video/audio playback works
         launchOptions: {
-          args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream']
-        }
+          args: [
+            "--use-fake-ui-for-media-stream",
+            "--use-fake-device-for-media-stream",
+          ],
+        },
       },
     },
 
@@ -95,12 +98,14 @@ export default defineConfig({
   ],
 
   // Run development server before starting tests (only in local development)
-  webServer: process.env.CI ? undefined : {
-    command: './dev up',
-    url: 'http://localhost:4000',
-    reuseExistingServer: true,
-    timeout: 120 * 1000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: "./dev up",
+        url: "http://localhost:4000",
+        reuseExistingServer: true,
+        timeout: 120 * 1000,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
 });

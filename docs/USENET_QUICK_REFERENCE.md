@@ -3,6 +3,7 @@
 ## File Locations & Key Modules
 
 ### Download Client System
+
 ```
 lib/mydia/downloads/
 ├── client.ex                          # Behavior definition
@@ -19,12 +20,14 @@ lib/mydia/downloads/
 ```
 
 ### Settings Configuration
+
 ```
 lib/mydia/settings/
 └── download_client_config.ex          # Config schema (needs :usenet type)
 ```
 
 ### Import Jobs
+
 ```
 lib/mydia/jobs/
 ├── download_monitor.ex                # Status polling
@@ -34,6 +37,7 @@ lib/mydia/jobs/
 ```
 
 ### Indexers
+
 ```
 lib/mydia/indexers/
 ├── adapter.ex                         # Behavior definition
@@ -54,9 +58,9 @@ lib/mydia/indexers/
 defmodule Mydia.Downloads.Client.Usenet do
   @behaviour Mydia.Downloads.Client
   require Logger
-  
+
   alias Mydia.Downloads.Client.{Error, HTTP}
-  
+
   # Implement 7 callbacks:
   # - test_connection/1
   # - add_torrent/3          ← receives {:url, "file.nzb"}
@@ -99,23 +103,27 @@ test/mydia/downloads/client/usenet_test.exs
 **API Endpoint:** `http://host:port/api`
 
 **Connection Test:**
+
 ```
 GET /api?mode=version&output=json
 ```
 
 **Add Download:**
+
 ```
 POST /api?mode=addurl&name={nzb_url}&output=json
 Returns: {nzb_id}
 ```
 
 **Get Status:**
+
 ```
 GET /api?mode=queuedetails&output=json
 Parse queue_detail[].nzo_id, etc_time_left, status, size, downloaded
 ```
 
 **State Mapping:**
+
 - "Downloading" → `:downloading`
 - "Paused" → `:paused`
 - "Completed" → `:completed`
@@ -126,18 +134,21 @@ Parse queue_detail[].nzo_id, etc_time_left, status, size, downloaded
 **API Endpoint:** `http://host:port/api`
 
 **Connection Test:**
+
 ```
 POST /api
 json: {"method": "version", "params": {}}
 ```
 
 **Add Download:**
+
 ```
 POST /api
 json: {"method": "append", "params": {"filename": "{nzb_url}", "url": true}}
 ```
 
 **Get Status:**
+
 ```
 POST /api
 json: {"method": "listgroups", "params": {}}
@@ -160,11 +171,13 @@ Downloads.initiate_download(search_result, media_item_id: 123)
 ```
 
 **Adapter receives:**
+
 ```elixir
 add_torrent(config, {:url, "https://indexer.example.com/file.nzb"}, opts)
 ```
 
 Your adapter should:
+
 1. Download NZB file from URL (or pass to client)
 2. Add to Usenet client
 3. Return client_id
@@ -195,6 +208,7 @@ All adapters must return this structure:
 ```
 
 **Critical fields for media import:**
+
 - `id` - used to query this download again
 - `state` - determines if download is done
 - `save_path` - MediaImport job looks here for files
@@ -251,6 +265,7 @@ end
 ```
 
 **Configuration passed to HTTP utilities:**
+
 ```elixir
 config = %{
   host: "localhost",
@@ -272,20 +287,20 @@ config = %{
 ```elixir
 defmodule Mydia.Downloads.Client.UsenetTest do
   use ExUnit.Case
-  
+
   describe "test_connection/1" do
     test "returns version info on successful connection" do
       # Mock API response
       # Call test_connection(config)
       # Assert {:ok, %{version: _}} returned
     end
-    
+
     test "returns error on connection failure" do
       # Mock API 500 response
       # Assert {:error, error} returned
     end
   end
-  
+
   describe "add_torrent/3" do
     test "downloads NZB and returns client_id" do
       # Mock HTTP GET for NZB download
@@ -294,14 +309,14 @@ defmodule Mydia.Downloads.Client.UsenetTest do
       # Assert {:ok, "nzb_id"} returned
     end
   end
-  
+
   describe "get_status/2" do
     test "returns current download status" do
       # Mock API response with queue details
       # Call get_status(config, "nzb_id")
       # Assert status_map returned with correct state
     end
-    
+
     test "maps Usenet states to internal states" do
       # "Downloading" → :downloading
       # "Paused" → :paused
@@ -309,7 +324,7 @@ defmodule Mydia.Downloads.Client.UsenetTest do
       # "Failed" → :error
     end
   end
-  
+
   # Similar tests for pause, resume, remove, list
 end
 ```
@@ -330,16 +345,19 @@ end
 ### Common Issues
 
 1. **Status mapping wrong**
+
    - Check Usenet client API docs for actual state strings
    - Log raw API responses
    - Compare with qBittorrent adapter for pattern
 
 2. **Files not found after download completes**
+
    - Verify save_path returned from get_status()
    - Check if NZB unpacks to directory vs single file
    - Handle both cases in save_path
 
 3. **Client not connecting**
+
    - Verify host/port/auth in config
    - Check timeout settings
    - Log HTTP request/response
@@ -431,4 +449,3 @@ These components work with Usenet automatically:
 - [ ] Write unit tests
 - [ ] Test with real SABnzbd/NZBGet instance
 - [ ] Test end-to-end: search → download → import
-

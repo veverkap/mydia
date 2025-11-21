@@ -12,16 +12,17 @@ Our current `Mydia.Streaming.Compatibility` module is **already well-aligned** w
 
 ## Container Format Support
 
-| Container | Chrome | Firefox | Safari | Edge | Status | Notes |
-|-----------|--------|---------|--------|------|--------|-------|
-| **MP4** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | **Universal** | Industry standard, best compatibility |
-| **WebM** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | **Universal** | Based on Matroska, royalty-free codecs only |
-| **MKV** | ❌ No | ⚠️ Nightly only | ❌ No | ❌ No | **Not Supported** | Firefox Nightly 145+ only (Oct 2025) |
-| **M4V** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | **Universal** | Apple variant of MP4 |
+| Container | Chrome  | Firefox         | Safari  | Edge    | Status            | Notes                                       |
+| --------- | ------- | --------------- | ------- | ------- | ----------------- | ------------------------------------------- |
+| **MP4**   | ✅ Full | ✅ Full         | ✅ Full | ✅ Full | **Universal**     | Industry standard, best compatibility       |
+| **WebM**  | ✅ Full | ✅ Full         | ✅ Full | ✅ Full | **Universal**     | Based on Matroska, royalty-free codecs only |
+| **MKV**   | ❌ No   | ⚠️ Nightly only | ❌ No   | ❌ No   | **Not Supported** | Firefox Nightly 145+ only (Oct 2025)        |
+| **M4V**   | ✅ Full | ✅ Full         | ✅ Full | ✅ Full | **Universal**     | Apple variant of MP4                        |
 
 ### MKV Investigation Conclusion
 
 **MKV is NOT suitable for direct streaming in production (2025):**
+
 - Only Firefox Nightly 145+ has support (not stable release)
 - Chrome, Safari, Edge have no support
 - Must continue remuxing MKV → MP4 for browser compatibility
@@ -30,15 +31,15 @@ Even when MKV contains browser-compatible codecs (H.264 + AAC), browsers refuse 
 
 ## Video Codec Support
 
-| Codec | Chrome | Firefox | Safari | Edge | Containers | Notes |
-|-------|--------|---------|--------|------|------------|-------|
-| **H.264 (AVC)** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | MP4, WebM | Universal baseline codec |
-| **H.265 (HEVC)** | ❌ No | ❌ No | ✅ Full* | ❌ No | MP4 | Safari only (Safari 11+, macOS High Sierra+, iOS 11+) |
-| **VP9** | ✅ Full | ✅ Full | ⚠️ Inconsistent | ✅ Full | WebM | Safari 14+ support, possibly removed in Safari 18 |
-| **AV1** | ✅ Full | ✅ Full | ⚠️ Limited | ✅ Full | MP4, WebM | Safari: hardware-dependent (M3+ Macs, iPhone 15+, macOS 16+) |
-| **VP8** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | WebM | Older codec, superseded by VP9 |
+| Codec            | Chrome  | Firefox | Safari          | Edge    | Containers | Notes                                                        |
+| ---------------- | ------- | ------- | --------------- | ------- | ---------- | ------------------------------------------------------------ |
+| **H.264 (AVC)**  | ✅ Full | ✅ Full | ✅ Full         | ✅ Full | MP4, WebM  | Universal baseline codec                                     |
+| **H.265 (HEVC)** | ❌ No   | ❌ No   | ✅ Full\*       | ❌ No   | MP4        | Safari only (Safari 11+, macOS High Sierra+, iOS 11+)        |
+| **VP9**          | ✅ Full | ✅ Full | ⚠️ Inconsistent | ✅ Full | WebM       | Safari 14+ support, possibly removed in Safari 18            |
+| **AV1**          | ✅ Full | ✅ Full | ⚠️ Limited      | ✅ Full | MP4, WebM  | Safari: hardware-dependent (M3+ Macs, iPhone 15+, macOS 16+) |
+| **VP8**          | ✅ Full | ✅ Full | ✅ Full         | ✅ Full | WebM       | Older codec, superseded by VP9                               |
 
-*HEVC in Safari is hardware-dependent. Safari intelligently chooses H.264 over HEVC when both are available to optimize battery life.
+\*HEVC in Safari is hardware-dependent. Safari intelligently chooses H.264 over HEVC when both are available to optimize battery life.
 
 ### Video Codec Versions
 
@@ -50,14 +51,14 @@ Even when MKV contains browser-compatible codecs (H.264 + AAC), browsers refuse 
 
 ## Audio Codec Support
 
-| Codec | Chrome | Firefox | Safari | Edge | Compatibility | Notes |
-|-------|--------|---------|--------|------|---------------|-------|
-| **AAC** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | 100% | Universal standard |
-| **MP3** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | 100% | Universal standard |
-| **Opus** | ✅ Full | ✅ Full | ⚠️ Partial | ✅ Full | 92% | Chrome v33+, Firefox v15+, Safari v11+ (partial) |
-| **Vorbis** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | High | Commonly used in WebM |
-| **AC3/E-AC3** | ❌ No | ❌ No | ❌ No | ❌ No | 0% | No browser support |
-| **DTS** | ❌ No | ❌ No | ❌ No | ❌ No | 0% | No browser support |
+| Codec         | Chrome  | Firefox | Safari     | Edge    | Compatibility | Notes                                            |
+| ------------- | ------- | ------- | ---------- | ------- | ------------- | ------------------------------------------------ |
+| **AAC**       | ✅ Full | ✅ Full | ✅ Full    | ✅ Full | 100%          | Universal standard                               |
+| **MP3**       | ✅ Full | ✅ Full | ✅ Full    | ✅ Full | 100%          | Universal standard                               |
+| **Opus**      | ✅ Full | ✅ Full | ⚠️ Partial | ✅ Full | 92%           | Chrome v33+, Firefox v15+, Safari v11+ (partial) |
+| **Vorbis**    | ✅ Full | ✅ Full | ✅ Full    | ✅ Full | High          | Commonly used in WebM                            |
+| **AC3/E-AC3** | ❌ No   | ❌ No   | ❌ No      | ❌ No   | 0%            | No browser support                               |
+| **DTS**       | ❌ No   | ❌ No   | ❌ No      | ❌ No   | 0%            | No browser support                               |
 
 ### Audio Codec Notes
 
@@ -70,15 +71,19 @@ Even when MKV contains browser-compatible codecs (H.264 + AAC), browsers refuse 
 ### What We Support Today (`lib/mydia/streaming/compatibility.ex`)
 
 **Containers:** ✅
+
 - MP4, WebM, M4V
 
 **Video Codecs:** ✅
+
 - H.264, VP9, AV1
 
 **Audio Codecs:** ✅
+
 - AAC, MP3, Opus, Vorbis
 
 **Container Exclusions:** ✅
+
 - MKV correctly marked as incompatible
 
 ### Alignment with 2025 Reality
@@ -86,10 +91,12 @@ Even when MKV contains browser-compatible codecs (H.264 + AAC), browsers refuse 
 Our current compatibility module is **already accurate** for 2025 browser support:
 
 ✅ **Correct exclusions:**
+
 - MKV not supported (correct decision)
 - HEVC not included (Safari-only, not universal)
 
 ✅ **Correct inclusions:**
+
 - H.264, VP9, AV1 all have broad support
 - AAC, MP3, Opus, Vorbis all widely supported
 - MP4 and WebM containers universal
@@ -99,10 +106,12 @@ Our current compatibility module is **already accurate** for 2025 browser suppor
 ### 1. Safari HEVC Support (Optional Enhancement)
 
 **Opportunity:**
+
 - Safari users with HEVC files could direct play instead of transcode
 - Requires browser detection
 
 **Implementation:**
+
 ```elixir
 defp browser_compatible?(container, video_codec, audio_codec, browser_info) do
   # Existing checks...
@@ -117,6 +126,7 @@ end
 ```
 
 **Trade-offs:**
+
 - Adds complexity (browser detection required)
 - Limited benefit (HEVC files less common, only helps Safari users)
 - Safari may choose H.264 over HEVC anyway for battery optimization
@@ -124,15 +134,17 @@ end
 ### 2. Client-Side Capability Detection
 
 **Opportunity:**
+
 - Detect actual browser capabilities at runtime
 - More future-proof than hardcoded lists
 - Support new codecs automatically as browsers add them
 
 **Implementation:**
+
 ```javascript
 // In video player hook or app.js
 function detectBrowserCapabilities() {
-  const video = document.createElement('video');
+  const video = document.createElement("video");
 
   return {
     h264: video.canPlayType('video/mp4; codecs="avc1.42E01E"'),
@@ -141,7 +153,7 @@ function detectBrowserCapabilities() {
     av1: video.canPlayType('video/mp4; codecs="av01.0.05M.08"'),
     aac: video.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
     opus: video.canPlayType('audio/webm; codecs="opus"'),
-    mkv: video.canPlayType('video/x-matroska; codecs="avc1.42E01E, mp4a.40.2"')
+    mkv: video.canPlayType('video/x-matroska; codecs="avc1.42E01E, mp4a.40.2"'),
   };
 }
 
@@ -149,6 +161,7 @@ function detectBrowserCapabilities() {
 ```
 
 **Trade-offs:**
+
 - Adds JavaScript complexity
 - Requires session/cookie storage
 - More flexible and future-proof
@@ -159,21 +172,25 @@ function detectBrowserCapabilities() {
 Based on detected capabilities, route to optimal streaming mode:
 
 **Tier 1: Direct Play (fastest)**
+
 - Browser supports file's container + codecs natively
 - Serve via HTTP Range requests (current implementation)
 - No processing needed
 
 **Tier 2: Stream Copy Remux (fast)**
+
 - Browser supports codecs but not container (e.g., MKV→MP4)
 - FFmpeg stream copy remux (current optimization in task-129)
 - 10-100x faster than transcoding
 
 **Tier 3: Partial Transcode (moderate)**
+
 - Copy compatible stream, transcode incompatible one
 - E.g., copy H.264 video, transcode DTS→AAC audio
 - Future enhancement
 
 **Tier 4: Full Transcode (slow)**
+
 - Transcode both video and audio streams
 - Current HLS transcoding fallback
 - Slowest but most compatible
@@ -183,6 +200,7 @@ Based on detected capabilities, route to optimal streaming mode:
 ### Short Term (Current State)
 
 **Keep current implementation** - it's already well-aligned with 2025 browser reality:
+
 - ✅ Correct codec support (H.264, VP9, AV1 / AAC, MP3, Opus, Vorbis)
 - ✅ Correct container support (MP4, WebM)
 - ✅ MKV correctly excluded
@@ -204,16 +222,18 @@ Based on detected capabilities, route to optimal streaming mode:
 To verify browser support claims, use the following test in browser console:
 
 ```javascript
-const video = document.createElement('video');
+const video = document.createElement("video");
 
 console.log({
-  'H.264 in MP4': video.canPlayType('video/mp4; codecs="avc1.42E01E"'),
-  'HEVC in MP4': video.canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"'),
-  'VP9 in WebM': video.canPlayType('video/webm; codecs="vp9"'),
-  'AV1 in MP4': video.canPlayType('video/mp4; codecs="av01.0.05M.08"'),
-  'AAC in MP4': video.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
-  'Opus in WebM': video.canPlayType('audio/webm; codecs="opus"'),
-  'MKV H.264+AAC': video.canPlayType('video/x-matroska; codecs="avc1.42E01E, mp4a.40.2"')
+  "H.264 in MP4": video.canPlayType('video/mp4; codecs="avc1.42E01E"'),
+  "HEVC in MP4": video.canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"'),
+  "VP9 in WebM": video.canPlayType('video/webm; codecs="vp9"'),
+  "AV1 in MP4": video.canPlayType('video/mp4; codecs="av01.0.05M.08"'),
+  "AAC in MP4": video.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
+  "Opus in WebM": video.canPlayType('audio/webm; codecs="opus"'),
+  "MKV H.264+AAC": video.canPlayType(
+    'video/x-matroska; codecs="avc1.42E01E, mp4a.40.2"',
+  ),
 });
 
 // Returns: '' (no), 'maybe', or 'probably' (yes)

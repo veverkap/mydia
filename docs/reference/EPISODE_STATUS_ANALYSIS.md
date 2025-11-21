@@ -3,9 +3,11 @@
 ## 1. CURRENT EPISODE DISPLAY
 
 ### Media Details Page (show.html.heex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.html.heex`
 
 **Episode Display Structure:**
+
 - Lines 225-330: Episodes section (TV shows only)
 - Episodes grouped by season in collapsible cards
 - Table layout with columns: Episode #, Title, Air Date, Quality, Status, Actions
@@ -15,6 +17,7 @@
   - No visual indicators for availability (has file, downloading, missing)
 
 **Episode Table Columns:**
+
 - Episode number
 - Title
 - Air date (hidden on small screens)
@@ -23,9 +26,11 @@
 - Action buttons (toggle monitored, search)
 
 ### LiveView Module (show.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.ex`
 
 **Key Functions:**
+
 - `load_media_item(id)` (line 392): Loads media with preloaded data
 - `build_preload_list()` (line 398):
   ```elixir
@@ -40,6 +45,7 @@
 - `get_download_status(media_item)` (line 566): Gets active downloads for media item
 
 **Preloading Pattern:**
+
 - Episodes are preloaded with `media_files` and `downloads`
 - Downloads include the media_item association
 - Allows checking: has files, active downloads
@@ -49,9 +55,11 @@
 ## 2. DATA STRUCTURE
 
 ### Episode Schema (episode.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia/media/episode.ex`
 
 **Fields:**
+
 ```elixir
 field :season_number, :integer
 field :episode_number, :integer
@@ -67,9 +75,11 @@ belongs_to :media_item, Mydia.Media.MediaItem
 ```
 
 ### MediaFile Schema (media_file.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia/library/media_file.ex`
 
 **Fields:**
+
 ```elixir
 field :path, :string
 field :size, :integer
@@ -87,9 +97,11 @@ belongs_to :quality_profile, Mydia.Settings.QualityProfile
 ```
 
 ### Download Schema (download.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia/downloads/download.ex`
 
 **Fields:**
+
 ```elixir
 field :status, :string          # "pending", "downloading", "completed", "failed", "cancelled"
 field :indexer, :string
@@ -109,12 +121,15 @@ belongs_to :episode, Mydia.Media.Episode
 ```
 
 ### Preloading for Episodes
+
 From `show.ex` line 401:
+
 ```elixir
 episodes: [:media_files, downloads: :media_item]
 ```
 
 This provides:
+
 - `episode.media_files` - all files for that episode
 - `episode.downloads` - all downloads for that episode
 - `episode.downloads[x].media_item` - parent media item
@@ -124,11 +139,13 @@ This provides:
 ## 3. LISTING PAGES
 
 ### Media Index Page (index.html.heex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/index.html.heex`
 
 **Two View Modes:**
 
 #### Grid View (lines 144-205)
+
 - 6-column responsive grid
 - Card layout with poster image
 - Shows: Quality badge (top-right), Monitored indicator (left side)
@@ -136,11 +153,13 @@ This provides:
 - Selection checkbox for batch operations
 
 #### List View (lines 207-291)
+
 - Table with columns: Checkbox, Poster, Title, Type, Year, Status, Quality, Size, Actions
 - Shows: Media-level status (monitored/unmonitored), quality badge
 - **No episode-level availability indicators**
 
 **Current Quality Badge:** (line 330-343 in index.ex)
+
 ```elixir
 defp get_quality_badge(media_item) do
   case media_item.media_files do
@@ -156,9 +175,11 @@ end
 ```
 
 ### Media Index LiveView (index.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/index.ex`
 
 **Preloading Pattern (line 290):**
+
 ```elixir
 Keyword.put(:preload, [:media_files])
 ```
@@ -170,9 +191,11 @@ Only preloads media_files for display, not episodes or downloads.
 ## 4. CALENDAR VIEW & STATUS COLORS
 
 ### Calendar Live (calendar_live/index.ex)
+
 **File:** `/home/arosenfeld/Code/mydia/lib/mydia_web/live/calendar_live/index.ex`
 
 **Status Determination (lines 169-187):**
+
 ```elixir
 defp get_item_status(item) do
   today = Date.utc_today()
@@ -196,20 +219,25 @@ end
 ```
 
 ### Data Provided to Calendar (lines 348-368)
+
 The `list_episodes_by_air_date/2` query includes:
+
 ```sql
 has_files: CASE WHEN EXISTS(SELECT 1 FROM media_files WHERE episode_id = ?) THEN true ELSE false END
 has_downloads: CASE WHEN EXISTS(SELECT 1 FROM downloads WHERE episode_id = ?) THEN true ELSE false END
 ```
 
 **Status Priority Logic:**
+
 1. Has files → **Downloaded** (green)
 2. Air date in future → **Upcoming** (gray)
 3. Has downloads → **Downloading** (blue)
 4. Otherwise → **Missing** (red)
 
 ### Calendar Template (calendar_live/index.html.heex)
+
 **Lines 114-126:** Item color based on status
+
 ```heex
 class={[
   "w-full text-left text-xs p-1 rounded cursor-pointer hover:opacity-80",
@@ -218,6 +246,7 @@ class={[
 ```
 
 **Legend (lines 202-222):**
+
 - Gray: Upcoming
 - Blue (info): Downloading
 - Green (success): Downloaded
@@ -228,6 +257,7 @@ class={[
 ## 5. HELPER FUNCTIONS - EXISTING STATUS LOGIC
 
 ### In Calendar LiveView (lines 169-187):
+
 ```elixir
 defp get_item_status(item) do
   today = Date.utc_today()
@@ -250,6 +280,7 @@ end
 ```
 
 ### Query Functions in media.ex:
+
 - `list_episodes_by_air_date/3` (line 340): Returns episodes with has_files and has_downloads computed
 - `list_movies_by_release_date/3` (line 380): Returns movies with same computed fields
 
@@ -258,6 +289,7 @@ end
 ## 6. PUBSUB SETUP FOR REAL-TIME UPDATES
 
 ### In show.ex (line 11):
+
 ```elixir
 if connected?(socket) do
   Phoenix.PubSub.subscribe(Mydia.PubSub, "downloads")
@@ -265,6 +297,7 @@ end
 ```
 
 ### Handlers (lines 373-388):
+
 ```elixir
 def handle_info({:download_created, download}, socket) do
   if download_for_media?(download, socket.assigns.media_item) do
@@ -284,6 +317,7 @@ end
 ```
 
 **Broadcast Points (in downloads.ex):**
+
 - Line 53: After creating download
 - Line 72: After updating download
 - Both use `broadcast_download_update(download.id)` (need to check implementation)
@@ -293,13 +327,14 @@ end
 ## 7. RECOMMENDATIONS FOR IMPLEMENTATION
 
 ### 1. **Create Helper Module**
+
 Create `/home/arosenfeld/Code/mydia/lib/mydia/media/episode_status.ex` with:
 
 ```elixir
 defmodule Mydia.Media.EpisodeStatus do
   @doc """
   Determines the availability status of an episode.
-  
+
   Status priority:
   1. Downloaded - has media files
   2. Downloading - has active downloads
@@ -314,20 +349,20 @@ defmodule Mydia.Media.EpisodeStatus do
       true -> :missing
     end
   end
-  
+
   defp has_files?(episode) do
     episode.media_files && Enum.any?(episode.media_files, & &1.path)
   end
-  
+
   defp has_active_downloads?(episode) do
-    episode.downloads && 
+    episode.downloads &&
     Enum.any?(episode.downloads, &(&1.status in ["pending", "downloading"]))
   end
-  
+
   defp is_upcoming?(episode, today) do
     episode.air_date && Date.compare(episode.air_date, today) == :gt
   end
-  
+
   @doc "Returns DaisyUI badge classes for status"
   def status_badge_class(status) do
     case status do
@@ -337,7 +372,7 @@ defmodule Mydia.Media.EpisodeStatus do
       :missing -> "badge-error"
     end
   end
-  
+
   @doc "Returns icon name for status"
   def status_icon(status) do
     case status do
@@ -347,7 +382,7 @@ defmodule Mydia.Media.EpisodeStatus do
       :missing -> "hero-exclamation-triangle"
     end
   end
-  
+
   @doc "Returns human-readable status label"
   def status_label(status) do
     case status do
@@ -361,7 +396,9 @@ end
 ```
 
 ### 2. **Update show.ex**
+
 Add to build_preload_list (line 398):
+
 ```elixir
 defp build_preload_list do
   [
@@ -374,6 +411,7 @@ end
 ```
 
 Add helper function:
+
 ```elixir
 defp get_episode_status(episode) do
   Mydia.Media.EpisodeStatus.get_status(episode)
@@ -381,7 +419,9 @@ end
 ```
 
 ### 3. **Update show.html.heex**
+
 Replace status column (lines 271-286) with:
+
 ```heex
 <td>
   <% status = get_episode_status(episode) %>
@@ -390,9 +430,9 @@ Replace status column (lines 271-286) with:
       "badge badge-sm",
       Mydia.Media.EpisodeStatus.status_badge_class(status)
     ]}>
-      <.icon 
-        name={Mydia.Media.EpisodeStatus.status_icon(status)} 
-        class="w-3 h-3 mr-1" 
+      <.icon
+        name={Mydia.Media.EpisodeStatus.status_icon(status)}
+        class="w-3 h-3 mr-1"
       />
       {Mydia.Media.EpisodeStatus.status_label(status)}
     </span>
@@ -401,7 +441,9 @@ Replace status column (lines 271-286) with:
 ```
 
 ### 4. **Update index.ex for TV Shows**
+
 If planning to show episode status in listing, need to preload episodes with media_files and downloads:
+
 ```elixir
 defp build_query_opts(assigns) do
   preload_list =
@@ -409,7 +451,7 @@ defp build_query_opts(assigns) do
       "tv_show" -> [:media_files, episodes: [:media_files, :downloads]]
       _ -> [:media_files]
     end
-  
+
   []
   |> maybe_add_filter(:type, assigns.filter_type)
   |> maybe_add_filter(:monitored, assigns.filter_monitored)
@@ -418,7 +460,9 @@ end
 ```
 
 ### 5. **Calendar Integration**
+
 Already uses same status colors. Can update to use shared module:
+
 ```elixir
 defp get_item_status(item) do
   if item.type == "episode" do
@@ -439,16 +483,16 @@ end
 
 ## Summary of Key File Paths
 
-| File | Purpose | Key Function |
-|------|---------|--------------|
-| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.html.heex` | Episode detail display | Lines 225-330: Episode table |
-| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.ex` | Episode LiveView logic | build_preload_list (line 398) |
-| `/home/arosenfeld/Code/mydia/lib/mydia/media/episode.ex` | Episode schema | has_many :media_files, :downloads |
-| `/home/arosenfeld/Code/mydia/lib/mydia/library/media_file.ex` | File schema | resolution field for quality |
-| `/home/arosenfeld/Code/mydia/lib/mydia/downloads/download.ex` | Download schema | status field: pending/downloading/completed/failed |
-| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/calendar_live/index.ex` | Calendar with status | get_item_status (line 169), status_color (line 180) |
-| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/calendar_live/index.html.heex` | Calendar UI | Status legend (lines 202-222) |
-| `/home/arosenfeld/Code/mydia/lib/mydia/media.ex` | Media context | list_episodes_by_air_date (line 340) with has_files/has_downloads |
+| File                                                                           | Purpose                | Key Function                                                      |
+| ------------------------------------------------------------------------------ | ---------------------- | ----------------------------------------------------------------- |
+| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.html.heex`     | Episode detail display | Lines 225-330: Episode table                                      |
+| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/media_live/show.ex`            | Episode LiveView logic | build_preload_list (line 398)                                     |
+| `/home/arosenfeld/Code/mydia/lib/mydia/media/episode.ex`                       | Episode schema         | has_many :media_files, :downloads                                 |
+| `/home/arosenfeld/Code/mydia/lib/mydia/library/media_file.ex`                  | File schema            | resolution field for quality                                      |
+| `/home/arosenfeld/Code/mydia/lib/mydia/downloads/download.ex`                  | Download schema        | status field: pending/downloading/completed/failed                |
+| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/calendar_live/index.ex`        | Calendar with status   | get_item_status (line 169), status_color (line 180)               |
+| `/home/arosenfeld/Code/mydia/lib/mydia_web/live/calendar_live/index.html.heex` | Calendar UI            | Status legend (lines 202-222)                                     |
+| `/home/arosenfeld/Code/mydia/lib/mydia/media.ex`                               | Media context          | list_episodes_by_air_date (line 340) with has_files/has_downloads |
 
 ---
 
@@ -586,24 +630,28 @@ Status determines from:
 ## APPENDIX: Implementation Checklist
 
 ### Phase 1: Create Shared Status Module
+
 - [ ] Create `/lib/mydia/media/episode_status.ex`
 - [ ] Implement `get_status(episode, today)` function
 - [ ] Add helper functions for badge class, icon, and label
 - [ ] Write tests for status determination logic
 
 ### Phase 2: Update Details Page
+
 - [ ] Update `show.ex` to use EpisodeStatus module
 - [ ] Modify `show.html.heex` episode table status column
 - [ ] Replace bookmark-only indicator with full status badge
 - [ ] Test with various episode states (downloaded, downloading, upcoming, missing)
 
 ### Phase 3: Real-Time Testing
+
 - [ ] Create/start a download for an episode
 - [ ] Verify status updates from "Upcoming" → "Downloading" via PubSub
 - [ ] Verify status updates from "Downloading" → "Downloaded" on completion
 - [ ] Test status updates appear in real-time without page refresh
 
 ### Phase 4: Optional Enhancements
+
 - [ ] Add to listing page if desired
 - [ ] Update calendar to use shared module
 - [ ] Add unit tests for status module
@@ -614,22 +662,26 @@ Status determines from:
 ## APPENDIX: Common Gotchas
 
 1. **Preloading is Critical**
+
    - If episodes aren't preloaded with `:media_files`, the status will always be MISSING
    - If episodes aren't preloaded with `:downloads`, DOWNLOADING won't detect active downloads
    - Current `show.ex` already has correct preloading at line 398
 
 2. **Date Comparison**
+
    - Must compare dates, not datetimes: `Date.compare(episode.air_date, today)`
    - Episode.air_date is a Date, not DateTime
    - Use `Date.utc_today()` to get current date
 
 3. **Download Status Values**
+
    - Valid statuses: "pending", "downloading", "completed", "failed", "cancelled"
    - Only "pending" and "downloading" indicate active downloads
    - "completed" should show as downloaded (file exists)
    - "failed" should show as missing (file doesn't exist)
 
 4. **Empty Lists**
+
    - `Enum.any?([], _)` returns false - safe for no files/downloads
    - `episode.media_files` will be `[]` not nil if preloaded with no results
    - Use `Enum.empty?()` or `Enum.any?()` for safe checks
@@ -638,4 +690,3 @@ Status determines from:
    - show.ex already subscribes to "downloads" topic
    - When download status changes, entire media_item is reloaded
    - This is correct behavior - simpler than partial updates
-

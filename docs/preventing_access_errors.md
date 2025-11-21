@@ -51,6 +51,7 @@ Dialyzer can catch many of these at compile time:
 ```
 
 Add to CI/CD:
+
 ```yaml
 - name: Run Dialyzer
   run: ./dev mix dialyzer --halt-exit-status
@@ -149,6 +150,7 @@ end
 ### 5. **Code Review Checklist**
 
 When reviewing PRs, look for:
+
 - [ ] Any `get_in/2` calls on custom structs
 - [ ] Bracket notation (`struct[:field]`) on non-Access structs
 - [ ] Map functions (`Map.get/2`) used on structs (works but discouraged)
@@ -168,12 +170,12 @@ Always use dot notation when accessing their fields.
 
 ## Quick Reference
 
-| Access Type | Maps | Structs | Recommendation |
-|-------------|------|---------|----------------|
-| `data[:key]` | ✅ Works | ❌ Crashes | Use `.field` for structs |
-| `data.field` | ❌ Error | ✅ Works | Always use for structs |
-| `get_in(data, [:key])` | ✅ Works | ❌ Crashes | Only for maps |
-| `Map.get(data, :key)` | ✅ Works | ✅ Works* | Discouraged for structs |
+| Access Type            | Maps     | Structs    | Recommendation           |
+| ---------------------- | -------- | ---------- | ------------------------ |
+| `data[:key]`           | ✅ Works | ❌ Crashes | Use `.field` for structs |
+| `data.field`           | ❌ Error | ✅ Works   | Always use for structs   |
+| `get_in(data, [:key])` | ✅ Works | ❌ Crashes | Only for maps            |
+| `Map.get(data, :key)`  | ✅ Works | ✅ Works\* | Discouraged for structs  |
 
 \* Works but considered bad practice - use `.field` instead
 

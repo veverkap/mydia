@@ -41,27 +41,27 @@ export const testUsers = {
    */
   admin: {
     /** Admin username for login */
-    username: 'admin',
+    username: "admin",
     /** Admin password for login */
-    password: 'adminpass',
+    password: "adminpass",
     /** Admin email address */
-    email: 'admin@localhost',
+    email: "admin@localhost",
     /** User role (admin has full access) */
-    role: 'admin'
+    role: "admin",
   },
   /**
    * Regular user account with standard permissions
    */
   user: {
     /** Regular user username for login */
-    username: 'testuser',
+    username: "testuser",
     /** Regular user password for login */
-    password: 'testpass',
+    password: "testpass",
     /** Regular user email address */
-    email: 'testuser@example.com',
+    email: "testuser@example.com",
     /** User role (user has standard access) */
-    role: 'user'
-  }
+    role: "user",
+  },
 } as const;
 
 /**

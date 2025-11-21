@@ -5,6 +5,7 @@ This guide covers advanced deployment topics for Mydia. For basic deployment ins
 ## Quick Reference
 
 **Basic deployment steps:**
+
 1. See [README.md](../../README.md#-production-deployment) for quick start with Docker Compose or Docker Run
 2. Review the [Environment Variables Reference](../../README.md#-environment-variables-reference) for all configuration options
 3. Return to this guide for advanced topics below
@@ -99,6 +100,7 @@ curl http://localhost:4000/health
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -112,6 +114,7 @@ Response:
 For a complete list of all configuration options, see the [Environment Variables Reference](../../README.md#-environment-variables-reference) in the README.
 
 Advanced topics include:
+
 - Download client integration (qBittorrent, Transmission)
 - Indexer configuration (Prowlarr, Jackett)
 - Database performance tuning
@@ -130,11 +133,13 @@ The production setup uses the following volumes:
 Mydia supports NFS and SMB network mounts. Ensure your mount has proper permissions for the container's UID/GID (default 1000, configurable via `PUID`/`PGID`).
 
 **NFS Export Example** (`/etc/exports` on NFS server):
+
 ```bash
 /path/to/media  192.168.1.0/24(rw,all_squash,anonuid=1000,anongid=1000)
 ```
 
 **Docker Compose with Host Mount**:
+
 ```yaml
 services:
   mydia:
@@ -152,6 +157,7 @@ services:
 ## First Run
 
 On first startup, the application will:
+
 1. Run database migrations
 2. Create default quality profiles
 3. Start the web server on port 4000
@@ -161,6 +167,7 @@ On first startup, the application will:
 ### Container won't start
 
 Check the logs:
+
 ```bash
 docker logs mydia
 ```
@@ -168,6 +175,7 @@ docker logs mydia
 ### Health check failing
 
 Ensure the application is listening on the correct port:
+
 ```bash
 docker exec mydia curl -f http://localhost:4000/health
 ```
@@ -175,6 +183,7 @@ docker exec mydia curl -f http://localhost:4000/health
 ### Database permission issues
 
 Ensure the data volume has correct permissions:
+
 ```bash
 docker exec mydia ls -la /data
 ```
@@ -258,6 +267,7 @@ docker pull ghcr.io/getmydia/mydia:v1.0.0
 - **Logging**: Watch startup logs to see backup creation and migration progress
 
 Example startup logs:
+
 ```
 [info] Checking for pending migrations...
 [info] Found 2 pending migrations, creating database backup...
@@ -306,6 +316,7 @@ docker compose up -d
 ```
 
 **Important Notes:**
+
 - Always restore a backup that matches the version you're rolling back to
 - Automatic backups are timestamped - use the most recent one before the upgrade
 - Keep at least 2-3 manual backups before major version upgrades
@@ -329,6 +340,7 @@ git push origin v1.0.0
 ```
 
 4. GitHub Actions will automatically:
+
    - Build multi-platform Docker images (amd64, arm64)
    - Tag the image with the version number and 'latest'
    - Publish to GitHub Container Registry
@@ -348,5 +360,6 @@ Images are published to `ghcr.io/getmydia/mydia` with the following tags:
 ### Image Platforms
 
 All images support multiple platforms:
+
 - `linux/amd64` - Standard x86_64 systems
 - `linux/arm64` - ARM64 systems (e.g., Apple Silicon, Raspberry Pi 4+)

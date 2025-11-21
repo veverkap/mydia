@@ -26,11 +26,13 @@ Mydia uses the same indexer definitions as Prowlarr, giving you access to 500+ i
 Cardigann indexers are controlled by a feature flag. To enable:
 
 **Via Environment Variable:**
+
 ```bash
 CARDIGANN_ENABLED=true
 ```
 
 **Via Application Configuration:**
+
 ```yaml
 features:
   cardigann_enabled: true
@@ -79,11 +81,13 @@ Private indexers require authentication credentials:
 Indexer definitions are automatically synced daily from the [Prowlarr Indexers repository](https://github.com/Prowlarr/Indexers).
 
 To manually trigger a sync:
+
 1. Go to **Settings → Indexers → Cardigann Library**
 2. Click the **Sync Definitions** button
 3. Wait for the sync to complete
 
 The sync process:
+
 - Downloads the latest definitions from GitHub
 - Updates existing definitions
 - Adds new indexers
@@ -114,6 +118,7 @@ You can use Cardigann indexers alongside traditional Prowlarr or Jackett instanc
 - Each indexer type can be managed independently
 
 This is useful when:
+
 - You have a Prowlarr instance for some indexers but want direct access to others
 - You're migrating from Prowlarr/Jackett to native Cardigann support
 - Different indexers work better through different methods
@@ -133,11 +138,13 @@ These limits are enforced automatically and cannot be overridden.
 ### Indexer Not Appearing in Search Results
 
 **Check if the indexer is enabled:**
+
 1. Go to Cardigann Library
 2. Verify the indexer toggle is ON
 3. Check the status indicator (green = working, red = error)
 
 **For private indexers, verify credentials:**
+
 1. Click Configure on the indexer
 2. Click Test Connection
 3. Fix any authentication errors
@@ -145,16 +152,19 @@ These limits are enforced automatically and cannot be overridden.
 ### Search Results Missing from Specific Indexer
 
 **Check the logs:**
+
 ```bash
 docker-compose logs -f mydia
 ```
 
 Look for messages like:
+
 - `Cardigann search failed` - Authentication or parsing error
 - `Rate limit exceeded` - Too many requests
 - `HTTP 404/503` - Indexer temporarily down
 
 **Common issues:**
+
 - Private indexer credentials expired
 - Indexer site is down or blocking requests
 - Indexer definition needs updating (run Sync Definitions)
@@ -162,16 +172,19 @@ Look for messages like:
 ### Private Indexer Authentication Failing
 
 **Login-based authentication:**
+
 - Verify username and password are correct
 - Check if the indexer requires captcha (not supported)
 - Some indexers require you to log in via browser first
 
 **API key authentication:**
+
 - Copy the API key exactly from the indexer's settings page
 - Check if the key has expired
 - Verify the key has search permissions
 
 **Cookie authentication:**
+
 - Export cookies using a browser extension
 - Cookie format varies by indexer (check definition for details)
 - Cookies may expire frequently
@@ -179,11 +192,13 @@ Look for messages like:
 ### Definition Sync Failing
 
 **Check GitHub connectivity:**
+
 - Verify Mydia can reach github.com
 - Check if you're behind a proxy or firewall
 - Review logs for network errors
 
 **Manual workaround:**
+
 1. Download definitions from https://github.com/Prowlarr/Indexers
 2. Contact Mydia administrator to import manually (future feature)
 
@@ -192,12 +207,14 @@ Look for messages like:
 The Cardigann feature can be disabled at any time:
 
 **When disabled:**
+
 - Cardigann Library link is hidden from navigation
 - Cardigann indexers are excluded from searches
 - Existing definitions and configurations are preserved
 - No automatic syncing occurs
 
 **When re-enabled:**
+
 - All previous settings are restored
 - Syncing resumes
 - Indexers become searchable again
@@ -207,17 +224,20 @@ This allows administrators to control whether users can access this feature.
 ## Privacy & Security
 
 **Data Storage:**
+
 - Indexer definitions: Stored in the local database
 - Private indexer credentials: Encrypted in the database
 - Search queries: Not logged by Mydia (may be logged by indexers)
 - Cookies and sessions: Stored per-user, per-indexer
 
 **Network Requests:**
+
 - Mydia connects directly to indexer websites
 - No data is sent to Mydia servers
 - GitHub API is used only for definition syncing
 
 **Credentials:**
+
 - Private indexer credentials are your responsibility
 - Use strong, unique passwords for private indexers
 - Enable 2FA on indexer sites when possible
@@ -234,27 +254,30 @@ This allows administrators to control whether users can access this feature.
 
 ## Comparison with Prowlarr/Jackett
 
-| Feature | Cardigann | Prowlarr | Jackett |
-|---------|-----------|----------|---------|
-| External Service | ❌ No | ✅ Required | ✅ Required |
-| Configuration | In Mydia | Separate UI | Separate UI |
-| Indexers Available | 500+ | 500+ | 500+ |
-| Auto-Updates | ✅ Yes | ✅ Yes | ✅ Yes |
-| Private Indexers | ✅ Yes | ✅ Yes | ✅ Yes |
-| Resource Usage | Low (in-app) | Medium (separate service) | Medium (separate service) |
-| Management | Mydia UI | Prowlarr UI | Jackett UI |
+| Feature            | Cardigann    | Prowlarr                  | Jackett                   |
+| ------------------ | ------------ | ------------------------- | ------------------------- |
+| External Service   | ❌ No        | ✅ Required               | ✅ Required               |
+| Configuration      | In Mydia     | Separate UI               | Separate UI               |
+| Indexers Available | 500+         | 500+                      | 500+                      |
+| Auto-Updates       | ✅ Yes       | ✅ Yes                    | ✅ Yes                    |
+| Private Indexers   | ✅ Yes       | ✅ Yes                    | ✅ Yes                    |
+| Resource Usage     | Low (in-app) | Medium (separate service) | Medium (separate service) |
+| Management         | Mydia UI     | Prowlarr UI               | Jackett UI                |
 
 **When to use Cardigann:**
+
 - You want fewer moving parts in your setup
 - You're starting fresh with Mydia
 - You prefer managing everything in one place
 
 **When to use Prowlarr/Jackett:**
+
 - You already have a working Prowlarr/Jackett setup
 - You use Prowlarr/Jackett with other arr applications
 - You need advanced Prowlarr-specific features (Flaresolverr, proxies, etc.)
 
 **Best of both:**
+
 - Use Prowlarr for indexers that need special handling
 - Use Cardigann for simple public indexers
 - Both types work together seamlessly in Mydia

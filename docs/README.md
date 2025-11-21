@@ -5,16 +5,20 @@ This directory contains all project documentation organized by category.
 ## Structure
 
 - **[architecture/](architecture/)** - Technical architecture, design system, and implementation details
+
   - [design.md](architecture/design.md) - Design system and UI components
   - [technical.md](architecture/technical.md) - Technical architecture and database schema
 
 - **[deployment/](deployment/)** - Production deployment guides and configuration
+
   - [DEPLOYMENT.md](deployment/DEPLOYMENT.md) - Complete production deployment instructions
 
 - **[guides/](guides/)** - Setup guides and development documentation
+
   - [SETUP_COMPLETE.md](guides/SETUP_COMPLETE.md) - Initial project setup completion status
 
 - **[product/](product/)** - Product vision, features, and roadmap
+
   - [product.md](product/product.md) - Product specification and vision
 
 - **[reference/](reference/)** - Technical reference documentation

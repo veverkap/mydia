@@ -57,46 +57,46 @@ export const searchResults = {
    */
   tvShow: [
     {
-      guid: 'https://example.com/torrent/12345',
-      title: 'Breaking.Bad.S01E01.Pilot.1080p.BluRay.x264-DEMAND',
+      guid: "https://example.com/torrent/12345",
+      title: "Breaking.Bad.S01E01.Pilot.1080p.BluRay.x264-DEMAND",
       size: 2147483648, // 2 GB
-      publishDate: '2024-01-15T10:30:00Z',
-      indexer: 'Mock Indexer',
+      publishDate: "2024-01-15T10:30:00Z",
+      indexer: "Mock Indexer",
       indexerId: 1,
-      downloadUrl: 'https://example.com/download/12345',
-      magnetUrl: 'magnet:?xt=urn:btih:ABCDEF1234567890',
+      downloadUrl: "https://example.com/download/12345",
+      magnetUrl: "magnet:?xt=urn:btih:ABCDEF1234567890",
       seeders: 150,
       leechers: 25,
-      protocol: 'torrent',
-      categories: ['TV', 'TV/HD']
+      protocol: "torrent",
+      categories: ["TV", "TV/HD"],
     },
     {
-      guid: 'https://example.com/torrent/12346',
-      title: 'Breaking.Bad.S01E01.720p.WEB-DL.DD5.1.H.264-GROUP',
+      guid: "https://example.com/torrent/12346",
+      title: "Breaking.Bad.S01E01.720p.WEB-DL.DD5.1.H.264-GROUP",
       size: 1073741824, // 1 GB
-      publishDate: '2024-01-15T09:15:00Z',
-      indexer: 'Mock Indexer',
+      publishDate: "2024-01-15T09:15:00Z",
+      indexer: "Mock Indexer",
       indexerId: 1,
-      downloadUrl: 'https://example.com/download/12346',
-      magnetUrl: 'magnet:?xt=urn:btih:1234567890ABCDEF',
+      downloadUrl: "https://example.com/download/12346",
+      magnetUrl: "magnet:?xt=urn:btih:1234567890ABCDEF",
       seeders: 200,
       leechers: 30,
-      protocol: 'torrent',
-      categories: ['TV', 'TV/HD']
+      protocol: "torrent",
+      categories: ["TV", "TV/HD"],
     },
     {
-      guid: 'https://usenet-indexer.com/nzb/78901',
-      title: 'Breaking.Bad.S01E01.1080p.BluRay.x264-NTb',
+      guid: "https://usenet-indexer.com/nzb/78901",
+      title: "Breaking.Bad.S01E01.1080p.BluRay.x264-NTb",
       size: 3221225472, // 3 GB
-      publishDate: '2024-01-16T14:20:00Z',
-      indexer: 'Mock Usenet Indexer',
+      publishDate: "2024-01-16T14:20:00Z",
+      indexer: "Mock Usenet Indexer",
       indexerId: 2,
-      downloadUrl: 'https://usenet-indexer.com/api/nzb/78901',
+      downloadUrl: "https://usenet-indexer.com/api/nzb/78901",
       seeders: 0, // N/A for usenet
       leechers: 0,
-      protocol: 'usenet',
-      categories: ['TV', 'TV/HD']
-    }
+      protocol: "usenet",
+      categories: ["TV", "TV/HD"],
+    },
   ],
 
   /**
@@ -104,39 +104,39 @@ export const searchResults = {
    */
   movie: [
     {
-      guid: 'https://example.com/torrent/99001',
-      title: 'Inception.2010.1080p.BluRay.x264-SPARKS',
+      guid: "https://example.com/torrent/99001",
+      title: "Inception.2010.1080p.BluRay.x264-SPARKS",
       size: 8589934592, // 8 GB
-      publishDate: '2024-02-01T12:00:00Z',
-      indexer: 'Mock Indexer',
+      publishDate: "2024-02-01T12:00:00Z",
+      indexer: "Mock Indexer",
       indexerId: 1,
-      downloadUrl: 'https://example.com/download/99001',
-      magnetUrl: 'magnet:?xt=urn:btih:MOVIE123456789',
+      downloadUrl: "https://example.com/download/99001",
+      magnetUrl: "magnet:?xt=urn:btih:MOVIE123456789",
       seeders: 500,
       leechers: 50,
-      protocol: 'torrent',
-      categories: ['Movies', 'Movies/HD']
+      protocol: "torrent",
+      categories: ["Movies", "Movies/HD"],
     },
     {
-      guid: 'https://example.com/torrent/99002',
-      title: 'Inception.2010.2160p.UHD.BluRay.x265-TERMINAL',
+      guid: "https://example.com/torrent/99002",
+      title: "Inception.2010.2160p.UHD.BluRay.x265-TERMINAL",
       size: 17179869184, // 16 GB
-      publishDate: '2024-02-02T08:30:00Z',
-      indexer: 'Mock Indexer',
+      publishDate: "2024-02-02T08:30:00Z",
+      indexer: "Mock Indexer",
       indexerId: 1,
-      downloadUrl: 'https://example.com/download/99002',
-      magnetUrl: 'magnet:?xt=urn:btih:MOVIE4K123456',
+      downloadUrl: "https://example.com/download/99002",
+      magnetUrl: "magnet:?xt=urn:btih:MOVIE4K123456",
       seeders: 250,
       leechers: 35,
-      protocol: 'torrent',
-      categories: ['Movies', 'Movies/UHD']
-    }
+      protocol: "torrent",
+      categories: ["Movies", "Movies/UHD"],
+    },
   ],
 
   /**
    * Empty search results (no matches found)
    */
-  empty: []
+  empty: [],
 } as const;
 
 /**
@@ -155,11 +155,11 @@ export const torrentInfo = {
    * Torrent currently downloading
    */
   downloading: {
-    hash: 'ABCDEF1234567890ABCDEF1234567890ABCDEF12',
-    name: 'Breaking.Bad.S01E01.Pilot.1080p.BluRay.x264-DEMAND',
+    hash: "ABCDEF1234567890ABCDEF1234567890ABCDEF12",
+    name: "Breaking.Bad.S01E01.Pilot.1080p.BluRay.x264-DEMAND",
     size: 2147483648,
     progress: 0.45, // 45%
-    state: 'downloading',
+    state: "downloading",
     dlspeed: 5242880, // 5 MB/s
     upspeed: 1048576, // 1 MB/s
     eta: 3600, // 1 hour
@@ -168,19 +168,19 @@ export const torrentInfo = {
     ratio: 0.5,
     added_on: 1705320000,
     completion_on: 0,
-    save_path: '/downloads/tv/Breaking Bad/Season 01/',
-    category: 'tv'
+    save_path: "/downloads/tv/Breaking Bad/Season 01/",
+    category: "tv",
   },
 
   /**
    * Torrent that finished downloading and is seeding
    */
   seeding: {
-    hash: '1234567890ABCDEF1234567890ABCDEF12345678',
-    name: 'Inception.2010.1080p.BluRay.x264-SPARKS',
+    hash: "1234567890ABCDEF1234567890ABCDEF12345678",
+    name: "Inception.2010.1080p.BluRay.x264-SPARKS",
     size: 8589934592,
     progress: 1.0, // 100%
-    state: 'seeding',
+    state: "seeding",
     dlspeed: 0,
     upspeed: 2097152, // 2 MB/s
     eta: 8640000, // Infinite (seeding)
@@ -189,19 +189,19 @@ export const torrentInfo = {
     ratio: 2.5,
     added_on: 1705233600,
     completion_on: 1705320000,
-    save_path: '/downloads/movies/Inception (2010)/',
-    category: 'movies'
+    save_path: "/downloads/movies/Inception (2010)/",
+    category: "movies",
   },
 
   /**
    * Torrent that is paused
    */
   paused: {
-    hash: 'FEDCBA0987654321FEDCBA0987654321FEDCBA09',
-    name: 'The.Matrix.1999.1080p.BluRay.x264',
+    hash: "FEDCBA0987654321FEDCBA0987654321FEDCBA09",
+    name: "The.Matrix.1999.1080p.BluRay.x264",
     size: 4294967296,
     progress: 0.75, // 75%
-    state: 'pausedDL',
+    state: "pausedDL",
     dlspeed: 0,
     upspeed: 0,
     eta: 8640000, // Infinite (paused)
@@ -210,19 +210,19 @@ export const torrentInfo = {
     ratio: 0.25,
     added_on: 1705147200,
     completion_on: 0,
-    save_path: '/downloads/movies/The Matrix (1999)/',
-    category: 'movies'
+    save_path: "/downloads/movies/The Matrix (1999)/",
+    category: "movies",
   },
 
   /**
    * Torrent with error state
    */
   error: {
-    hash: 'ERROR123456789ERROR123456789ERROR12345678',
-    name: 'Failed.Download.Example',
+    hash: "ERROR123456789ERROR123456789ERROR12345678",
+    name: "Failed.Download.Example",
     size: 1073741824,
-    progress: 0.10, // 10%
-    state: 'error',
+    progress: 0.1, // 10%
+    state: "error",
     dlspeed: 0,
     upspeed: 0,
     eta: 8640000,
@@ -231,9 +231,9 @@ export const torrentInfo = {
     ratio: 0,
     added_on: 1705060800,
     completion_on: 0,
-    save_path: '/downloads/failed/',
-    category: 'tv'
-  }
+    save_path: "/downloads/failed/",
+    category: "tv",
+  },
 } as const;
 
 /**
@@ -246,59 +246,57 @@ export const indexerDefinitions = {
    * Sample Cardigann indexer definition
    */
   cardigann: {
-    id: 'mock-indexer',
-    name: 'Mock Indexer',
-    description: 'A mock indexer for testing',
-    language: 'en-US',
-    type: 'public',
-    encoding: 'UTF-8',
-    links: ['https://mock-indexer.example.com/'],
+    id: "mock-indexer",
+    name: "Mock Indexer",
+    description: "A mock indexer for testing",
+    language: "en-US",
+    type: "public",
+    encoding: "UTF-8",
+    links: ["https://mock-indexer.example.com/"],
     caps: {
       categorymappings: [
-        { id: '1', cat: 'TV', desc: 'TV' },
-        { id: '2', cat: 'Movies', desc: 'Movies' }
+        { id: "1", cat: "TV", desc: "TV" },
+        { id: "2", cat: "Movies", desc: "Movies" },
       ],
       modes: {
-        search: ['q'],
-        'tv-search': ['q', 'season', 'ep'],
-        'movie-search': ['q']
-      }
+        search: ["q"],
+        "tv-search": ["q", "season", "ep"],
+        "movie-search": ["q"],
+      },
     },
     search: {
-      paths: [
-        { path: '/search' }
-      ],
+      paths: [{ path: "/search" }],
       inputs: {
-        $raw: '{{ .Keywords }}'
+        $raw: "{{ .Keywords }}",
       },
       rows: {
-        selector: 'table.results tr'
+        selector: "table.results tr",
       },
       fields: {
         title: {
-          selector: 'td.title'
+          selector: "td.title",
         },
         download: {
-          selector: 'td.download a',
-          attribute: 'href'
+          selector: "td.download a",
+          attribute: "href",
         },
         size: {
-          selector: 'td.size'
+          selector: "td.size",
         },
         seeders: {
-          selector: 'td.seeders'
+          selector: "td.seeders",
         },
         leechers: {
-          selector: 'td.leechers'
-        }
-      }
-    }
-  }
+          selector: "td.leechers",
+        },
+      },
+    },
+  },
 } as const;
 
 /**
  * Export type definitions for TypeScript type checking
  */
-export type SearchResultFixture = typeof searchResults.tvShow[0];
+export type SearchResultFixture = (typeof searchResults.tvShow)[0];
 export type TorrentInfoFixture = typeof torrentInfo.downloading;
 export type IndexerDefinitionFixture = typeof indexerDefinitions.cardigann;

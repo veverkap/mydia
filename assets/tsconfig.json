@@ -23,13 +23,6 @@
     "allowJs": true,
     "noEmit": true
   },
-  "include": [
-    "js/**/*",
-    "e2e/**/*.ts",
-    "playwright.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "e2e-results"
-  ]
+  "include": ["js/**/*", "e2e/**/*.ts", "playwright.config.ts"],
+  "exclude": ["node_modules", "e2e-results"]
 }

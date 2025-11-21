@@ -38,12 +38,12 @@ Edit `assets/screenshots.js` to add or modify pages:
 ```javascript
 const screenshots = [
   {
-    name: 'my-page',
-    path: '/my-page',
-    description: 'My custom page',
-    waitFor: 'h1, .main-content',  // CSS selector to wait for
-    fullPage: false                 // Capture full page scroll
-  }
+    name: "my-page",
+    path: "/my-page",
+    description: "My custom page",
+    waitFor: "h1, .main-content", // CSS selector to wait for
+    fullPage: false, // Capture full page scroll
+  },
 ];
 ```
 

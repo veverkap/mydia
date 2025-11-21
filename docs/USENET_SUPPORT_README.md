@@ -5,69 +5,81 @@ This directory contains comprehensive documentation for implementing Usenet supp
 ## Files in This Documentation
 
 ### 1. **USENET_ARCHITECTURE_ANALYSIS.md** (Start Here!)
-   **Purpose:** Complete architectural overview and deep-dive
-   
-   **Contents:**
-   - Executive summary of download infrastructure
-   - Detailed explanation of each component (client system, monitoring, import, indexers)
-   - Current download protocols and how they work
-   - Adapter behavior pattern explained
-   - Configuration system
-   - Search job architecture (movies and TV)
-   - Metadata management and file analysis
-   - Complete data flow examples
-   - Integration points for Usenet support
-   - Design patterns in use
-   - Performance considerations
-   - Known limitations
-   
-   **Best for:** Understanding the full architecture, design decisions, and integration philosophy
+
+**Purpose:** Complete architectural overview and deep-dive
+
+**Contents:**
+
+- Executive summary of download infrastructure
+- Detailed explanation of each component (client system, monitoring, import, indexers)
+- Current download protocols and how they work
+- Adapter behavior pattern explained
+- Configuration system
+- Search job architecture (movies and TV)
+- Metadata management and file analysis
+- Complete data flow examples
+- Integration points for Usenet support
+- Design patterns in use
+- Performance considerations
+- Known limitations
+
+**Best for:** Understanding the full architecture, design decisions, and integration philosophy
 
 ### 2. **USENET_QUICK_REFERENCE.md** (Use During Implementation)
-   **Purpose:** Tactical implementation guide with specific code examples
-   
-   **Contents:**
-   - File locations and key modules
-   - Implementation checklist
-   - SABnzbd-specific API examples
-   - NZBGet-specific API examples
-   - Required status map structure
-   - HTTP client utilities reference
-   - State transition flow diagram
-   - Testing templates (unit and integration)
-   - Debugging tips
-   - Quick start checklist
-   - No changes required checklist
-   
-   **Best for:** Implementing the Usenet adapter, referring to during development
+
+**Purpose:** Tactical implementation guide with specific code examples
+
+**Contents:**
+
+- File locations and key modules
+- Implementation checklist
+- SABnzbd-specific API examples
+- NZBGet-specific API examples
+- Required status map structure
+- HTTP client utilities reference
+- State transition flow diagram
+- Testing templates (unit and integration)
+- Debugging tips
+- Quick start checklist
+- No changes required checklist
+
+**Best for:** Implementing the Usenet adapter, referring to during development
 
 ### 3. **This File (USENET_SUPPORT_README.md)**
-   High-level navigation and quick summaries
+
+High-level navigation and quick summaries
 
 ## Quick Summary
 
 ### The Problem
+
 Mydia currently supports torrent downloads (qBittorrent, Transmission) but not Usenet. Adding Usenet support requires understanding how downloads are handled to ensure clean integration.
 
 ### The Solution
+
 The application is already architected for this! It uses a **protocol-agnostic adapter pattern** where:
+
 1. Each download client type implements a defined interface (behavior)
 2. A registry maps client types to adapter modules
 3. All other code (search, monitoring, import) uses the generic interface
 4. No protocol-specific logic outside the adapter
 
 ### The Implementation
+
 Adding Usenet support requires:
 
 1. **Create `lib/mydia/downloads/client/usenet.ex`** (150-300 lines)
+
    - Implement `@behaviour Mydia.Downloads.Client`
    - Handle SABnzbd or NZBGet API calls
    - Map states and return standardized status maps
 
 2. **Update `lib/mydia/settings/download_client_config.ex`** (1 line)
+
    - Add `:usenet` to `@client_types`
 
 3. **Update `lib/mydia/downloads.ex`** (1 line)
+
    - Register the adapter in `register_clients/0`
 
 4. **No other changes needed!**
@@ -108,22 +120,26 @@ Library
 ## Key Design Patterns
 
 ### 1. Adapter Pattern
+
 - Well-defined behavior: `Mydia.Downloads.Client`
 - Pluggable implementations
 - Registry-based lookup
 - No coupling between components
 
 ### 2. Stateless Client Status
+
 - Downloads table stores metadata only
 - Real-time status from clients on demand
 - Single source of truth: the clients themselves
 
 ### 3. Ephemeral Download Queue
+
 - Downloads deleted after import
 - Library is source of truth for what's been downloaded
 - Only active downloads in database
 
 ### 4. Protocol Independence
+
 - Search, monitoring, import don't care how files arrive
 - Only care about: presence, location, completion status
 - Works for torrents, Usenet, HTTP, etc.
@@ -164,16 +180,19 @@ lib/mydia/
 ## Reading Guide
 
 ### For Architects
+
 1. Read USENET_ARCHITECTURE_ANALYSIS.md sections 1-8
 2. Review design patterns (section 8)
 3. Understand integration philosophy (section 7)
 
 ### For Implementers
+
 1. Read USENET_QUICK_REFERENCE.md - all sections
 2. Use implementation checklist
 3. Refer to code examples for SABnzbd/NZBGet
 
 ### For Code Reviewers
+
 1. Check implementation against behavior definition (client.ex)
 2. Verify state mapping is correct
 3. Ensure status_map structure matches spec
@@ -181,13 +200,13 @@ lib/mydia/
 
 ## Implementation Effort
 
-| Task | Hours | Complexity |
-|------|-------|-----------|
-| Create adapter module | 4-8 | Medium |
-| Configuration changes | <1 | Trivial |
-| Unit tests | 3-6 | Medium |
-| Integration tests | 3-6 | Medium |
-| **Total** | **10-20** | **Medium** |
+| Task                  | Hours     | Complexity |
+| --------------------- | --------- | ---------- |
+| Create adapter module | 4-8       | Medium     |
+| Configuration changes | <1        | Trivial    |
+| Unit tests            | 3-6       | Medium     |
+| Integration tests     | 3-6       | Medium     |
+| **Total**             | **10-20** | **Medium** |
 
 ## Next Steps
 
@@ -203,18 +222,21 @@ lib/mydia/
 ## Key Files to Study
 
 ### Must Read (for complete understanding)
+
 - `lib/mydia/downloads/client.ex` - Behavior definition
 - `lib/mydia/downloads/client/qbittorrent.ex` - Reference implementation
 - `lib/mydia/jobs/download_monitor.ex` - How monitoring works
 - `lib/mydia/jobs/media_import.ex` - How import works
 
 ### Should Read (for context)
+
 - `lib/mydia/downloads.ex` - Client selection and download initiation
 - `lib/mydia/settings/download_client_config.ex` - Configuration schema
 - `lib/mydia/jobs/movie_search.ex` - How search initiates downloads
 - `lib/mydia/downloads/client/http.ex` - Shared HTTP utilities
 
 ### Reference (for implementation details)
+
 - `lib/mydia/indexers/search_result.ex` - What search returns
 - `lib/mydia/downloads/download.ex` - Download database schema
 - `lib/mydia/library/metadata_enricher.ex` - Media enrichment

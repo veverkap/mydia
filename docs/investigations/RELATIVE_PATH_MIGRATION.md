@@ -60,6 +60,7 @@ The application uses a **layered configuration approach**:
 4. **Environment Variables** (highest priority)
 
 Library paths support:
+
 - Environment variables: `LIBRARY_PATH_1_PATH`, `LIBRARY_PATH_1_TYPE`, etc.
 - Database storage in `library_paths` table
 - Runtime merging via `Mydia.Config.Loader`
@@ -67,6 +68,7 @@ Library paths support:
 ### Current Data Model
 
 **Library Paths** (`lib/mydia/settings/library_path.ex`):
+
 ```elixir
 schema "library_paths" do
   field :path, :string          # Absolute path to library root
@@ -78,6 +80,7 @@ end
 ```
 
 **Media Files** (`lib/mydia/library/media_file.ex`):
+
 ```elixir
 schema "media_files" do
   field :path, :string                                    # Currently absolute
@@ -91,18 +94,22 @@ end
 ### Key Code Locations
 
 **File Import** (`lib/mydia/jobs/media_import.ex:499-500`):
+
 - Builds absolute path: `dest_path = Path.join(dest_dir, final_filename)`
 - Stores directly: `attrs = %{path: path, ...}`
 
 **File Access** (`lib/mydia_web/controllers/api/stream_controller.ex:93,216`):
+
 - Directly uses absolute path: `File.exists?(media_file.path)`
 - Streams from: `file_path = media_file.path`
 
 **Library Scanning** (`lib/mydia/library.ex:315-316,423-424,533-534`):
+
 - Queries files by absolute path
 - Compares existing paths as strings
 
 **File Lookup** (`lib/mydia/library.ex:45-50`):
+
 - Query: `where([f], f.path == ^path)`
 
 ## Migration Strategy
@@ -144,6 +151,7 @@ end
 #### 2.1 Identify Library Path for Each File
 
 **Algorithm**:
+
 ```elixir
 defmodule Mydia.Repo.Migrations.PopulateRelativePaths do
   def up do
@@ -177,17 +185,20 @@ end
 #### 2.2 Handle Edge Cases
 
 **Orphaned Files**: Files that don't match any library path
+
 - **Option A**: Delete them (aggressive)
 - **Option B**: Keep them with NULL library_path_id (allow manual cleanup)
 - **Recommendation**: Option B with admin UI warning
 
 **Files Outside Library Paths**: Some files may have been manually added
+
 - Keep absolute path as fallback
 - Add validation warning
 
 #### 2.3 Validate Migration
 
 After migration:
+
 ```sql
 -- Check for files without library_path_id
 SELECT COUNT(*) FROM media_files WHERE library_path_id IS NULL;
@@ -243,6 +254,7 @@ end
 #### 3.2 Update Import Job (`lib/mydia/jobs/media_import.ex`)
 
 **Changes**:
+
 - Calculate relative path instead of storing absolute
 - Store library_path_id reference
 - Use relative path in all file operations
@@ -267,6 +279,7 @@ end
 #### 3.3 Update Stream Controller (`lib/mydia_web/controllers/api/stream_controller.ex`)
 
 **Changes**:
+
 - Resolve absolute path before accessing file
 - Preload library_path association
 
@@ -302,6 +315,7 @@ end
 #### 3.4 Update Library Scanning (`lib/mydia/library.ex`)
 
 **Changes**:
+
 - Convert absolute paths to relative before storing
 - Pass library_path_id when creating files
 - Update path comparison logic
@@ -327,6 +341,7 @@ end
 #### 3.5 Update File Lookup Functions
 
 **Changes**:
+
 - Add functions to query by relative path
 - Update absolute path queries to resolve and compare
 
@@ -498,31 +513,37 @@ end
 #### 5.2 Migration Execution
 
 **Step 1**: Schema changes (add columns, non-breaking)
+
 ```bash
 mix ecto.migrate
 ```
 
 **Step 2**: Data migration (populate new columns)
+
 ```bash
 mix ecto.migrate  # Run data population migration
 ```
 
 **Step 3**: Validation (verify data integrity)
+
 ```bash
 # Run custom validation script
 mix run priv/repo/scripts/validate_relative_paths.exs
 ```
 
 **Step 4**: Code deployment (use new columns)
+
 - Deploy application code that uses relative paths
 - Keep absolute path column for backwards compatibility
 
 **Step 5**: Monitoring (24-48 hours)
+
 - Monitor error rates
 - Check for missing files
 - Validate playback success rate
 
 **Step 6**: Cleanup (after validation)
+
 - Remove deprecated `path` column (optional, can keep for safety)
 - Remove migration code
 - Update documentation
@@ -532,11 +553,13 @@ mix run priv/repo/scripts/validate_relative_paths.exs
 If issues arise:
 
 **Before Code Deployment**:
+
 - Restore database backup
 - Revert migrations
 - Resume operations on old schema
 
 **After Code Deployment**:
+
 - Redeploy previous application version
 - Database still has both columns
 - System falls back to absolute path
@@ -546,12 +569,15 @@ If issues arise:
 ### High Risk Areas
 
 1. **Data Loss**: Migration errors could corrupt file references
+
    - **Mitigation**: Full database backup, staged rollout
 
 2. **Downtime**: Migration may lock tables
+
    - **Mitigation**: Run during low-traffic window, test on copy first
 
 3. **Orphaned Files**: Files outside library paths become inaccessible
+
    - **Mitigation**: Pre-migration report, admin UI for cleanup
 
 4. **Path Separator Issues**: Windows vs Unix path separators
@@ -560,9 +586,11 @@ If issues arise:
 ### Medium Risk Areas
 
 1. **Performance**: Joining library_paths table adds query overhead
+
    - **Mitigation**: Add indexes, benchmark queries, consider preloading
 
 2. **Complex Queries**: Path-based queries become more complex
+
    - **Mitigation**: Create helper functions, add database views
 
 3. **External Integrations**: Third-party tools may expect absolute paths
@@ -579,6 +607,7 @@ If issues arise:
 ### Alternative 1: Path Rewriting on Library Change
 
 **Approach**: When library path changes, update all media_file paths in bulk
+
 ```sql
 UPDATE media_files
 SET path = REPLACE(path, '/old/path', '/new/path')
@@ -586,11 +615,13 @@ WHERE path LIKE '/old/path/%'
 ```
 
 **Pros**:
+
 - Simpler implementation
 - No schema changes needed
 - Works with existing code
 
 **Cons**:
+
 - Dangerous bulk operation
 - No rollback if paths wrong
 - Doesn't handle complex path changes
@@ -602,6 +633,7 @@ WHERE path LIKE '/old/path/%'
 ### Alternative 2: Virtual Filesystem Layer
 
 **Approach**: Create abstraction layer that maps logical paths to physical paths
+
 ```elixir
 defmodule Mydia.VFS do
   def resolve_path(logical_path) do
@@ -611,11 +643,13 @@ end
 ```
 
 **Pros**:
+
 - Very flexible
 - Could support multiple backends
 - Clean separation of concerns
 
 **Cons**:
+
 - Over-engineered for current needs
 - Performance overhead on every file access
 - Complex to implement and maintain
@@ -626,16 +660,19 @@ end
 ### Alternative 3: Symlink-Based Approach
 
 **Approach**: Create symlinks when library path changes
+
 ```bash
 ln -s /new/media/movies /old/media/movies
 ```
 
 **Pros**:
+
 - No code changes needed
 - Works at filesystem level
 - Easy to set up
 
 **Cons**:
+
 - Requires OS-level permissions
 - Not portable (Windows support)
 - Doesn't work in containers
@@ -649,6 +686,7 @@ ln -s /new/media/movies /old/media/movies
 **Use relative paths with library_path_id foreign key** (Proposed Solution)
 
 **Justification**:
+
 1. ✅ **Solves root cause**: Library paths can change without breaking files
 2. ✅ **Data integrity**: Foreign key ensures valid references
 3. ✅ **Explicit relationships**: Clear which files belong to which library
@@ -658,14 +696,14 @@ ln -s /new/media/movies /old/media/movies
 
 ## Implementation Estimates
 
-| Phase | Effort | Risk | Dependencies |
-|-------|--------|------|--------------|
-| 1. Schema Changes | 1 day | Low | None |
-| 2. Data Migration | 2-3 days | High | Phase 1 |
-| 3. Code Changes | 3-5 days | Medium | Phase 2 |
-| 4. Testing | 2-3 days | Medium | Phase 3 |
-| 5. Rollout | 1 day | High | Phase 4 |
-| **Total** | **9-13 days** | **High** | Sequential |
+| Phase             | Effort        | Risk     | Dependencies |
+| ----------------- | ------------- | -------- | ------------ |
+| 1. Schema Changes | 1 day         | Low      | None         |
+| 2. Data Migration | 2-3 days      | High     | Phase 1      |
+| 3. Code Changes   | 3-5 days      | Medium   | Phase 2      |
+| 4. Testing        | 2-3 days      | Medium   | Phase 3      |
+| 5. Rollout        | 1 day         | High     | Phase 4      |
+| **Total**         | **9-13 days** | **High** | Sequential   |
 
 ## Success Criteria
 
@@ -680,16 +718,19 @@ ln -s /new/media/movies /old/media/movies
 ## Open Questions
 
 1. **Should we keep the absolute `path` column long-term?**
+
    - Pro: Safety net for rollback, backwards compatibility
    - Con: Data duplication, potential for inconsistency
    - **Recommendation**: Keep for 6 months, then deprecate
 
 2. **How to handle files added before migration?**
+
    - Option A: Require re-scanning library
    - Option B: Automatic migration (preferred)
    - **Recommendation**: Automatic migration with validation
 
 3. **Should library path deletions cascade to media files?**
+
    - Pro: Clean data, no orphans
    - Con: Accidental deletion loses all file records
    - **Recommendation**: CASCADE with confirmation UI

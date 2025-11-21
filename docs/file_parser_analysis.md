@@ -25,6 +25,7 @@ The current `FileParser` implementation uses a **list-based pattern matching** a
 ### Core Problems
 
 #### 1. **Exhaustive List Maintenance**
+
 ```elixir
 # Must add every variant manually
 @audio_codecs ~w(... DDP5.1 DD5.1 DD+ ...)
@@ -32,6 +33,7 @@ The current `FileParser` implementation uses a **list-based pattern matching** a
 ```
 
 #### 2. **Dot Normalization Issues**
+
 ```elixir
 # "DDP5.1" becomes "DDP5 1" after normalization
 # Now need separate handling for normalized versions
@@ -39,11 +41,13 @@ normalized_pattern = String.replace(pattern, ".", " ")
 ```
 
 #### 3. **Order Dependencies**
+
 - Patterns must be removed in correct order
 - Release groups without hyphens don't get caught
 - Edge cases multiply as more patterns are added
 
 #### 4. **No Pattern Flexibility**
+
 ```elixir
 # Can't handle variations like:
 # - "DD5.1" vs "DD51" vs "DD5 1"
@@ -80,6 +84,7 @@ title = clean(filename)  # What remains is the title
 ### Key Advantages
 
 #### 1. **Flexible Regex Patterns**
+
 ```python
 # Single pattern handles all variations
 audio: /(?:DD|DDP|EAC3)(?P<channels>\d\.?\d)?/
@@ -95,11 +100,13 @@ Matches:
 ```
 
 #### 2. **Sequential Extraction**
+
 - Apply pattern → Extract info → Remove from string → Repeat
 - What remains after all patterns is the title
 - No order dependencies (patterns are self-contained)
 
 #### 3. **Standardization Layer**
+
 ```python
 def standardize_audio(raw_match):
     # Convert variants to canonical forms
@@ -113,6 +120,7 @@ def standardize_audio(raw_match):
 ```
 
 #### 4. **Maintainability**
+
 - New codec variant? Update regex, not lists
 - Handles unknown patterns gracefully
 - Tested on millions of real-world filenames
@@ -121,18 +129,19 @@ def standardize_audio(raw_match):
 
 ## Comparison: Current vs PTN Approach
 
-| Aspect | Current (List-Based) | PTN (Regex-Based) |
-|--------|---------------------|-------------------|
-| **Audio Codecs** | `~w(DTS-HD DTS-X DTS TrueHD DDP5.1 DD5.1 ...)` | `(?:DTS(?:-HD|-X)?|DD(?:P)?(?:\d\.?\d)?|TrueHD|Atmos)` |
-| **Handles Variations** | ❌ Must add each variant | ✅ Pattern handles all |
-| **Dot Normalization** | ⚠️ Complex workarounds | ✅ Regex handles it |
-| **Maintenance** | ❌ Add to list for each new case | ✅ Pattern often covers it |
-| **Edge Cases** | ❌ Multiplies over time | ✅ Gracefully degrades |
-| **Title Extraction** | Remove patterns, clean result | Remove patterns, what remains is title |
+| Aspect                 | Current (List-Based)                           | PTN (Regex-Based)                      |
+| ---------------------- | ---------------------------------------------- | -------------------------------------- | ---- | -------------------- | ------ | ------- |
+| **Audio Codecs**       | `~w(DTS-HD DTS-X DTS TrueHD DDP5.1 DD5.1 ...)` | `(?:DTS(?:-HD                          | -X)? | DD(?:P)?(?:\d\.?\d)? | TrueHD | Atmos)` |
+| **Handles Variations** | ❌ Must add each variant                       | ✅ Pattern handles all                 |
+| **Dot Normalization**  | ⚠️ Complex workarounds                         | ✅ Regex handles it                    |
+| **Maintenance**        | ❌ Add to list for each new case               | ✅ Pattern often covers it             |
+| **Edge Cases**         | ❌ Multiplies over time                        | ✅ Gracefully degrades                 |
+| **Title Extraction**   | Remove patterns, clean result                  | Remove patterns, what remains is title |
 
 ### Example: Audio Codec Handling
 
 **Current Approach:**
+
 ```elixir
 @audio_codecs ~w(DTS-HD DTS-X DTS TrueHD DDP5.1 DD5.1 DD+ Atmos AAC AC3 DD DDP)
 
@@ -144,6 +153,7 @@ acc
 ```
 
 **PTN Approach:**
+
 ```elixir
 @audio_pattern ~r/
   \b
@@ -176,6 +186,7 @@ end
 **Filename:** `Black Phone 2. 2025 1080P WEB-DL DDP5.1 Atmos. X265. POOLTED.mkv`
 
 ### Current Behavior
+
 ```
 1. Normalize: "Black Phone 2  2025 1080P WEB-DL DDP5 1 Atmos  X265  POOLTED"
 2. Try to match "DDP5.1" → ❌ Doesn't exist in list
@@ -184,6 +195,7 @@ end
 ```
 
 ### PTN Approach
+
 ```
 1. Normalize: "Black Phone 2  2025 1080P WEB-DL DDP5.1 Atmos  X265  POOLTED"
 2. Apply patterns sequentially:
@@ -307,21 +319,25 @@ end
 ## Recommendations Summary
 
 ### Immediate Action (This Task - Phase 1)
+
 1. ✅ **Fixed:** Add DDP5.1 to audio codecs list (band-aid)
 2. **Next:** Replace audio codec list with flexible regex pattern
 3. **Document:** Current limitations (release groups, etc.)
 
 ### Short Term (Next Sprint)
+
 1. Implement Phase 1 improvements (regex patterns)
 2. Add more comprehensive test cases from real-world filenames
 3. Benchmark against PTN for common cases
 
 ### Medium Term (Q1 2025)
+
 1. Implement Phase 2 (sequential extraction)
 2. Create migration path from V1 to V2 parser
 3. A/B test with real library data
 
 ### Long Term (Q2 2025)
+
 1. Achieve parity with PTN/GuessIt
 2. Consider contributing improvements back to Elixir ecosystem
 3. Build standardization layer for better TMDB matching
@@ -331,11 +347,13 @@ end
 ## Decision Framework
 
 ### When to Use List-Based Approach
+
 - ✅ Stable, well-defined set of values (max 10-20 items)
 - ✅ No variations expected
 - ✅ Exact matching is sufficient
 
 ### When to Use Regex-Based Approach
+
 - ✅ Multiple variations of same concept (DD/DDP/EAC3)
 - ✅ Pattern has structure (e.g., "codec" + optional "version")
 - ✅ New variants appear regularly
@@ -348,6 +366,7 @@ end
 ## Testing Strategy
 
 ### Test Cases to Add
+
 ```elixir
 # Audio codec variations
 "Movie.2024.1080p.DDP5.1.mkv"      # With dot
@@ -369,6 +388,7 @@ end
 ```
 
 ### Integration Testing
+
 - Test against real library of 1000+ files
 - Compare results with PTN/GuessIt
 - Measure accuracy improvement
@@ -391,6 +411,7 @@ end
 The current list-based approach served well initially but has reached its limits. The DDP5.1 bug is a symptom of a systemic issue: **we're playing whack-a-mole with codec variations**.
 
 **Adopting a regex-based sequential extraction approach** will:
+
 - ✅ Fix current and future codec variation issues
 - ✅ Reduce maintenance burden
 - ✅ Improve match accuracy
@@ -398,11 +419,13 @@ The current list-based approach served well initially but has reached its limits
 - ✅ Make the codebase more maintainable
 
 The phased approach allows us to:
+
 1. **Quick fix** the immediate issue (Phase 1)
 2. **Incrementally improve** without breaking existing functionality
 3. **Eventually achieve** production-grade parsing quality
 
 **Recommended next steps:**
+
 1. Complete current task with quick fix + documentation
 2. Create backlog task for Phase 1 improvements
 3. Schedule Phase 2 for next sprint

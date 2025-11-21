@@ -11,6 +11,7 @@ Mydia uses a **protocol-agnostic adapter pattern** for downloads and indexers. T
 ### 1.1 Current Download Protocols
 
 The system currently supports:
+
 1. **qBittorrent** - Torrent protocol via Web API
 2. **Transmission** - Torrent protocol via RPC API
 3. **HTTP** - Direct file downloads
@@ -20,6 +21,7 @@ The system currently supports:
 **Location:** `lib/mydia/downloads/`
 
 #### Behavior Pattern: `Mydia.Downloads.Client`
+
 File: `lib/mydia/downloads/client.ex`
 
 Defines the interface all download adapters must implement:
@@ -39,7 +41,7 @@ Defines the interface all download adapters must implement:
 ```elixir
 @type torrent_input :: {:magnet, String.t()} | {:file, binary()} | {:url, String.t()}
 
-@type torrent_state :: 
+@type torrent_state ::
   :downloading | :seeding | :paused | :error | :completed | :checking
 
 @type status_map :: %{
@@ -63,11 +65,13 @@ Defines the interface all download adapters must implement:
 #### Implementations
 
 1. **qBittorrent:** `lib/mydia/downloads/client/qbittorrent.ex`
+
    - Uses Web API with cookie-based authentication
    - Maps qBittorrent states to internal states
    - Supports torrent file, magnet links, and URL inputs
 
 2. **Transmission:** `lib/mydia/downloads/client/transmission.ex`
+
    - Uses RPC API
    - Similar state mapping
 
@@ -119,7 +123,7 @@ schema "download_client_configs" do
   field :category, :string
   field :download_directory, :string
   field :connection_settings, :map
-  
+
   belongs_to :updated_by, Mydia.Accounts.User
   timestamps(type: :utc_datetime)
 end
@@ -207,6 +211,7 @@ end
 Background job running on schedule (via Oban):
 
 **Responsibilities:**
+
 1. Poll all download clients for status changes
 2. Detect newly completed downloads
 3. Detect failed downloads
@@ -215,6 +220,7 @@ Background job running on schedule (via Oban):
 6. Track events
 
 **State Mapping Logic:**
+
 ```elixir
 completed =
   Enum.filter(downloads, fn d ->
@@ -230,6 +236,7 @@ missing =
 ```
 
 **Event Tracking:**
+
 - `Events.download_completed/2`
 - `Events.download_failed/2`
 - Activity feed updates
@@ -241,6 +248,7 @@ missing =
 Handles file organization and library integration:
 
 **Responsibilities:**
+
 1. Locate downloaded files from client
 2. Filter video files only
 3. Parse filenames for metadata
@@ -252,6 +260,7 @@ Handles file organization and library integration:
 9. Delete download record after successful import
 
 **File Operations Priority:**
+
 ```elixir
 # 1. Hardlink (instant, no duplicate storage) - requires same filesystem
 # 2. Move (when use_hardlinks=false and move_files=true)
@@ -264,6 +273,7 @@ Movies: `{library_root}/{Title} ({Year})/`
 TV Shows: `{library_root}/{Show Title}/Season NN/`
 
 **Metadata Enrichment:**
+
 - Filename parsing: resolution, codec, audio, source, release group
 - FFprobe analysis: actual resolution, codec, audio codec, bitrate, HDR
 - Merges filename + file analysis
@@ -285,6 +295,7 @@ Similar pattern to download clients:
 ```
 
 **Current Implementations:**
+
 - Prowlarr: `lib/mydia/indexers/adapter/prowlarr.ex`
 - Jackett: `lib/mydia/indexers/adapter/jackett.ex`
 
@@ -325,6 +336,7 @@ Normalized search result structure:
 **File:** `lib/mydia/indexers/release_ranker.ex`
 
 Selects best result from multiple search results based on:
+
 - Quality profile preferences
 - Size constraints
 - Seeder health
@@ -340,10 +352,12 @@ Selects best result from multiple search results based on:
 **File:** `lib/mydia/jobs/movie_search.ex`
 
 Modes:
+
 1. **"all_monitored"** - Search all monitored movies without files (scheduled)
 2. **"specific"** - Search single movie by ID (UI-triggered)
 
 **Flow:**
+
 1. Find monitored movies without media files
 2. Build search query (title + year)
 3. Search all indexers via `Indexers.search_all()`
@@ -356,6 +370,7 @@ Modes:
 **File:** `lib/mydia/jobs/tv_show_search.ex`
 
 Modes:
+
 1. **"specific"** - Single episode
 2. **"season"** - Full season (prefer season pack)
 3. **"show"** - All episodes with smart logic
@@ -364,6 +379,7 @@ Modes:
 **Smart Season Pack Logic:**
 
 For "show" and "all_monitored" modes:
+
 - Group episodes by season
 - Calculate missing percentage per season
 - If >= 70% missing → prefer season pack
@@ -396,6 +412,7 @@ The import job later uses this metadata to map files to individual episodes.
 **File:** `lib/mydia/library/metadata_enricher.ex`
 
 When a media item is discovered:
+
 1. Match against provider (TMDB)
 2. Fetch full metadata
 3. Download images (poster, backdrop)
@@ -407,6 +424,7 @@ When a media item is discovered:
 **File:** `lib/mydia/library/file_analyzer.ex`
 
 Uses FFprobe to extract:
+
 - Resolution
 - Video codec
 - Audio codec
@@ -540,7 +558,7 @@ def register_clients do
   Registry.register(:qbittorrent, Mydia.Downloads.Client.Qbittorrent)
   Registry.register(:transmission, Mydia.Downloads.Client.Transmission)
   Registry.register(:usenet, Mydia.Downloads.Client.Usenet)  # NEW
-  
+
   Logger.info("Download client adapter registration complete")
   :ok
 end
@@ -565,6 +583,7 @@ Usenet providers (Prowlarr, Jackett) return NZB URLs in search results:
 Usenet client states → internal states:
 
 Common states in SABnzbd/NZBGet:
+
 - "queued" → `:downloading`
 - "downloading" → `:downloading`
 - "paused" → `:paused`
@@ -583,12 +602,14 @@ Implement state mapping in Usenet adapter similar to Qbittorrent.
 4. Processes files (parsing, analysis, import)
 
 Usenet adapter must return `save_path` in status_map pointing to:
+
 - Single file for NZB with one release
 - Directory for multi-file NZBs
 
 ### 7.7 HTTP Client Library
 
 The shared `Mydia.Downloads.Client.HTTP` module handles:
+
 - URL building (http/https)
 - Authentication (basic, API key, custom headers)
 - Request/response with Req
@@ -691,7 +712,7 @@ def list_downloads_with_status(opts) do
   downloads = list_downloads(preload: [:media_item, episode: :media_item])
   clients = get_configured_clients()
   client_statuses = fetch_all_client_statuses(clients)  # One call per client
-  
+
   downloads
   |> Enum.map(&enrich_download_with_status(&1, client_statuses))
 end
@@ -729,11 +750,13 @@ file_metadata =
 ### 12.2 Usenet-Specific Considerations
 
 1. **NZB file handling**
+
    - SABnzbd/NZBGet download NZB and parse internally
    - File paths not available until download starts
    - May need special handling in MediaImport for NZB metadata
 
 2. **Multipart files**
+
    - Usenet downloads often result in multiple files (RAR archives, etc.)
    - MediaImport already filters for video extensions only
    - Consider adding RAR/7z extraction for completeness
@@ -757,4 +780,3 @@ Usenet support requires:
 6. **No changes to indexers, search jobs, or import jobs**
 
 The architecture is cleanly extensible - Usenet integrates as a "download provider" alongside torrents with zero impact on search, import, or media management logic.
-

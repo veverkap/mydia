@@ -7,20 +7,20 @@ on:
       - master
       - main
     paths:
-      - 'assets/**'
-      - 'lib/**'
-      - 'test/e2e/**'
-      - 'compose.e2e.yml'
-      - 'compose.test.yml'
-      - '.github/workflows/e2e.yml'
+      - "assets/**"
+      - "lib/**"
+      - "test/e2e/**"
+      - "compose.e2e.yml"
+      - "compose.test.yml"
+      - ".github/workflows/e2e.yml"
   pull_request:
     paths:
-      - 'assets/**'
-      - 'lib/**'
-      - 'test/e2e/**'
-      - 'compose.e2e.yml'
-      - 'compose.test.yml'
-      - '.github/workflows/e2e.yml'
+      - "assets/**"
+      - "lib/**"
+      - "test/e2e/**"
+      - "compose.e2e.yml"
+      - "compose.test.yml"
+      - ".github/workflows/e2e.yml"
 
 env:
   MIX_ENV: test

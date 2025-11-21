@@ -12,6 +12,6 @@
  * import * as fixtures from '../fixtures';
  */
 
-export * from './users';
-export * from './media';
-export * from './api-responses';
+export * from "./users";
+export * from "./media";
+export * from "./api-responses";

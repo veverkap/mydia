@@ -16,7 +16,7 @@
  *   await loginPage.login('admin', 'adminpass');
  * });
  */
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 export class LoginPage {
   /**
@@ -39,7 +39,9 @@ export class LoginPage {
   }
 
   private get oidcButton() {
-    return this.page.locator('a:has-text("Sign in with OIDC"), button:has-text("Sign in with OIDC")');
+    return this.page.locator(
+      'a:has-text("Sign in with OIDC"), button:has-text("Sign in with OIDC")',
+    );
   }
 
   private get errorMessage() {
@@ -56,8 +58,8 @@ export class LoginPage {
    * await loginPage.goto();
    */
   async goto() {
-    await this.page.goto('/auth/local/login');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/auth/local/login");
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -103,7 +105,7 @@ export class LoginPage {
     await this.fillPassword(password);
     await this.clickSubmit();
     // Wait for navigation
-    await this.page.waitForURL('/', { timeout: 5000 });
+    await this.page.waitForURL("/", { timeout: 5000 });
   }
 
   /**

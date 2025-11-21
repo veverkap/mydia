@@ -9,6 +9,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 ## ✨ Features
 
 ### Core Library Management
+
 - 📺 **Smart Media Library** – Track TV shows, movies, and episodes with rich metadata from TMDB/TVDB
 - 🔍 **Media Discovery** – Search and add content with automatic metadata matching and disambiguation
 - 📁 **Library Scanner** – Automatic scanning and import of existing media files
@@ -17,6 +18,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 📊 **Quality Profiles** – Customizable quality preferences for automated downloads
 
 ### Download Management
+
 - ⬇️ **Download Client Integration** – Seamless connectivity with torrent clients (qBittorrent, Transmission) and Usenet clients (SABnzbd, NZBGet)
 - 🔎 **Indexer Support** – Integrated search via Prowlarr and Jackett for finding releases
 - 🤖 **Automatic Search & Download** – Background jobs to automatically find and download monitored content
@@ -26,12 +28,14 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 🌐 **Usenet Support** – Native support for Usenet downloads with SABnzbd and NZBGet clients
 
 ### Monitoring & Tracking
+
 - 🔔 **Release Calendar** – Track upcoming and past releases with timeline view
 - 👁️ **Episode Monitoring** – Monitor individual episodes, seasons, or entire series
 - 📊 **Missing Episodes** – Identify gaps in your library
 - ⏱️ **Background Jobs** – Automated scanning, searching, and importing with Oban
 
 ### User Management & Access Control
+
 - 👥 **Role-Based Access** – Admin and guest user roles with appropriate permissions
 - 🎫 **Guest Request System** – Guests can browse media and submit requests for new content
 - ✅ **Request Approval Workflow** – Admins review and approve/reject guest requests with notes
@@ -40,6 +44,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 🚀 **Auto-Promotion** – First OIDC user automatically promoted to admin role
 
 ### System & Configuration
+
 - ⚙️ **Admin Dashboard** – System status, configuration management, and health monitoring
 - 🔧 **Flexible Configuration** – Environment variables, YAML files, or database settings with clear precedence
 - 🎨 **Modern UI** – Built with Phoenix LiveView, Tailwind CSS, and DaisyUI
@@ -78,10 +83,10 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 
 Multi-platform images are available for the following architectures:
 
-| Architecture | Available | Tag |
-| :----: | :----: | ---- |
-| x86-64 | ✅ | amd64-latest |
-| arm64 | ✅ | arm64-latest |
+| Architecture | Available | Tag          |
+| :----------: | :-------: | ------------ |
+|    x86-64    |    ✅     | amd64-latest |
+|    arm64     |    ✅     | arm64-latest |
 
 The multi-arch image `ghcr.io/getmydia/mydia:latest` will automatically pull the correct image for your architecture.
 
@@ -118,15 +123,15 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/New_York
-      - SECRET_KEY_BASE=your-secret-key-base-here  # Required: generate with openssl rand -base64 48
-      - GUARDIAN_SECRET_KEY=your-guardian-secret-key-here  # Required: generate with openssl rand -base64 48
-      - PHX_HOST=localhost  # Change to your domain
+      - SECRET_KEY_BASE=your-secret-key-base-here # Required: generate with openssl rand -base64 48
+      - GUARDIAN_SECRET_KEY=your-guardian-secret-key-here # Required: generate with openssl rand -base64 48
+      - PHX_HOST=localhost # Change to your domain
       - PORT=4000
       - MOVIES_PATH=/media/library/movies
       - TV_PATH=/media/library/tv
     volumes:
       - /path/to/mydia/config:/config
-      - /path/to/your/media:/media  # Single mount enables hardlinks between downloads and libraries
+      - /path/to/your/media:/media # Single mount enables hardlinks between downloads and libraries
     ports:
       - 4000:4000
     restart: unless-stopped
@@ -163,34 +168,34 @@ Container images are configured using parameters passed at runtime. These parame
 
 ### Ports (`-p`)
 
-| Parameter | Function |
-| :----: | --- |
+|  Parameter  | Function      |
+| :---------: | ------------- |
 | `4000:4000` | Web interface |
 
 ### Environment Variables (`-e`)
 
-| Env | Function |
-| :----: | --- |
-| `PUID=1000` | User ID for file permissions - see [User / Group Identifiers](#user--group-identifiers) below |
-| `PGID=1000` | Group ID for file permissions - see [User / Group Identifiers](#user--group-identifiers) below |
-| `TZ=UTC` | Timezone (e.g., `America/New_York`) |
-| `SECRET_KEY_BASE` | **Required** - Phoenix secret key (generate with: `openssl rand -base64 48`) |
-| `GUARDIAN_SECRET_KEY` | **Required** - JWT signing key (generate with: `openssl rand -base64 48`) |
-| `PHX_HOST=localhost` | Public hostname for the application |
-| `PORT=4000` | Web server port |
-| `MOVIES_PATH=/media/movies` | Movies directory path |
-| `TV_PATH=/media/tv` | TV shows directory path |
+|             Env             | Function                                                                                       |
+| :-------------------------: | ---------------------------------------------------------------------------------------------- |
+|         `PUID=1000`         | User ID for file permissions - see [User / Group Identifiers](#user--group-identifiers) below  |
+|         `PGID=1000`         | Group ID for file permissions - see [User / Group Identifiers](#user--group-identifiers) below |
+|          `TZ=UTC`           | Timezone (e.g., `America/New_York`)                                                            |
+|      `SECRET_KEY_BASE`      | **Required** - Phoenix secret key (generate with: `openssl rand -base64 48`)                   |
+|    `GUARDIAN_SECRET_KEY`    | **Required** - JWT signing key (generate with: `openssl rand -base64 48`)                      |
+|    `PHX_HOST=localhost`     | Public hostname for the application                                                            |
+|         `PORT=4000`         | Web server port                                                                                |
+| `MOVIES_PATH=/media/movies` | Movies directory path                                                                          |
+|     `TV_PATH=/media/tv`     | TV shows directory path                                                                        |
 
 See the **[Environment Variables Reference](#-environment-variables-reference)** section below for complete configuration options including download clients, indexers, and authentication.
 
 ### Volume Mappings (`-v`)
 
-| Volume | Function |
-| :----: | --- |
-| `/config` | Application data, database, and configuration files |
-| `/media/movies` | Movies library location |
-| `/media/tv` | TV shows library location |
-| `/media/downloads` | Download client output directory (optional) |
+|       Volume       | Function                                            |
+| :----------------: | --------------------------------------------------- |
+|     `/config`      | Application data, database, and configuration files |
+|  `/media/movies`   | Movies library location                             |
+|    `/media/tv`     | TV shows library location                           |
+| `/media/downloads` | Download client output directory (optional)         |
 
 > **💡 Hardlink Support for Efficient Storage**
 >
@@ -201,10 +206,11 @@ See the **[Environment Variables Reference](#-environment-variables-reference)**
 > ```yaml
 > volumes:
 >   - /path/to/mydia/config:/config
->   - /path/to/your/media:/media  # Single mount for downloads AND libraries
+>   - /path/to/your/media:/media # Single mount for downloads AND libraries
 > ```
 >
 > Then organize your host directory structure like:
+>
 > ```
 > /path/to/your/media/
 >   ├── downloads/          # Download client output
@@ -214,6 +220,7 @@ See the **[Environment Variables Reference](#-environment-variables-reference)**
 > ```
 >
 > And configure environment variables:
+>
 > ```yaml
 > environment:
 >   - MOVIES_PATH=/media/library/movies
@@ -223,6 +230,7 @@ See the **[Environment Variables Reference](#-environment-variables-reference)**
 > Configure your download client (qBittorrent, Transmission, etc.) to save files to `/media/downloads`.
 >
 > **Benefits:**
+>
 > - Instant file operations (no data copying)
 > - Zero duplicate storage space
 > - Files remain seeding in your download client while available in your library
@@ -239,6 +247,7 @@ Mydia uses **relative path storage** for media files, which provides several ben
 - **Seamless Upgrades**: The migration from absolute to relative paths happens automatically on first startup after upgrade
 
 Library paths can be configured via:
+
 1. Environment variables (`MOVIES_PATH`, `TV_PATH`) - Highest priority
 2. Admin UI (Database settings)
 3. YAML configuration file (`config/config.yml`)
@@ -265,6 +274,7 @@ Use these values for `PUID` and `PGID` in your container configuration.
 The entrypoint script automatically handles conflicts when the specified PUID/PGID is already in use by another user or group in the container. For example, GID 100 is typically used by the "users" group in Alpine Linux. The container will automatically resolve these conflicts by removing the conflicting user/group and applying your specified IDs.
 
 **Common scenarios:**
+
 - Using `PGID=100` (conflicts with "users" group) - automatically handled ✓
 - Using `PUID=99` (conflicts with "nobody" user on some systems) - automatically handled ✓
 - Any custom UID/GID that matches your host system - automatically handled ✓
@@ -304,6 +314,7 @@ Mydia automatically creates database backups before running migrations to ensure
   3. Restart the container
 
 To disable automatic backups (not recommended):
+
 ```bash
 # In docker-compose.yml or docker run command
 environment:
@@ -315,6 +326,7 @@ For more details about backup and restore procedures, see [docs/deployment/DEPLO
 ### Beta Releases
 
 Beta releases are available for testing new features before they are released to stable. Beta releases:
+
 - Are tagged with `beta` instead of `latest`
 - May contain experimental features or breaking changes
 - Are not recommended for production use
@@ -334,7 +346,7 @@ Update your Docker Compose configuration:
 ```yaml
 services:
   mydia:
-    image: ghcr.io/getmydia/mydia:beta  # Use beta tag instead of latest
+    image: ghcr.io/getmydia/mydia:beta # Use beta tag instead of latest
     # ... rest of configuration
 ```
 
@@ -344,53 +356,54 @@ See [DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) for advanced deployment topic
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SECRET_KEY_BASE` | Phoenix secret key for cookies/sessions | Generate with: `openssl rand -base64 48` |
-| `GUARDIAN_SECRET_KEY` | JWT signing key for authentication | Generate with: `openssl rand -base64 48` |
+| Variable              | Description                             | Example                                  |
+| --------------------- | --------------------------------------- | ---------------------------------------- |
+| `SECRET_KEY_BASE`     | Phoenix secret key for cookies/sessions | Generate with: `openssl rand -base64 48` |
+| `GUARDIAN_SECRET_KEY` | JWT signing key for authentication      | Generate with: `openssl rand -base64 48` |
 
 ### Container Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PUID` | User ID for file permissions | `1000` |
-| `PGID` | Group ID for file permissions | `1000` |
-| `TZ` | Timezone (e.g., `America/New_York`, `Europe/London`) | `UTC` |
-| `DATABASE_PATH` | Path to SQLite database file | `/config/mydia.db` |
+| Variable        | Description                                          | Default            |
+| --------------- | ---------------------------------------------------- | ------------------ |
+| `PUID`          | User ID for file permissions                         | `1000`             |
+| `PGID`          | Group ID for file permissions                        | `1000`             |
+| `TZ`            | Timezone (e.g., `America/New_York`, `Europe/London`) | `UTC`              |
+| `DATABASE_PATH` | Path to SQLite database file                         | `/config/mydia.db` |
 
 ### Server Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PHX_HOST` | Public hostname for the application | `localhost` |
-| `PORT` | Web server port | `4000` |
-| `HOST` | Server binding address | `0.0.0.0` |
-| `URL_SCHEME` | URL scheme for external links (http/https) | `http` |
+| Variable           | Description                                                                                                                             | Default                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `PHX_HOST`         | Public hostname for the application                                                                                                     | `localhost`                       |
+| `PORT`             | Web server port                                                                                                                         | `4000`                            |
+| `HOST`             | Server binding address                                                                                                                  | `0.0.0.0`                         |
+| `URL_SCHEME`       | URL scheme for external links (http/https)                                                                                              | `http`                            |
 | `PHX_CHECK_ORIGIN` | WebSocket origin checking. Set to `false` to allow all origins (useful for IP-based access), or comma-separated list of allowed origins | Allows `PHX_HOST` with any scheme |
 
 ### Media Library
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MOVIES_PATH` | Movies directory path | `/media/movies` |
-| `TV_PATH` | TV shows directory path | `/media/tv` |
-| `MEDIA_SCAN_INTERVAL_HOURS` | Hours between library scans | `1` |
+| Variable                    | Description                 | Default         |
+| --------------------------- | --------------------------- | --------------- |
+| `MOVIES_PATH`               | Movies directory path       | `/media/movies` |
+| `TV_PATH`                   | TV shows directory path     | `/media/tv`     |
+| `MEDIA_SCAN_INTERVAL_HOURS` | Hours between library scans | `1`             |
 
 ### Authentication
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LOCAL_AUTH_ENABLED` | Enable local username/password auth | `true` |
-| `OIDC_ENABLED` | Enable OIDC/OpenID Connect auth | `false` |
-| `OIDC_DISCOVERY_DOCUMENT_URI` | OIDC discovery endpoint URL | - |
-| `OIDC_CLIENT_ID` | OIDC client ID | - |
-| `OIDC_CLIENT_SECRET` | OIDC client secret | - |
-| `OIDC_REDIRECT_URI` | OIDC callback URL | Auto-computed |
-| `OIDC_SCOPES` | Space-separated scope list | `openid profile email` |
+| Variable                      | Description                         | Default                |
+| ----------------------------- | ----------------------------------- | ---------------------- |
+| `LOCAL_AUTH_ENABLED`          | Enable local username/password auth | `true`                 |
+| `OIDC_ENABLED`                | Enable OIDC/OpenID Connect auth     | `false`                |
+| `OIDC_DISCOVERY_DOCUMENT_URI` | OIDC discovery endpoint URL         | -                      |
+| `OIDC_CLIENT_ID`              | OIDC client ID                      | -                      |
+| `OIDC_CLIENT_SECRET`          | OIDC client secret                  | -                      |
+| `OIDC_REDIRECT_URI`           | OIDC callback URL                   | Auto-computed          |
+| `OIDC_SCOPES`                 | Space-separated scope list          | `openid profile email` |
 
 **OIDC Provider Compatibility:**
 
 Mydia uses standard OAuth2 authentication that works with **minimal provider configuration** - just set client_id, client_secret, and redirect_uris in your provider. No need to configure:
+
 - `token_endpoint_auth_method` settings
 - `response_modes` lists
 - JWT-based authentication methods
@@ -410,6 +423,7 @@ See [docs/OIDC_TESTING.md](docs/OIDC_TESTING.md) for detailed setup instructions
 **First-Time Setup:**
 
 When you first access Mydia, you'll be guided through a setup flow to create the initial admin user. You can either:
+
 - Set a custom password of your choice
 - Generate a secure random password that will be displayed once
 
@@ -421,32 +435,33 @@ After the admin user is created, you'll be automatically logged in and can begin
 >
 > The features controlled by these flags are **very early in development** and are **unstable or may not work at all**. Do not enable these features unless you understand the risks and are comfortable with potential issues, bugs, or breaking changes. These features are opt-in and disabled by default for good reason.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ENABLE_PLAYBACK` | Enable media playback controls and HLS streaming | `false` |
+| Variable           | Description                                                                             | Default |
+| ------------------ | --------------------------------------------------------------------------------------- | ------- |
+| `ENABLE_PLAYBACK`  | Enable media playback controls and HLS streaming                                        | `false` |
 | `ENABLE_CARDIGANN` | Enable native Cardigann indexer support (hundreds of indexers without Prowlarr/Jackett) | `false` |
-| `ENABLE_SUBTITLES` | Enable subtitle download and management | `false` |
+| `ENABLE_SUBTITLES` | Enable subtitle download and management                                                 | `false` |
 
 ### Download Clients
 
 Configure multiple download clients using numbered environment variables (`<N>` = 1, 2, 3, etc.):
 
-| Variable Pattern | Description | Example |
-|-----------------|-------------|---------|
-| `DOWNLOAD_CLIENT_<N>_NAME` | Client display name | `qBittorrent` |
-| `DOWNLOAD_CLIENT_<N>_TYPE` | Client type (qbittorrent, transmission, sabnzbd, nzbget, http) | `qbittorrent` |
-| `DOWNLOAD_CLIENT_<N>_ENABLED` | Enable this client | `true` |
-| `DOWNLOAD_CLIENT_<N>_PRIORITY` | Client priority (higher = preferred) | `1` |
-| `DOWNLOAD_CLIENT_<N>_HOST` | Client hostname or IP | `qbittorrent` |
-| `DOWNLOAD_CLIENT_<N>_PORT` | Client port | `8080` |
-| `DOWNLOAD_CLIENT_<N>_USE_SSL` | Use SSL/TLS connection | `false` |
-| `DOWNLOAD_CLIENT_<N>_USERNAME` | Authentication username (Transmission, qBittorrent, NZBGet) | - |
-| `DOWNLOAD_CLIENT_<N>_PASSWORD` | Authentication password (Transmission, qBittorrent, NZBGet) | - |
-| `DOWNLOAD_CLIENT_<N>_API_KEY` | API key (SABnzbd) | - |
-| `DOWNLOAD_CLIENT_<N>_CATEGORY` | Default download category | - |
-| `DOWNLOAD_CLIENT_<N>_DOWNLOAD_DIRECTORY` | Download output directory | - |
+| Variable Pattern                         | Description                                                    | Example       |
+| ---------------------------------------- | -------------------------------------------------------------- | ------------- |
+| `DOWNLOAD_CLIENT_<N>_NAME`               | Client display name                                            | `qBittorrent` |
+| `DOWNLOAD_CLIENT_<N>_TYPE`               | Client type (qbittorrent, transmission, sabnzbd, nzbget, http) | `qbittorrent` |
+| `DOWNLOAD_CLIENT_<N>_ENABLED`            | Enable this client                                             | `true`        |
+| `DOWNLOAD_CLIENT_<N>_PRIORITY`           | Client priority (higher = preferred)                           | `1`           |
+| `DOWNLOAD_CLIENT_<N>_HOST`               | Client hostname or IP                                          | `qbittorrent` |
+| `DOWNLOAD_CLIENT_<N>_PORT`               | Client port                                                    | `8080`        |
+| `DOWNLOAD_CLIENT_<N>_USE_SSL`            | Use SSL/TLS connection                                         | `false`       |
+| `DOWNLOAD_CLIENT_<N>_USERNAME`           | Authentication username (Transmission, qBittorrent, NZBGet)    | -             |
+| `DOWNLOAD_CLIENT_<N>_PASSWORD`           | Authentication password (Transmission, qBittorrent, NZBGet)    | -             |
+| `DOWNLOAD_CLIENT_<N>_API_KEY`            | API key (SABnzbd)                                              | -             |
+| `DOWNLOAD_CLIENT_<N>_CATEGORY`           | Default download category                                      | -             |
+| `DOWNLOAD_CLIENT_<N>_DOWNLOAD_DIRECTORY` | Download output directory                                      | -             |
 
 **Supported Download Clients:**
+
 - **Torrent Clients**: qBittorrent, Transmission
 - **Usenet Clients**: SABnzbd, NZBGet
 
@@ -489,17 +504,17 @@ DOWNLOAD_CLIENT_4_PASSWORD=tegbzn6789
 
 Configure multiple indexers using numbered environment variables (`<N>` = 1, 2, 3, etc.):
 
-| Variable Pattern | Description | Example |
-|-----------------|-------------|---------|
-| `INDEXER_<N>_NAME` | Indexer display name | `Prowlarr` |
-| `INDEXER_<N>_TYPE` | Indexer type (prowlarr, jackett, public) | `prowlarr` |
-| `INDEXER_<N>_ENABLED` | Enable this indexer | `true` |
-| `INDEXER_<N>_PRIORITY` | Indexer priority (higher = preferred) | `1` |
-| `INDEXER_<N>_BASE_URL` | Indexer base URL | `http://prowlarr:9696` |
-| `INDEXER_<N>_API_KEY` | Indexer API key | - |
-| `INDEXER_<N>_INDEXER_IDS` | Comma-separated indexer IDs | `1,2,3` |
-| `INDEXER_<N>_CATEGORIES` | Comma-separated categories | `movies,tv` |
-| `INDEXER_<N>_RATE_LIMIT` | API rate limit (requests/sec) | - |
+| Variable Pattern          | Description                              | Example                |
+| ------------------------- | ---------------------------------------- | ---------------------- |
+| `INDEXER_<N>_NAME`        | Indexer display name                     | `Prowlarr`             |
+| `INDEXER_<N>_TYPE`        | Indexer type (prowlarr, jackett, public) | `prowlarr`             |
+| `INDEXER_<N>_ENABLED`     | Enable this indexer                      | `true`                 |
+| `INDEXER_<N>_PRIORITY`    | Indexer priority (higher = preferred)    | `1`                    |
+| `INDEXER_<N>_BASE_URL`    | Indexer base URL                         | `http://prowlarr:9696` |
+| `INDEXER_<N>_API_KEY`     | Indexer API key                          | -                      |
+| `INDEXER_<N>_INDEXER_IDS` | Comma-separated indexer IDs              | `1,2,3`                |
+| `INDEXER_<N>_CATEGORIES`  | Comma-separated categories               | `movies,tv`            |
+| `INDEXER_<N>_RATE_LIMIT`  | API rate limit (requests/sec)            | -                      |
 
 Example for Prowlarr:
 
@@ -521,9 +536,9 @@ INDEXER_2_API_KEY=your-jackett-api-key-here
 
 ### Advanced Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LOG_LEVEL` | Application log level (debug, info, warning, error) | `info` |
+| Variable    | Description                                         | Default |
+| ----------- | --------------------------------------------------- | ------- |
+| `LOG_LEVEL` | Application log level (debug, info, warning, error) | `info`  |
 
 ### Configuration Precedence
 
@@ -566,6 +581,7 @@ Visit [localhost:4000](http://localhost:4000)
 ### Continuous Integration
 
 All pull requests and commits to the main branch automatically run:
+
 - ✓ Code compilation with warnings as errors
 - ✓ Code formatting checks
 - ✓ Static analysis with Credo
@@ -601,6 +617,7 @@ npm run test:e2e -- --headed
 ```
 
 **What's Tested:**
+
 - ✓ Authentication flows (local + OIDC)
 - ✓ LiveView real-time updates
 - ✓ JavaScript/Alpine.js interactions
@@ -614,16 +631,16 @@ E2E tests run automatically in GitHub Actions on every PR and push. Tests use a 
 **Writing Tests:**
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from '../helpers/auth';
-import { assertFlashMessage } from '../helpers/liveview';
+import { test, expect } from "@playwright/test";
+import { loginAsAdmin } from "../helpers/auth";
+import { assertFlashMessage } from "../helpers/liveview";
 
-test('admin can update settings', async ({ page }) => {
+test("admin can update settings", async ({ page }) => {
   await loginAsAdmin(page);
-  await page.goto('/admin/settings');
-  await page.fill('input[name="setting"]', 'value');
+  await page.goto("/admin/settings");
+  await page.fill('input[name="setting"]', "value");
   await page.click('button[type="submit"]');
-  await assertFlashMessage(page, 'success', 'Settings saved');
+  await assertFlashMessage(page, "success", "Settings saved");
 });
 ```
 
@@ -641,6 +658,7 @@ Automatic pre-commit hooks are available to catch formatting issues before they 
 The pre-commit hook will automatically run `mix format --check-formatted` before each commit. If formatting issues are found, the commit will be blocked with instructions to fix them.
 
 To bypass the hook in exceptional cases (not recommended):
+
 ```bash
 git commit --no-verify
 ```

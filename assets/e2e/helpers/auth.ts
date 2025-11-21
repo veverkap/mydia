@@ -15,8 +15,8 @@
  *   await logout(page);
  * });
  */
-import { Page, expect } from '@playwright/test';
-import { testUsers } from '../fixtures/users';
+import { Page, expect } from "@playwright/test";
+import { testUsers } from "../fixtures/users";
 
 /**
  * Login as admin user using local authentication
@@ -76,12 +76,16 @@ export async function loginAsUser(page: Page): Promise<void> {
  *   await expect(page).toHaveURL('/');
  * });
  */
-export async function login(page: Page, username: string, password: string): Promise<void> {
+export async function login(
+  page: Page,
+  username: string,
+  password: string,
+): Promise<void> {
   // Navigate to local login page
-  await page.goto('/auth/local/login');
+  await page.goto("/auth/local/login");
 
   // Wait for login form to be visible
-  await page.waitForSelector('form', { state: 'visible' });
+  await page.waitForSelector("form", { state: "visible" });
 
   // Fill in credentials
   await page.fill('input[name="user[username]"]', username);
@@ -92,7 +96,7 @@ export async function login(page: Page, username: string, password: string): Pro
 
   // Wait for redirect to homepage or successful login
   // The redirect to "/" is sufficient proof that login succeeded
-  await page.waitForURL('/', { timeout: 5000 });
+  await page.waitForURL("/", { timeout: 5000 });
 }
 
 /**
@@ -116,9 +120,13 @@ export async function login(page: Page, username: string, password: string): Pro
  *   await expect(page).toHaveURL('/');
  * });
  */
-export async function mockOIDCLogin(page: Page, email: string = 'test@example.com', name: string = 'Test User'): Promise<void> {
+export async function mockOIDCLogin(
+  page: Page,
+  email: string = "test@example.com",
+  name: string = "Test User",
+): Promise<void> {
   // Navigate to OIDC login
-  await page.goto('/auth/oidc');
+  await page.goto("/auth/oidc");
 
   // The mock OAuth2 server should redirect us to an interactive login page
   // Fill in the mock login form if it appears
@@ -128,7 +136,7 @@ export async function mockOIDCLogin(page: Page, email: string = 'test@example.co
   }
 
   // Wait for redirect back to the app
-  await page.waitForURL('/', { timeout: 5000 });
+  await page.waitForURL("/", { timeout: 5000 });
 }
 
 /**
@@ -149,14 +157,19 @@ export async function mockOIDCLogin(page: Page, email: string = 'test@example.co
  */
 export async function logout(page: Page): Promise<void> {
   // Navigate to logout endpoint
-  await page.goto('/auth/logout');
+  await page.goto("/auth/logout");
 
   // Wait for redirect to login page or homepage
-  await page.waitForURL((url) => {
-    return url.pathname === '/auth/local/login' ||
-           url.pathname === '/' ||
-           url.pathname === '/auth/login';
-  }, { timeout: 5000 });
+  await page.waitForURL(
+    (url) => {
+      return (
+        url.pathname === "/auth/local/login" ||
+        url.pathname === "/" ||
+        url.pathname === "/auth/login"
+      );
+    },
+    { timeout: 5000 },
+  );
 }
 
 /**
@@ -176,7 +189,9 @@ export async function logout(page: Page): Promise<void> {
  */
 export async function isLoggedIn(page: Page): Promise<boolean> {
   // Check for presence of user menu or other logged-in indicators
-  const userMenu = await page.locator('[data-test="user-menu"], .navbar').count();
+  const userMenu = await page
+    .locator('[data-test="user-menu"], .navbar')
+    .count();
   return userMenu > 0;
 }
 
@@ -200,8 +215,12 @@ export async function isLoggedIn(page: Page): Promise<boolean> {
  *   // Test will run with admin user logged in
  * });
  */
-export async function ensureLoggedIn(page: Page, username?: string, password?: string): Promise<void> {
-  if (!await isLoggedIn(page)) {
+export async function ensureLoggedIn(
+  page: Page,
+  username?: string,
+  password?: string,
+): Promise<void> {
+  if (!(await isLoggedIn(page))) {
     if (username && password) {
       await login(page, username, password);
     } else {

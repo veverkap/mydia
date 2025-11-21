@@ -15,7 +15,7 @@
  *   await adminPage.clickAddIndexer();
  * });
  */
-import { Page, expect, Locator } from '@playwright/test';
+import { Page, expect, Locator } from "@playwright/test";
 
 export class AdminConfigPage {
   /**
@@ -53,7 +53,7 @@ export class AdminConfigPage {
   }
 
   private get indexerModal() {
-    return this.page.locator('.modal.modal-open .modal-box');
+    return this.page.locator(".modal.modal-open .modal-box");
   }
 
   private get indexerNameInput() {
@@ -61,7 +61,7 @@ export class AdminConfigPage {
   }
 
   private get indexerTypeSelect() {
-    return this.indexerModal.locator('select').first();
+    return this.indexerModal.locator("select").first();
   }
 
   private get indexerBaseUrlInput() {
@@ -77,11 +77,15 @@ export class AdminConfigPage {
   }
 
   private get testIndexerButton() {
-    return this.indexerModal.locator('button:has-text("Test Connection"), button:has-text("Test")').first();
+    return this.indexerModal
+      .locator('button:has-text("Test Connection"), button:has-text("Test")')
+      .first();
   }
 
   private get closeModalButton() {
-    return this.indexerModal.locator('button:has-text("Cancel"), button:has-text("Close")');
+    return this.indexerModal.locator(
+      'button:has-text("Cancel"), button:has-text("Close")',
+    );
   }
 
   /**
@@ -89,7 +93,9 @@ export class AdminConfigPage {
    * @param name - Name of the indexer
    */
   private indexerRow(name: string) {
-    return this.page.locator(`tr:has-text("${name}"), .card:has-text("${name}")`).first();
+    return this.page
+      .locator(`tr:has-text("${name}"), .card:has-text("${name}")`)
+      .first();
   }
 
   /**
@@ -97,7 +103,9 @@ export class AdminConfigPage {
    * @param name - Name of the indexer
    */
   private editIndexerButton(name: string) {
-    return this.indexerRow(name).locator('button:has-text("Edit"), .btn:has-text("Edit")');
+    return this.indexerRow(name).locator(
+      'button:has-text("Edit"), .btn:has-text("Edit")',
+    );
   }
 
   /**
@@ -105,7 +113,9 @@ export class AdminConfigPage {
    * @param name - Name of the indexer
    */
   private deleteIndexerButton(name: string) {
-    return this.indexerRow(name).locator('button:has-text("Delete"), .btn:has-text("Delete")');
+    return this.indexerRow(name).locator(
+      'button:has-text("Delete"), .btn:has-text("Delete")',
+    );
   }
 
   // Download Client Selectors
@@ -115,7 +125,7 @@ export class AdminConfigPage {
   }
 
   private get clientModal() {
-    return this.page.locator('.modal.modal-open .modal-box');
+    return this.page.locator(".modal.modal-open .modal-box");
   }
 
   private get clientNameInput() {
@@ -123,7 +133,7 @@ export class AdminConfigPage {
   }
 
   private get clientTypeSelect() {
-    return this.clientModal.locator('select').first();
+    return this.clientModal.locator("select").first();
   }
 
   private get clientHostInput() {
@@ -151,7 +161,9 @@ export class AdminConfigPage {
   }
 
   private get testClientButton() {
-    return this.clientModal.locator('button:has-text("Test Connection"), button:has-text("Test")').first();
+    return this.clientModal
+      .locator('button:has-text("Test Connection"), button:has-text("Test")')
+      .first();
   }
 
   /**
@@ -159,7 +171,9 @@ export class AdminConfigPage {
    * @param name - Name of the download client
    */
   private clientRow(name: string) {
-    return this.page.locator(`tr:has-text("${name}"), .card:has-text("${name}")`).first();
+    return this.page
+      .locator(`tr:has-text("${name}"), .card:has-text("${name}")`)
+      .first();
   }
 
   /**
@@ -167,7 +181,9 @@ export class AdminConfigPage {
    * @param name - Name of the download client
    */
   private editClientButton(name: string) {
-    return this.clientRow(name).locator('button:has-text("Edit"), .btn:has-text("Edit")');
+    return this.clientRow(name).locator(
+      'button:has-text("Edit"), .btn:has-text("Edit")',
+    );
   }
 
   /**
@@ -175,7 +191,9 @@ export class AdminConfigPage {
    * @param name - Name of the download client
    */
   private deleteClientButton(name: string) {
-    return this.clientRow(name).locator('button:has-text("Delete"), .btn:has-text("Delete")');
+    return this.clientRow(name).locator(
+      'button:has-text("Delete"), .btn:has-text("Delete")',
+    );
   }
 
   // General Settings Selectors
@@ -185,17 +203,23 @@ export class AdminConfigPage {
    * @param key - Setting key (e.g., "crash_reporting.enabled")
    */
   private settingToggle(key: string) {
-    return this.page.locator(`input[type="checkbox"][name*="${key}"], .toggle[phx-value-key="${key}"]`);
+    return this.page.locator(
+      `input[type="checkbox"][name*="${key}"], .toggle[phx-value-key="${key}"]`,
+    );
   }
 
   // Flash Message Selectors
 
   private get successMessage() {
-    return this.page.locator('#flash-info, [role="alert"]:has-text("success"), .alert-success');
+    return this.page.locator(
+      '#flash-info, [role="alert"]:has-text("success"), .alert-success',
+    );
   }
 
   private get errorMessage() {
-    return this.page.locator('#flash-error, [role="alert"]:has-text("error"), [role="alert"]:has-text("failed"), .alert-error');
+    return this.page.locator(
+      '#flash-error, [role="alert"]:has-text("error"), [role="alert"]:has-text("failed"), .alert-error',
+    );
   }
 
   // Navigation Actions
@@ -206,8 +230,8 @@ export class AdminConfigPage {
    * await adminPage.goto();
    */
   async goto() {
-    await this.page.goto('/admin/config');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/admin/config");
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -217,7 +241,7 @@ export class AdminConfigPage {
    */
   async goToGeneralTab() {
     await this.generalTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -227,7 +251,7 @@ export class AdminConfigPage {
    */
   async goToQualityTab() {
     await this.qualityTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -237,7 +261,7 @@ export class AdminConfigPage {
    */
   async goToClientsTab() {
     await this.clientsTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -247,7 +271,7 @@ export class AdminConfigPage {
    */
   async goToIndexersTab() {
     await this.indexersTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -257,7 +281,7 @@ export class AdminConfigPage {
    */
   async goToLibraryTab() {
     await this.libraryTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   // Indexer Actions
@@ -309,7 +333,7 @@ export class AdminConfigPage {
    */
   async saveIndexer() {
     await this.saveIndexerButton.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -341,9 +365,9 @@ export class AdminConfigPage {
    */
   async deleteIndexer(name: string) {
     // Handle confirmation dialog
-    this.page.on('dialog', dialog => dialog.accept());
+    this.page.on("dialog", (dialog) => dialog.accept());
     await this.deleteIndexerButton(name).click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -421,7 +445,7 @@ export class AdminConfigPage {
    */
   async saveDownloadClient() {
     await this.saveClientButton.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -453,9 +477,9 @@ export class AdminConfigPage {
    */
   async deleteDownloadClient(name: string) {
     // Handle confirmation dialog
-    this.page.on('dialog', dialog => dialog.accept());
+    this.page.on("dialog", (dialog) => dialog.accept());
     await this.deleteClientButton(name).click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   // General Settings Actions
@@ -480,7 +504,9 @@ export class AdminConfigPage {
    * await adminPage.assertPageLoaded();
    */
   async assertPageLoaded() {
-    await expect(this.page.locator('h1:has-text("Configuration Management")')).toBeVisible();
+    await expect(
+      this.page.locator('h1:has-text("Configuration Management")'),
+    ).toBeVisible();
   }
 
   /**

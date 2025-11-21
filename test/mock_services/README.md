@@ -5,9 +5,11 @@ This directory contains mock implementations of external services used by Mydia 
 ## Services
 
 ### Mock Prowlarr
+
 A lightweight Node.js/Express server that mimics the Prowlarr API.
 
 **Endpoints:**
+
 - `GET /health` - Health check
 - `GET /api/v1/indexer` - List all indexers
 - `GET /api/v1/indexer/:id` - Get specific indexer
@@ -16,17 +18,21 @@ A lightweight Node.js/Express server that mimics the Prowlarr API.
 - `GET /api/v1/system/status` - System status
 
 **Authentication:**
+
 - Uses API key via `X-Api-Key` header or `apikey` query parameter
 - Default API key: `test-api-key`
 
 **Test Data:**
+
 - 2 mock indexers (1 torrent, 1 usenet)
 - 3 mock search results with various formats
 
 ### Mock qBittorrent
+
 A lightweight Node.js/Express server that mimics the qBittorrent Web API.
 
 **Endpoints:**
+
 - `GET /health` - Health check
 - `POST /api/v2/auth/login` - Login (sets session cookie)
 - `POST /api/v2/auth/logout` - Logout
@@ -40,10 +46,12 @@ A lightweight Node.js/Express server that mimics the qBittorrent Web API.
 - `GET /api/v2/torrents/properties` - Get torrent properties
 
 **Authentication:**
+
 - Cookie-based session management
 - Default credentials: `admin` / `adminpass`
 
 **Features:**
+
 - In-memory torrent storage
 - Simulated download progress (5% every 5 seconds)
 - Automatic state transitions (downloading → uploading)
@@ -52,21 +60,25 @@ A lightweight Node.js/Express server that mimics the qBittorrent Web API.
 ## Running the E2E Environment
 
 ### Start all services:
+
 ```bash
 docker compose -f compose.e2e.yml up -d
 ```
 
 ### View logs:
+
 ```bash
 docker compose -f compose.e2e.yml logs -f
 ```
 
 ### Stop all services:
+
 ```bash
 docker compose -f compose.e2e.yml down
 ```
 
 ### Rebuild mock services after changes:
+
 ```bash
 docker compose -f compose.e2e.yml build mock-prowlarr mock-qbittorrent
 ```
@@ -99,31 +111,40 @@ QBITTORRENT_PASSWORD: "adminpass"
 ## Extending Mock Services
 
 ### Adding new Prowlarr endpoints:
+
 Edit `test/mock_services/prowlarr/server.js` and add new Express routes.
 
 ### Adding new qBittorrent endpoints:
+
 Edit `test/mock_services/qbittorrent/server.js` and add new Express routes.
 
 ### Adding test data:
+
 Modify the `mockIndexers` and `mockSearchResults` arrays in the Prowlarr server, or add initial torrents in the qBittorrent server.
 
 ## Troubleshooting
 
 ### Services fail to start:
+
 Check service health with:
+
 ```bash
 docker compose -f compose.e2e.yml ps
 ```
 
 ### Mock service crashes:
+
 View logs to debug:
+
 ```bash
 docker compose -f compose.e2e.yml logs mock-prowlarr
 docker compose -f compose.e2e.yml logs mock-qbittorrent
 ```
 
 ### App can't connect to mock services:
+
 Verify network connectivity from app container:
+
 ```bash
 docker compose -f compose.e2e.yml exec app curl http://mock-prowlarr:9696/health
 docker compose -f compose.e2e.yml exec app curl http://mock-qbittorrent:8080/health

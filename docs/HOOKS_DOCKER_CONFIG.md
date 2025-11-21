@@ -7,12 +7,14 @@ The Mydia hooks system uses a configurable directory for user-defined hooks. The
 ## How It Works
 
 - **Relative paths**: Resolved relative to the database directory
+
   - Development: `database.path: "mydia_dev.db"` + `hooks.directory: "hooks"` = `./hooks`
   - Production: `database.path: "/config/mydia.db"` + `hooks.directory: "hooks"` = `/data/hooks`
 
 - **Absolute paths**: Used as-is (for advanced configurations)
 
 This approach means:
+
 - ✅ No path changes needed between dev and production
 - ✅ Hooks live alongside your data (easy to backup together)
 - ✅ Docker manages the absolute paths via volume mounts
@@ -25,7 +27,7 @@ The hooks directory is configurable via `config.yaml`:
 
 ```yaml
 database:
-  path: "/config/mydia.db"  # Or "mydia_dev.db" in development
+  path: "/config/mydia.db" # Or "mydia_dev.db" in development
 
 hooks:
   # Enable or disable the hooks system
@@ -46,7 +48,7 @@ hooks:
 In Docker, mount a single data volume. Hooks will be stored alongside the database:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   mydia:

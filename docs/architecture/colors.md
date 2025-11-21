@@ -3,6 +3,7 @@
 ## Design Philosophy
 
 The Mydia color scheme is designed for:
+
 - **Power users** who spend extended time in the interface (dark theme reduces eye strain)
 - **Information density** without overwhelming (subdued base colors, strategic accent use)
 - **Media-focused interface** (dark backgrounds make thumbnails and posters pop)
@@ -14,6 +15,7 @@ The Mydia color scheme is designed for:
 ### Primary Colors
 
 **Primary Blue** - Main actions, links, selections
+
 - `primary`: `#3b82f6` (Blue-500)
 - `primary-focus`: `#2563eb` (Blue-600)
 - `primary-content`: `#ffffff`
@@ -25,6 +27,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Secondary Purple** - Secondary actions, status indicators
+
 - `secondary`: `#8b5cf6` (Violet-500)
 - `secondary-focus`: `#7c3aed` (Violet-600)
 - `secondary-content`: `#ffffff`
@@ -36,6 +39,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Accent Cyan** - Highlights, quality badges, notifications
+
 - `accent`: `#06b6d4` (Cyan-500)
 - `accent-focus`: `#0891b2` (Cyan-600)
 - `accent-content`: `#ffffff`
@@ -49,12 +53,14 @@ The Mydia color scheme is designed for:
 ### Base/Background Colors
 
 **Dark Foundation** - Main backgrounds
+
 - `base-100`: `#0f172a` (Slate-900) - Main background
 - `base-200`: `#1e293b` (Slate-800) - Card background, elevated surfaces
 - `base-300`: `#334155` (Slate-700) - Hover states, borders, dividers
 - `base-content`: `#f1f5f9` (Slate-100) - Primary text
 
 **Why dark theme**:
+
 1. **Media presentation**: Dark backgrounds make movie posters and thumbnails visually prominent
 2. **Extended use**: Reduces eye strain during long library management sessions
 3. **Power user preference**: Technical users typically prefer dark interfaces
@@ -63,6 +69,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Neutral Gray** - Secondary text, borders, disabled states
+
 - `neutral`: `#1f2937` (Gray-800)
 - `neutral-focus`: `#111827` (Gray-900)
 - `neutral-content`: `#f9fafb` (Gray-50)
@@ -74,6 +81,7 @@ The Mydia color scheme is designed for:
 ### Semantic Colors
 
 **Success Green** - Completed, available, downloaded
+
 - `success`: `#10b981` (Emerald-500)
 - `success-content`: `#ffffff`
 
@@ -84,6 +92,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Warning Amber** - Monitored, pending, needs attention
+
 - `warning`: `#f59e0b` (Amber-500)
 - `warning-content`: `#000000`
 
@@ -94,6 +103,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Error Red** - Failed, missing, critical issues
+
 - `error`: `#ef4444` (Red-500)
 - `error-content`: `#ffffff`
 
@@ -104,6 +114,7 @@ The Mydia color scheme is designed for:
 ---
 
 **Info Blue** - Informational messages, tips
+
 - `info`: `#3b82f6` (Blue-500)
 - `info-content`: `#ffffff`
 
@@ -145,6 +156,7 @@ The Mydia color scheme is designed for:
 ## Component-Specific Usage
 
 ### Media Cards
+
 - Background: `base-200`
 - Hover: `base-300`
 - Selected: `primary` border/highlight
@@ -152,23 +164,27 @@ The Mydia color scheme is designed for:
 - Status dot: `success` (downloaded), `warning` (monitored), `error` (missing)
 
 ### Buttons
+
 - Primary CTA: `btn-primary` (blue)
 - Secondary actions: `btn-ghost` or `btn-secondary`
 - Destructive: `btn-error`
 - Disabled: `btn-disabled` (neutral-focus)
 
 ### Badges
+
 - Quality (4K, UHD): `badge-accent` (cyan)
 - Premium (HDR10+, Dolby Vision): `badge-secondary` (purple)
 - Codec/Format (HEVC, Atmos): `badge` (neutral)
 - Status: `badge-success`, `badge-warning`, `badge-error`
 
 ### Progress & Loading
+
 - Progress bars: `progress-primary`
 - Loading spinners: `loading` (primary color)
 - Background: `base-300`
 
 ### Text Hierarchy
+
 - Primary text: `base-content` (Slate-100, #f1f5f9)
 - Secondary text: `base-content/60` (60% opacity)
 - Meta info: `base-content/40` (40% opacity)
@@ -182,15 +198,15 @@ The Mydia color scheme is designed for:
 
 All color combinations meet **WCAG AA standards** (4.5:1 for normal text, 3:1 for large text):
 
-| Background | Foreground | Ratio | Level |
-|------------|------------|-------|-------|
-| `base-100` (#0f172a) | `base-content` (#f1f5f9) | 14.7:1 | AAA |
-| `primary` (#3b82f6) | `primary-content` (#ffffff) | 4.6:1 | AA |
-| `secondary` (#8b5cf6) | `secondary-content` (#ffffff) | 4.8:1 | AA |
-| `accent` (#06b6d4) | `accent-content` (#ffffff) | 4.7:1 | AA |
-| `success` (#10b981) | `success-content` (#ffffff) | 4.5:1 | AA |
-| `warning` (#f59e0b) | Black text | 8.1:1 | AAA |
-| `error` (#ef4444) | `error-content` (#ffffff) | 4.5:1 | AA |
+| Background            | Foreground                    | Ratio  | Level |
+| --------------------- | ----------------------------- | ------ | ----- |
+| `base-100` (#0f172a)  | `base-content` (#f1f5f9)      | 14.7:1 | AAA   |
+| `primary` (#3b82f6)   | `primary-content` (#ffffff)   | 4.6:1  | AA    |
+| `secondary` (#8b5cf6) | `secondary-content` (#ffffff) | 4.8:1  | AA    |
+| `accent` (#06b6d4)    | `accent-content` (#ffffff)    | 4.7:1  | AA    |
+| `success` (#10b981)   | `success-content` (#ffffff)   | 4.5:1  | AA    |
+| `warning` (#f59e0b)   | Black text                    | 8.1:1  | AAA   |
+| `error` (#ef4444)     | `error-content` (#ffffff)     | 4.5:1  | AA    |
 
 ### Color Blind Considerations
 
@@ -212,36 +228,36 @@ module.exports = {
       {
         "mydia-dark": {
           // Primary - Main actions
-          "primary": "#3b82f6",
+          primary: "#3b82f6",
           "primary-focus": "#2563eb",
           "primary-content": "#ffffff",
 
           // Secondary - Premium features
-          "secondary": "#8b5cf6",
+          secondary: "#8b5cf6",
           "secondary-focus": "#7c3aed",
           "secondary-content": "#ffffff",
 
           // Accent - Quality badges
-          "accent": "#06b6d4",
+          accent: "#06b6d4",
           "accent-focus": "#0891b2",
           "accent-content": "#ffffff",
 
           // Neutral - Subtle elements
-          "neutral": "#1f2937",
+          neutral: "#1f2937",
           "neutral-focus": "#111827",
           "neutral-content": "#f9fafb",
 
           // Base - Backgrounds & text (dark)
-          "base-100": "#0f172a",  // Slate-900
-          "base-200": "#1e293b",  // Slate-800
-          "base-300": "#334155",  // Slate-700
+          "base-100": "#0f172a", // Slate-900
+          "base-200": "#1e293b", // Slate-800
+          "base-300": "#334155", // Slate-700
           "base-content": "#f1f5f9", // Slate-100
 
           // Semantic colors
-          "info": "#3b82f6",
-          "success": "#10b981",
-          "warning": "#f59e0b",
-          "error": "#ef4444",
+          info: "#3b82f6",
+          success: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444",
 
           // Color-specific content (text on colored backgrounds)
           "info-content": "#ffffff",
@@ -251,34 +267,34 @@ module.exports = {
         },
         "mydia-light": {
           // Action colors (same as dark theme)
-          "primary": "#3b82f6",
+          primary: "#3b82f6",
           "primary-focus": "#2563eb",
           "primary-content": "#ffffff",
 
-          "secondary": "#8b5cf6",
+          secondary: "#8b5cf6",
           "secondary-focus": "#7c3aed",
           "secondary-content": "#ffffff",
 
-          "accent": "#06b6d4",
+          accent: "#06b6d4",
           "accent-focus": "#0891b2",
           "accent-content": "#ffffff",
 
           // Neutral - Subtle elements (inverted)
-          "neutral": "#f1f5f9",
+          neutral: "#f1f5f9",
           "neutral-focus": "#f8fafc",
           "neutral-content": "#0f172a",
 
           // Base - Backgrounds & text (light)
-          "base-100": "#f8fafc",  // Slate-50
-          "base-200": "#f1f5f9",  // Slate-100
-          "base-300": "#e2e8f0",  // Slate-200
+          "base-100": "#f8fafc", // Slate-50
+          "base-200": "#f1f5f9", // Slate-100
+          "base-300": "#e2e8f0", // Slate-200
           "base-content": "#0f172a", // Slate-900
 
           // Semantic colors (same as dark theme)
-          "info": "#3b82f6",
-          "success": "#10b981",
-          "warning": "#f59e0b",
-          "error": "#ef4444",
+          info: "#3b82f6",
+          success: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444",
 
           "info-content": "#ffffff",
           "success-content": "#ffffff",
@@ -289,7 +305,7 @@ module.exports = {
     ],
     darkTheme: "mydia-dark",
   },
-}
+};
 ```
 
 ### CSS Custom Properties
@@ -298,17 +314,17 @@ The theme automatically generates CSS variables:
 
 ```css
 :root {
-  --p: 217 91% 60%;    /* primary */
-  --pf: 221 83% 53%;   /* primary-focus */
-  --pc: 0 0% 100%;     /* primary-content */
+  --p: 217 91% 60%; /* primary */
+  --pf: 221 83% 53%; /* primary-focus */
+  --pc: 0 0% 100%; /* primary-content */
 
-  --s: 258 90% 66%;    /* secondary */
-  --sf: 262 83% 58%;   /* secondary-focus */
-  --sc: 0 0% 100%;     /* secondary-content */
+  --s: 258 90% 66%; /* secondary */
+  --sf: 262 83% 58%; /* secondary-focus */
+  --sc: 0 0% 100%; /* secondary-content */
 
-  --a: 188 94% 43%;    /* accent */
-  --af: 188 91% 37%;   /* accent-focus */
-  --ac: 0 0% 100%;     /* accent-content */
+  --a: 188 94% 43%; /* accent */
+  --af: 188 91% 37%; /* accent-focus */
+  --ac: 0 0% 100%; /* accent-content */
 
   /* ... and so on */
 }
@@ -319,6 +335,7 @@ The theme automatically generates CSS variables:
 ## Examples in Context
 
 ### Media Card with Quality Badges
+
 ```html
 <div class="card bg-base-200 hover:bg-base-300">
   <figure class="relative">
@@ -344,24 +361,20 @@ The theme automatically generates CSS variables:
 ```
 
 ### Action Buttons
+
 ```html
 <!-- Primary action (blue) -->
-<button class="btn btn-primary">
-  Download
-</button>
+<button class="btn btn-primary">Download</button>
 
 <!-- Secondary action (ghost) -->
-<button class="btn btn-ghost">
-  Monitor
-</button>
+<button class="btn btn-ghost">Monitor</button>
 
 <!-- Destructive action (red) -->
-<button class="btn btn-error">
-  Delete
-</button>
+<button class="btn btn-error">Delete</button>
 ```
 
 ### Status Messages
+
 ```html
 <!-- Success -->
 <div class="alert alert-success">
@@ -391,12 +404,14 @@ The Mydia light theme (`mydia-light`) provides an alternative color scheme for u
 ### Light Theme Colors
 
 **Base Colors (Inverted)**
+
 - `base-100`: `#f8fafc` (Slate-50) - Main background (light)
 - `base-200`: `#f1f5f9` (Slate-100) - Card background, elevated surfaces
 - `base-300`: `#e2e8f0` (Slate-200) - Hover states, borders, dividers
 - `base-content`: `#0f172a` (Slate-900) - Primary text (dark on light)
 
 **Neutral Gray** (Adjusted for light theme)
+
 - `neutral`: `#f1f5f9` (Slate-100)
 - `neutral-focus`: `#f8fafc` (Slate-50)
 - `neutral-content`: `#0f172a` (Slate-900)
@@ -404,6 +419,7 @@ The Mydia light theme (`mydia-light`) provides an alternative color scheme for u
 **Action and Semantic Colors**
 
 The light theme maintains the same action and semantic colors as the dark theme:
+
 - Primary, Secondary, Accent colors remain unchanged
 - Success, Warning, Error, Info colors remain unchanged
 - These colors provide sufficient contrast on light backgrounds while maintaining brand consistency
@@ -411,11 +427,13 @@ The light theme maintains the same action and semantic colors as the dark theme:
 ### Theme Switching
 
 Users can switch between themes using the theme toggle UI:
+
 - **Dark** (mydia-dark): Original dark theme optimized for media management
 - **Light** (mydia-light): Light theme variant for bright environments
 - **System**: Automatically follows the user's operating system preference
 
 Theme preference is:
+
 - Stored in localStorage for persistence
 - Applied before page load to prevent flash of incorrect theme
 - Updated automatically when system preference changes (in System mode)
@@ -424,13 +442,13 @@ Theme preference is:
 
 Both light and dark themes maintain **WCAG AA standards** for contrast ratios:
 
-| Light Theme | Background | Foreground | Ratio | Level |
-|------------|------------|------------|-------|-------|
-| Main content | `base-100` (#f8fafc) | `base-content` (#0f172a) | 14.7:1 | AAA |
-| Card content | `base-200` (#f1f5f9) | `base-content` (#0f172a) | 14.7:1 | AAA |
-| Primary button | `primary` (#3b82f6) | `primary-content` (#ffffff) | 4.6:1 | AA |
-| Secondary button | `secondary` (#8b5cf6) | `secondary-content` (#ffffff) | 4.8:1 | AA |
-| Accent elements | `accent` (#06b6d4) | `accent-content` (#ffffff) | 4.7:1 | AA |
+| Light Theme      | Background            | Foreground                    | Ratio  | Level |
+| ---------------- | --------------------- | ----------------------------- | ------ | ----- |
+| Main content     | `base-100` (#f8fafc)  | `base-content` (#0f172a)      | 14.7:1 | AAA   |
+| Card content     | `base-200` (#f1f5f9)  | `base-content` (#0f172a)      | 14.7:1 | AAA   |
+| Primary button   | `primary` (#3b82f6)   | `primary-content` (#ffffff)   | 4.6:1  | AA    |
+| Secondary button | `secondary` (#8b5cf6) | `secondary-content` (#ffffff) | 4.8:1  | AA    |
+| Accent elements  | `accent` (#06b6d4)    | `accent-content` (#ffffff)    | 4.7:1  | AA    |
 
 ---
 
@@ -439,6 +457,7 @@ Both light and dark themes maintain **WCAG AA standards** for contrast ratios:
 ### Custom Themes (Phase 3+)
 
 Allow users to customize:
+
 - Primary/secondary/accent colors
 - Base color darkness
 - Semantic color choices
@@ -449,6 +468,7 @@ Allow users to customize:
 ## Summary
 
 This color scheme balances:
+
 - **Functionality**: Clear visual hierarchy for information-dense interfaces
 - **Aesthetics**: Modern, cohesive palette suitable for media applications
 - **Accessibility**: WCAG AA compliant contrast ratios throughout

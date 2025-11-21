@@ -15,7 +15,7 @@
  *   await searchPage.assertResultsVisible();
  * });
  */
-import { Page, expect, Locator } from '@playwright/test';
+import { Page, expect, Locator } from "@playwright/test";
 
 export class SearchPage {
   /**
@@ -27,19 +27,27 @@ export class SearchPage {
   // Selectors
 
   private get searchInput() {
-    return this.page.locator('input[type="search"], input[name="search"], input[placeholder*="search" i]');
+    return this.page.locator(
+      'input[type="search"], input[name="search"], input[placeholder*="search" i]',
+    );
   }
 
   private get searchButton() {
-    return this.page.locator('button:has-text("Search"), button[type="submit"]').first();
+    return this.page
+      .locator('button:has-text("Search"), button[type="submit"]')
+      .first();
   }
 
   private get resultsContainer() {
-    return this.page.locator('[data-test="search-results"], .search-results, #search-results');
+    return this.page.locator(
+      '[data-test="search-results"], .search-results, #search-results',
+    );
   }
 
   private get emptyState() {
-    return this.page.locator('[data-test="empty-state"], .empty-state, :has-text("No results found")');
+    return this.page.locator(
+      '[data-test="empty-state"], .empty-state, :has-text("No results found")',
+    );
   }
 
   /**
@@ -47,7 +55,9 @@ export class SearchPage {
    * @param index - Zero-based index of result
    */
   private resultItem(index: number) {
-    return this.resultsContainer.locator('[data-test="search-result"], .search-result').nth(index);
+    return this.resultsContainer
+      .locator('[data-test="search-result"], .search-result')
+      .nth(index);
   }
 
   /**
@@ -55,7 +65,9 @@ export class SearchPage {
    * @param index - Zero-based index of result
    */
   private addButton(index: number) {
-    return this.resultItem(index).locator('button:has-text("Add"), button[data-test="add-button"]');
+    return this.resultItem(index).locator(
+      'button:has-text("Add"), button[data-test="add-button"]',
+    );
   }
 
   /**
@@ -63,7 +75,9 @@ export class SearchPage {
    * @param index - Zero-based index of result
    */
   private resultTitle(index: number) {
-    return this.resultItem(index).locator('[data-test="title"], h2, h3, .title').first();
+    return this.resultItem(index)
+      .locator('[data-test="title"], h2, h3, .title')
+      .first();
   }
 
   /**
@@ -71,7 +85,9 @@ export class SearchPage {
    * @param index - Zero-based index of result
    */
   private qualityBadge(index: number) {
-    return this.resultItem(index).locator('[data-test="quality"], .quality, .badge');
+    return this.resultItem(index).locator(
+      '[data-test="quality"], .quality, .badge',
+    );
   }
 
   // Actions
@@ -82,8 +98,8 @@ export class SearchPage {
    * await searchPage.goto();
    */
   async goto() {
-    await this.page.goto('/search');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/search");
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -96,7 +112,7 @@ export class SearchPage {
     await this.searchInput.fill(query);
     await this.searchButton.click();
     // Wait for search results to load
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -138,7 +154,7 @@ export class SearchPage {
    * const hasQuality = await searchPage.hasQualityBadge(0);
    */
   async hasQualityBadge(index: number): Promise<boolean> {
-    return await this.qualityBadge(index).count() > 0;
+    return (await this.qualityBadge(index).count()) > 0;
   }
 
   // Assertions
@@ -173,7 +189,9 @@ export class SearchPage {
    * await searchPage.assertResultCount(5);
    */
   async assertResultCount(count: number) {
-    const results = this.resultsContainer.locator('[data-test="search-result"], .search-result');
+    const results = this.resultsContainer.locator(
+      '[data-test="search-result"], .search-result',
+    );
     await expect(results).toHaveCount(count, { timeout: 5000 });
   }
 

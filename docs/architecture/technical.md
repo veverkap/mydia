@@ -5,6 +5,7 @@
 Mydia is built with simplicity and self-hosting in mind. The application uses **SQLite as the default database**, eliminating the need for separate database containers or complex configuration. This makes deployment as simple as running a single Docker container or binary.
 
 **Key Design Principles:**
+
 - 🗃️ **SQLite-First**: Zero-configuration database that's perfect for self-hosting
 - 🐳 **Docker-Optimized**: Single container deployment with persistent volumes
 - 🔐 **OIDC Native**: First-class support for modern authentication
@@ -14,30 +15,35 @@ Mydia is built with simplicity and self-hosting in mind. The application uses **
 ## Technology Stack
 
 ### Core Framework
+
 - **Phoenix Framework 1.7+**: Web framework and real-time capabilities
 - **Elixir/OTP**: Concurrent, fault-tolerant application platform
 - **SQLite3**: Embedded database for simple, zero-configuration deployment
 - **LiveView**: Real-time UI updates without JavaScript complexity
 
 ### Authentication & Security
+
 - **OpenID Connect (OIDC)**: Primary authentication mechanism
 - **Guardian**: JWT token management for API authentication
 - **Ueberauth**: Extensible authentication strategy system
 - **HTTPS-only**: Enforced secure connections
 
 ### Infrastructure
+
 - **Docker**: Multi-stage builds for minimal image size
 - **Docker Compose**: Local development and simple deployments
 - **Health Checks**: Container orchestration readiness probes
 - **Prometheus Metrics**: Operational observability
 
 ### Data & Storage
+
 - **Ecto + Ecto_SQLite3**: Database abstraction and SQLite adapter
 - **Oban**: Background job processing with reliability (SQLite-compatible)
 - **File System**: Media file management with configurable paths
 - **S3-Compatible**: Optional object storage support
 
 ### Why SQLite?
+
 - **Zero Configuration**: No separate database server required
 - **Single File**: Database stored as a single file for easy backups
 - **Docker-Friendly**: Simpler container deployment (no multi-container setup needed)
@@ -272,6 +278,7 @@ CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
 ```
 
 **SQLite-specific Optimizations:**
+
 - **WAL Mode**: Write-Ahead Logging for better concurrency
 - **Foreign Keys**: Enabled by default in config
 - **JSON1 Extension**: For efficient JSON queries
@@ -305,6 +312,7 @@ config :mydia, Mydia.Repo,
 ```
 
 #### Configuration Sources (Priority Order)
+
 1. Environment variables (highest priority)
 2. Runtime config file (`config.yml`)
 3. Default values (lowest priority)
@@ -577,7 +585,7 @@ CMD ["/app/bin/mydia", "start"]
 ### Docker Compose Example
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   mydia:
@@ -667,12 +675,14 @@ docker restart mydia
 ## Security Considerations
 
 ### Authentication & Authorization
+
 - OIDC tokens validated on every request
 - Role-based access control (RBAC) for API endpoints
 - API keys for service-to-service communication
 - Rate limiting on authentication endpoints
 
 ### Data Security
+
 - Secrets stored in environment variables, never in code
 - Database file permissions restricted to application user
 - API keys hashed in database (using Argon2)
@@ -680,6 +690,7 @@ docker restart mydia
 - Optional: Encrypt SQLite database file at rest using SQLCipher extension
 
 ### Input Validation
+
 - All user input sanitized and validated
 - File paths restricted to configured directories
 - SQL injection prevention via Ecto parameterized queries
@@ -688,6 +699,7 @@ docker restart mydia
 ## Performance Considerations
 
 ### Database Optimization (SQLite-Specific)
+
 - **Indexes**: Created on frequently queried fields (tmdb_id, imdb_id, title, status)
 - **WAL Mode**: Write-Ahead Logging enabled for concurrent reads during writes
 - **PRAGMA Settings**:
@@ -705,17 +717,20 @@ docker restart mydia
 - **Read-Heavy Optimization**: WAL mode allows unlimited concurrent readers
 
 ### Performance Limits
+
 - **Concurrent Writes**: Serialized (one at a time) - acceptable for typical media management
 - **Read Performance**: Excellent - multiple processes can read simultaneously
 - **Database Size**: Tested up to 100GB+ (handles 50K+ media items comfortably)
 - **Write Throughput**: ~2000-5000 inserts/sec in WAL mode
 
 ### Caching Strategy
+
 - ETS tables for configuration and frequently accessed data
 - Phoenix LiveView process-level caching
 - CDN for static assets
 
 ### Scalability
+
 - **Single Node**: SQLite works best on a single node (perfect for self-hosting)
 - **Vertical Scaling**: Add more CPU/RAM to the single container
 - **Background Jobs**: Oban efficiently distributes jobs across available cores
@@ -725,18 +740,21 @@ docker restart mydia
 ## Monitoring & Observability
 
 ### Metrics (Prometheus)
+
 - HTTP request rates and latencies
 - Background job queue depths
 - Database connection pool usage
 - Media library statistics
 
 ### Logging
+
 - Structured JSON logging
 - Log levels configurable per module
 - Integration with syslog/journald
 - Correlation IDs for request tracing
 
 ### Health Checks
+
 - Database connectivity
 - File system accessibility
 - External service availability
@@ -745,6 +763,7 @@ docker restart mydia
 ## Development Environment
 
 ### Prerequisites
+
 - Elixir 1.16+
 - Erlang/OTP 26+
 - SQLite3 (included with most systems)
@@ -819,6 +838,7 @@ iex -S mix phx.server
 Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.db` in the project root.
 
 ### Testing Strategy
+
 - Unit tests for business logic (Contexts)
 - Integration tests for external services (Adapters)
 - Controller/LiveView tests for UI
@@ -826,6 +846,7 @@ Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.
 - Property-based testing for complex logic
 
 ### CI/CD Pipeline
+
 1. Lint (mix format --check-formatted, mix credo)
 2. Type checking (dialyzer)
 3. Tests (mix test)
@@ -835,16 +856,18 @@ Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.
 7. Smoke tests
 8. Deploy to production
 
-## Migration from *arr Stack
+## Migration from \*arr Stack
 
 ### Import Tools
+
 - Import existing media library structure
-- Parse *arr configuration for indexers and clients
+- Parse \*arr configuration for indexers and clients
 - Map quality profiles to Mydia equivalents
 - Preserve existing file organization
 
 ### Compatibility
-- Monitor same folder structure as *arr apps
+
+- Monitor same folder structure as \*arr apps
 - Support same download client APIs
 - Compatible webhook formats
 - Import/export YAML configuration
@@ -852,6 +875,7 @@ Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.
 ## SQLite vs PostgreSQL Decision Matrix
 
 ### Use SQLite (Default) When:
+
 - ✅ Self-hosting for personal use or small household
 - ✅ Library size < 50,000 media items
 - ✅ Single server deployment
@@ -860,6 +884,7 @@ Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.
 - ✅ Lower resource consumption needed
 
 ### Consider PostgreSQL When:
+
 - ⚠️ Library size > 50,000 media items
 - ⚠️ High concurrent user load (10+ simultaneous users)
 - ⚠️ Multi-node deployment required
@@ -867,6 +892,7 @@ Visit http://localhost:4000 - the SQLite database will be created at `mydia_dev.
 - ⚠️ Existing PostgreSQL infrastructure available
 
 ### Migration Path
+
 The application supports both databases via configuration. To migrate from SQLite to PostgreSQL:
 
 1. Export data via API or CLI tool
@@ -899,6 +925,7 @@ docker exec -it mydia sqlite3 /config/mydia.db "PRAGMA wal_checkpoint(FULL);"
 ### Automated Maintenance
 
 Oban background jobs will handle:
+
 - Daily ANALYZE for query optimization
 - Weekly VACUUM during low-activity periods
 - WAL checkpoint management

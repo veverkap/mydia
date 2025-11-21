@@ -147,9 +147,9 @@ media:
 library_paths:
   # Example: Movies library
   - path: "/media/movies"
-    type: "movies"          # Type: movies, series, or mixed
-    monitored: true         # Enable/disable monitoring
-    scan_interval: 3600     # Scan interval in seconds (3600 = 1 hour)
+    type: "movies" # Type: movies, series, or mixed
+    monitored: true # Enable/disable monitoring
+    scan_interval: 3600 # Scan interval in seconds (3600 = 1 hour)
     # quality_profile_id: 1 # Optional: Assign a quality profile
 
   # Example: TV shows library

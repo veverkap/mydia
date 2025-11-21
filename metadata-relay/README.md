@@ -35,12 +35,15 @@ The Docker Compose configuration includes an optional Redis service for persiste
 **With Redis (default):**
 
 1. **Start all services**:
+
    ```bash
    docker-compose up -d
    ```
+
    This starts both the relay service and Redis.
 
 2. **View logs**:
+
    ```bash
    docker-compose logs -f relay
    ```
@@ -55,6 +58,7 @@ The Docker Compose configuration includes an optional Redis service for persiste
 To use in-memory caching instead of Redis:
 
 1. **Edit docker-compose.yml** and comment out:
+
    - The `REDIS_URL` environment variable in the relay service
    - The entire `redis` service
    - The `depends_on: redis` line
@@ -68,6 +72,7 @@ To use in-memory caching instead of Redis:
 **Accessing Redis directly:**
 
 Redis is exposed on port 6379. You can connect using `redis-cli`:
+
 ```bash
 docker-compose exec redis redis-cli
 
@@ -81,11 +86,13 @@ INFO stats
 ### Using Local Elixir
 
 1. **Install dependencies**:
+
    ```bash
    mix deps.get
    ```
 
 2. **Run the server**:
+
    ```bash
    mix run --no-halt
    ```
@@ -98,11 +105,13 @@ INFO stats
 ### Testing
 
 Run the test suite:
+
 ```bash
 mix test
 ```
 
 Run tests with coverage:
+
 ```bash
 mix test --cover
 ```
@@ -110,6 +119,7 @@ mix test --cover
 ### Code Formatting
 
 Format code according to project standards:
+
 ```bash
 mix format
 ```
@@ -120,12 +130,12 @@ The service is configured entirely via environment variables for maximum flexibi
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | `4000` | HTTP port the server listens on |
-| `TMDB_API_KEY` | Yes | - | API key for The Movie Database. Get one at https://www.themoviedb.org/settings/api |
-| `TVDB_API_KEY` | Yes | - | API key for TheTVDB. Get one at https://thetvdb.com/api-information |
-| `REDIS_URL` | No | - | Redis connection URL for persistent caching. Format: `redis://[password@]host:port`. If not set, uses in-memory caching |
+| Variable       | Required | Default | Description                                                                                                             |
+| -------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `PORT`         | No       | `4000`  | HTTP port the server listens on                                                                                         |
+| `TMDB_API_KEY` | Yes      | -       | API key for The Movie Database. Get one at https://www.themoviedb.org/settings/api                                      |
+| `TVDB_API_KEY` | Yes      | -       | API key for TheTVDB. Get one at https://thetvdb.com/api-information                                                     |
+| `REDIS_URL`    | No       | -       | Redis connection URL for persistent caching. Format: `redis://[password@]host:port`. If not set, uses in-memory caching |
 
 ### Cache Configuration
 
@@ -134,29 +144,34 @@ The metadata relay supports two caching backends:
 #### In-Memory Cache (Default)
 
 **When to use:**
+
 - Local development
 - Single-instance deployments
 - When Redis is not available
 
 **Characteristics:**
+
 - Fast, zero-latency access
 - Cache lost on service restart
 - Limited by available RAM
 - Maximum 20,000 entries with LRU eviction
 
 **Configuration:**
+
 - No configuration needed
 - Simply don't set `REDIS_URL`
 
 #### Redis Cache (Optional)
 
 **When to use:**
+
 - Production deployments
 - Multi-instance/horizontal scaling
 - When cache persistence across restarts is needed
 - When sharing cache between multiple services
 
 **Characteristics:**
+
 - Persistent cache across restarts
 - Shared cache for multiple instances
 - Configurable eviction policies
@@ -177,6 +192,7 @@ REDIS_URL=redis://username:password@localhost:6379
 ```
 
 **Fallback behavior:**
+
 - If Redis connection fails at startup, service falls back to in-memory cache
 - Service continues to operate normally with degraded caching
 - Connection failures are logged but don't crash the service
@@ -186,6 +202,7 @@ REDIS_URL=redis://username:password@localhost:6379
 Create a `.env` file in the project root:
 
 **Without Redis (default):**
+
 ```bash
 PORT=4001
 TMDB_API_KEY=your_tmdb_key_here
@@ -193,6 +210,7 @@ TVDB_API_KEY=your_tvdb_key_here
 ```
 
 **With Redis:**
+
 ```bash
 PORT=4001
 TMDB_API_KEY=your_tmdb_key_here
@@ -206,21 +224,23 @@ The `.env.example` file provides a template with all available options.
 
 The service automatically determines cache TTL based on content type:
 
-| Content Type | TTL | Rationale |
-|--------------|-----|-----------|
-| Movie/TV show details by ID | 30 days | Metadata rarely changes once published |
-| Images | 90 days | Image URLs never change |
-| Season/episode data | 14 days | Episode data is stable once aired |
-| Search results | 7 days | Search results change occasionally |
-| Trending content | 1 hour | Trending data changes frequently |
-| Default | 30 days | Conservative default for other endpoints |
+| Content Type                | TTL     | Rationale                                |
+| --------------------------- | ------- | ---------------------------------------- |
+| Movie/TV show details by ID | 30 days | Metadata rarely changes once published   |
+| Images                      | 90 days | Image URLs never change                  |
+| Season/episode data         | 14 days | Episode data is stable once aired        |
+| Search results              | 7 days  | Search results change occasionally       |
+| Trending content            | 1 hour  | Trending data changes frequently         |
+| Default                     | 30 days | Conservative default for other endpoints |
 
 **In-Memory Cache Eviction:**
+
 - Maximum entries: 20,000
 - Eviction policy: LRU (Least Recently Used)
 - Background cleanup: Every 15 minutes
 
 **Redis Cache Eviction:**
+
 - TTL-based expiration (automatic)
 - No size limits (managed by Redis configuration)
 - Configurable via Redis `maxmemory-policy` setting
@@ -230,6 +250,7 @@ The service automatically determines cache TTL based on content type:
 In production (Fly.io), environment variables are managed through secrets:
 
 **Without Redis:**
+
 ```bash
 # Set required secrets
 fly secrets set TMDB_API_KEY=your_key_here
@@ -237,6 +258,7 @@ fly secrets set TVDB_API_KEY=your_key_here
 ```
 
 **With Redis:**
+
 ```bash
 # Set required secrets
 fly secrets set TMDB_API_KEY=your_key_here
@@ -247,6 +269,7 @@ fly secrets set REDIS_URL=redis://username:password@your-redis-host:6379
 ```
 
 **Manage secrets:**
+
 ```bash
 # View configured secrets (values are hidden)
 fly secrets list
@@ -256,6 +279,7 @@ fly secrets unset SECRET_NAME
 ```
 
 **Security Notes:**
+
 - Never commit API keys to version control
 - Use Fly.io secrets for production deployments
 - API keys are loaded at runtime via `config/runtime.exs`
@@ -277,6 +301,7 @@ The metadata-relay service uses GitHub Actions for automated CI/CD. When you pus
 To release a new version:
 
 1. **Update the version** in `mix.exs` (if desired):
+
    ```elixir
    def project do
      [
@@ -287,12 +312,14 @@ To release a new version:
    ```
 
 2. **Commit your changes**:
+
    ```bash
    git add .
    git commit -m "feat: prepare metadata-relay v0.2.0 release"
    ```
 
 3. **Create and push a version tag**:
+
    ```bash
    # Format: metadata-relay-vX.Y.Z
    git tag metadata-relay-v0.2.0
@@ -309,6 +336,7 @@ To release a new version:
 **One-time setup** - Add the Fly.io API token to GitHub secrets:
 
 Using the GitHub CLI (recommended):
+
 ```bash
 # Quick one-liner setup
 flyctl auth token | gh secret set FLY_API_TOKEN
@@ -318,6 +346,7 @@ gh secret list
 ```
 
 Or manually via the web UI:
+
 1. Get token: `flyctl auth token`
 2. Go to: Settings → Secrets and variables → Actions
 3. Add secret: Name=`FLY_API_TOKEN`, Value=token from step 1
@@ -325,6 +354,7 @@ Or manually via the web UI:
 **That's it!** All releases will now deploy automatically.
 
 **Validate your setup:**
+
 ```bash
 # Run the validation script to check everything is configured
 cd metadata-relay
@@ -332,6 +362,7 @@ cd metadata-relay
 ```
 
 **Helpful commands:**
+
 ```bash
 # Monitor a release in real-time
 gh run watch
@@ -346,6 +377,7 @@ flyctl logs -a metadata-relay -f
 #### What Gets Built
 
 Each release creates multi-platform Docker images:
+
 - **Platforms**: `linux/amd64`, `linux/arm64`
 - **Registry**: GitHub Container Registry (GHCR)
 - **Tags**: `latest`, `X.Y.Z`, `X.Y`, `X` (semantic versioning)
@@ -363,28 +395,33 @@ For manual deployments or initial setup, you can deploy directly using the Fly C
 #### Initial Deployment
 
 1. **Navigate to the metadata-relay directory**:
+
    ```bash
    cd metadata-relay
    ```
 
 2. **Launch the app** (first time only):
+
    ```bash
    fly launch --config fly.toml
    ```
 
    When prompted:
+
    - Choose a unique app name (or accept the suggested name)
    - Select a region (default: ewr - Newark, NJ)
    - Skip database creation
    - Skip deployment for now (we need to set secrets first)
 
 3. **Set required secrets**:
+
    ```bash
    fly secrets set TMDB_API_KEY=your_tmdb_key_here
    fly secrets set TVDB_API_KEY=your_tvdb_key_here
    ```
 
 4. **Deploy the application**:
+
    ```bash
    fly deploy
    ```
@@ -392,11 +429,13 @@ For manual deployments or initial setup, you can deploy directly using the Fly C
    Database migrations will run automatically on container startup.
 
 5. **Verify deployment**:
+
    ```bash
    fly open /health
    ```
 
    This should open your browser to the health check endpoint and show:
+
    ```json
    {
      "status": "ok",
@@ -408,6 +447,7 @@ For manual deployments or initial setup, you can deploy directly using the Fly C
 #### Subsequent Deployments
 
 After the initial setup, deploy updates with:
+
 ```bash
 fly deploy
 ```
@@ -426,6 +466,7 @@ Database migrations will run automatically on container startup.
 The default configuration runs 1 machine with 256MB RAM. To scale:
 
 - **Scale vertically** (more resources per machine):
+
   ```bash
   fly scale vm shared-cpu-2x --memory 512
   ```
@@ -440,6 +481,7 @@ The default configuration runs 1 machine with 256MB RAM. To scale:
 To use a custom domain:
 
 1. **Add certificate**:
+
    ```bash
    fly certs add metadata-relay.yourdomain.com
    ```
@@ -449,11 +491,13 @@ To use a custom domain:
 #### Troubleshooting Deployment
 
 **Check health status:**
+
 ```bash
 curl https://metadata-relay.fly.dev/health
 ```
 
 **View application logs:**
+
 ```bash
 # Real-time logs
 fly logs -f
@@ -466,21 +510,25 @@ fly logs -f | grep ERROR
 ```
 
 **SSH into running machine:**
+
 ```bash
 fly ssh console
 ```
 
 **Check secrets configuration:**
+
 ```bash
 fly secrets list
 ```
 
 **Restart the application:**
+
 ```bash
 fly apps restart metadata-relay
 ```
 
 **Check machine status:**
+
 ```bash
 fly status
 fly machines list
@@ -489,16 +537,19 @@ fly machines list
 **Common issues:**
 
 1. **Deployment fails during build:**
+
    - Check Docker build locally: `docker build -f Dockerfile .`
    - Verify all dependencies in `mix.exs` are available
    - Check build logs: `fly logs`
 
 2. **App crashes after deployment:**
+
    - Check if secrets are set: `fly secrets list`
    - View crash logs: `fly logs --limit 200`
    - Verify runtime.exs is reading environment variables correctly
 
 3. **Health check failing:**
+
    - Ensure PORT environment variable matches internal_port in fly.toml
    - Check if application is listening on correct port
    - SSH in and test: `curl localhost:4001/health`
@@ -517,6 +568,7 @@ GET /health
 ```
 
 Returns service status and version:
+
 ```json
 {
   "status": "ok",
@@ -563,6 +615,7 @@ GET /errors
 ```
 
 **Features:**
+
 - View all errors and exceptions from the metadata-relay service
 - See crash reports submitted by Mydia instances
 - Browse error details including stacktraces and context
@@ -582,13 +635,12 @@ POST /crashes/report
 ```
 
 **Request body:**
+
 ```json
 {
   "error_type": "RuntimeError",
   "error_message": "Something went wrong",
-  "stacktrace": [
-    {"file": "lib/mydia.ex", "line": 42, "function": "process"}
-  ],
+  "stacktrace": [{ "file": "lib/mydia.ex", "line": 42, "function": "process" }],
   "version": "1.0.0",
   "environment": "production",
   "occurred_at": "2025-11-19T23:00:00Z",
@@ -650,17 +702,20 @@ The metadata-relay includes integrated error tracking with the ErrorTracker dash
 The service uses Elixir's built-in Logger for structured logging. Logs include:
 
 - **Request/Response Logging**: Automatic via `Plug.Logger`
+
   - HTTP method, path, status code
   - Response time
   - Client IP address
 
 - **Cache Events**: Logged by `MetadataRelay.Plug.Cache`
+
   - Cache hits (`:debug` level)
   - Cache misses (`:debug` level)
   - Cache key generation
   - TTL information
 
 - **TVDB Authentication**: Logged by `MetadataRelay.TVDB.Auth`
+
   - Token generation (`:info` level)
   - Token refresh (`:info` level)
   - Authentication failures (`:error` level)
@@ -673,6 +728,7 @@ The service uses Elixir's built-in Logger for structured logging. Logs include:
 ### Log Levels
 
 The service uses standard Elixir log levels:
+
 - `:debug` - Detailed information for diagnosing issues (cache events, request details)
 - `:info` - General informational messages (startup, authentication events)
 - `:warning` - Warning messages (retry attempts, deprecated features)
@@ -681,6 +737,7 @@ The service uses standard Elixir log levels:
 ### Viewing Logs
 
 **Local development:**
+
 ```bash
 # Logs appear in console when running with mix
 mix run --no-halt
@@ -690,11 +747,13 @@ iex -S mix
 ```
 
 **Docker:**
+
 ```bash
 docker-compose logs -f relay
 ```
 
 **Production (Fly.io):**
+
 ```bash
 # Real-time logs
 fly logs -f
@@ -736,6 +795,7 @@ curl https://metadata-relay.fly.dev/health
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -749,19 +809,23 @@ A `200 OK` status indicates the service is running and able to respond to reques
 ### Performance Monitoring
 
 **Cache Performance:**
+
 - Cache is stored in-memory using ETS
 - Default TTL: 1 hour
 - No size limit (relies on Fly.io memory constraints)
 - Cache is lost on machine restart
 
 **Recommended Monitoring:**
+
 1. Set up Fly.io metrics monitoring for:
+
    - CPU usage
    - Memory usage
    - Request latency
    - HTTP status codes
 
 2. Configure alerts for:
+
    - High error rates (>5% 5xx responses)
    - Slow response times (P95 > 1s)
    - Memory usage >80%
@@ -787,6 +851,7 @@ The project uses GitHub Actions for automated testing and quality checks:
 ### CI Workflow (Runs on every push/PR)
 
 Automatically runs on changes to the `metadata-relay/` directory:
+
 - ✅ **Tests**: Full test suite with coverage reporting
 - 🔍 **Code Quality**: Unused dependency checks, compilation warnings check
 - 📝 **Formatting**: Ensures code follows project standards
@@ -795,6 +860,7 @@ Automatically runs on changes to the `metadata-relay/` directory:
 ### Release Workflow (Runs on version tags)
 
 Triggered when pushing tags matching `metadata-relay-v*`:
+
 - 🏗️ **Build**: Creates multi-platform Docker images (amd64, arm64)
 - 📦 **Publish**: Pushes to GitHub Container Registry
 - 🚀 **Deploy**: Automatically deploys to Fly.io production

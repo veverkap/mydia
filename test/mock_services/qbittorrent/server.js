@@ -1,11 +1,11 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const USERNAME = process.env.USERNAME || 'admin';
-const PASSWORD = process.env.PASSWORD || 'adminpass';
+const USERNAME = process.env.USERNAME || "admin";
+const PASSWORD = process.env.PASSWORD || "adminpass";
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -24,76 +24,76 @@ function generateSessionId() {
 const requireAuth = (req, res, next) => {
   const sid = req.cookies.SID;
   if (!sid || !sessions.has(sid)) {
-    return res.status(403).send('Forbidden');
+    return res.status(403).send("Forbidden");
   }
   next();
 };
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 // Login endpoint
-app.post('/api/v2/auth/login', (req, res) => {
+app.post("/api/v2/auth/login", (req, res) => {
   const { username, password } = req.body;
 
   if (username === USERNAME && password === PASSWORD) {
     const sid = generateSessionId();
     sessions.set(sid, { username, loginTime: Date.now() });
-    res.cookie('SID', sid, { httpOnly: true });
-    return res.send('Ok.');
+    res.cookie("SID", sid, { httpOnly: true });
+    return res.send("Ok.");
   }
 
-  res.status(401).send('Fails.');
+  res.status(401).send("Fails.");
 });
 
 // Logout endpoint
-app.post('/api/v2/auth/logout', (req, res) => {
+app.post("/api/v2/auth/logout", (req, res) => {
   const sid = req.cookies.SID;
   if (sid) {
     sessions.delete(sid);
-    res.clearCookie('SID');
+    res.clearCookie("SID");
   }
-  res.send('Ok.');
+  res.send("Ok.");
 });
 
 // Get application version
-app.get('/api/v2/app/version', (req, res) => {
-  res.send('v4.5.0-mock');
+app.get("/api/v2/app/version", (req, res) => {
+  res.send("v4.5.0-mock");
 });
 
 // Get application preferences
-app.get('/api/v2/app/preferences', requireAuth, (req, res) => {
+app.get("/api/v2/app/preferences", requireAuth, (req, res) => {
   res.json({
-    save_path: '/downloads',
+    save_path: "/downloads",
     temp_path_enabled: false,
     preallocate_all: false,
-    incomplete_files_ext: false
+    incomplete_files_ext: false,
   });
 });
 
 // Get torrent list
-app.get('/api/v2/torrents/info', requireAuth, (req, res) => {
+app.get("/api/v2/torrents/info", requireAuth, (req, res) => {
   const torrentList = Array.from(torrents.values());
   res.json(torrentList);
 });
 
 // Add torrent
-app.post('/api/v2/torrents/add', requireAuth, (req, res) => {
+app.post("/api/v2/torrents/add", requireAuth, (req, res) => {
   const { urls, savepath, category } = req.body;
 
   if (!urls) {
-    return res.status(400).send('Missing urls parameter');
+    return res.status(400).send("Missing urls parameter");
   }
 
   const urlList = Array.isArray(urls) ? urls : [urls];
 
-  urlList.forEach(url => {
+  urlList.forEach((url) => {
     const hash = Math.random().toString(36).substring(2, 42);
-    const name = url.includes('urn:btih:')
+    const name = url.includes("urn:btih:")
       ? `Torrent ${hash.substring(0, 8)}`
-      : url.split('/').pop() || `Torrent ${hash.substring(0, 8)}`;
+      : url.split("/").pop() || `Torrent ${hash.substring(0, 8)}`;
 
     torrents.set(hash, {
       hash,
@@ -109,15 +109,15 @@ app.post('/api/v2/torrents/add', requireAuth, (req, res) => {
       num_incomplete: 0,
       ratio: 0,
       eta: 8640000,
-      state: 'downloading',
+      state: "downloading",
       seq_dl: false,
       f_l_piece_prio: false,
-      category: category || '',
-      tags: '',
-      save_path: savepath || '/downloads',
+      category: category || "",
+      tags: "",
+      save_path: savepath || "/downloads",
       added_on: Math.floor(Date.now() / 1000),
       completion_on: -1,
-      tracker: url.includes('magnet:') ? 'Magnet Link' : 'HTTP Seed',
+      tracker: url.includes("magnet:") ? "Magnet Link" : "HTTP Seed",
       dl_limit: -1,
       up_limit: -1,
       downloaded: 0,
@@ -128,87 +128,87 @@ app.post('/api/v2/torrents/add', requireAuth, (req, res) => {
       auto_tmm: false,
       time_active: 0,
       seeding_time: 0,
-      availability: -1
+      availability: -1,
     });
   });
 
-  res.send('Ok.');
+  res.send("Ok.");
 });
 
 // Delete torrents
-app.post('/api/v2/torrents/delete', requireAuth, (req, res) => {
+app.post("/api/v2/torrents/delete", requireAuth, (req, res) => {
   const { hashes, deleteFiles } = req.body;
 
   if (!hashes) {
-    return res.status(400).send('Missing hashes parameter');
+    return res.status(400).send("Missing hashes parameter");
   }
 
-  const hashList = hashes.split('|');
-  hashList.forEach(hash => {
-    if (hash === 'all') {
+  const hashList = hashes.split("|");
+  hashList.forEach((hash) => {
+    if (hash === "all") {
       torrents.clear();
     } else {
       torrents.delete(hash);
     }
   });
 
-  res.send('Ok.');
+  res.send("Ok.");
 });
 
 // Pause torrents
-app.post('/api/v2/torrents/pause', requireAuth, (req, res) => {
+app.post("/api/v2/torrents/pause", requireAuth, (req, res) => {
   const { hashes } = req.body;
 
   if (!hashes) {
-    return res.status(400).send('Missing hashes parameter');
+    return res.status(400).send("Missing hashes parameter");
   }
 
-  const hashList = hashes.split('|');
-  hashList.forEach(hash => {
+  const hashList = hashes.split("|");
+  hashList.forEach((hash) => {
     const torrent = torrents.get(hash);
     if (torrent) {
-      torrent.state = 'pausedDL';
+      torrent.state = "pausedDL";
       torrent.dlspeed = 0;
       torrent.upspeed = 0;
     }
   });
 
-  res.send('Ok.');
+  res.send("Ok.");
 });
 
 // Resume torrents
-app.post('/api/v2/torrents/resume', requireAuth, (req, res) => {
+app.post("/api/v2/torrents/resume", requireAuth, (req, res) => {
   const { hashes } = req.body;
 
   if (!hashes) {
-    return res.status(400).send('Missing hashes parameter');
+    return res.status(400).send("Missing hashes parameter");
   }
 
-  const hashList = hashes.split('|');
-  hashList.forEach(hash => {
+  const hashList = hashes.split("|");
+  hashList.forEach((hash) => {
     const torrent = torrents.get(hash);
     if (torrent) {
-      torrent.state = 'downloading';
+      torrent.state = "downloading";
     }
   });
 
-  res.send('Ok.');
+  res.send("Ok.");
 });
 
 // Get torrent properties
-app.get('/api/v2/torrents/properties', requireAuth, (req, res) => {
+app.get("/api/v2/torrents/properties", requireAuth, (req, res) => {
   const { hash } = req.query;
 
   const torrent = torrents.get(hash);
   if (!torrent) {
-    return res.status(404).json({ error: 'Torrent not found' });
+    return res.status(404).json({ error: "Torrent not found" });
   }
 
   res.json({
     save_path: torrent.save_path,
     creation_date: torrent.added_on,
     piece_size: 4194304,
-    comment: '',
+    comment: "",
     total_wasted: 0,
     total_uploaded: torrent.uploaded,
     total_uploaded_session: torrent.uploaded_session,
@@ -223,7 +223,7 @@ app.get('/api/v2/torrents/properties', requireAuth, (req, res) => {
     share_ratio: torrent.ratio,
     addition_date: torrent.added_on,
     completion_date: torrent.completion_on,
-    created_by: 'Mock qBittorrent',
+    created_by: "Mock qBittorrent",
     dl_speed_avg: 0,
     dl_speed: torrent.dlspeed,
     eta: torrent.eta,
@@ -237,37 +237,37 @@ app.get('/api/v2/torrents/properties', requireAuth, (req, res) => {
     seeds_total: torrent.num_complete,
     total_size: torrent.size,
     up_speed_avg: 0,
-    up_speed: torrent.upspeed
+    up_speed: torrent.upspeed,
   });
 });
 
 // Simulate torrent progress
 setInterval(() => {
-  torrents.forEach(torrent => {
-    if (torrent.state === 'downloading' && torrent.progress < 1) {
+  torrents.forEach((torrent) => {
+    if (torrent.state === "downloading" && torrent.progress < 1) {
       torrent.progress += 0.05;
       torrent.dlspeed = Math.floor(Math.random() * 10000000) + 1000000;
       torrent.downloaded += torrent.dlspeed;
 
       if (torrent.progress >= 1) {
         torrent.progress = 1;
-        torrent.state = 'uploading';
+        torrent.state = "uploading";
         torrent.dlspeed = 0;
         torrent.completion_on = Math.floor(Date.now() / 1000);
       }
-    } else if (torrent.state === 'uploading') {
+    } else if (torrent.state === "uploading") {
       torrent.upspeed = Math.floor(Math.random() * 5000000) + 500000;
       torrent.uploaded += torrent.upspeed;
       torrent.ratio = torrent.uploaded / torrent.size;
     }
     torrent.time_active += 5;
-    if (torrent.state === 'uploading') {
+    if (torrent.state === "uploading") {
       torrent.seeding_time += 5;
     }
   });
 }, 5000);
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Mock qBittorrent server listening on port ${PORT}`);
   console.log(`Username: ${USERNAME}`);
   console.log(`Password: ${PASSWORD}`);

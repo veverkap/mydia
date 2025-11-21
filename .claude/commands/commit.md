@@ -7,11 +7,13 @@ Review the current git changes and create well-organized commits using conventio
 1. **Analyze Changes**: Review `git status` and `git diff` to understand all modified and untracked files
 
 2. **Group Logically**: Organize changes into logical groups based on:
+
    - Feature area (e.g., downloads, auth, UI, config)
    - Type of change (e.g., fix, feat, refactor, docs, test, chore)
    - Related functionality (changes that work together)
 
 3. **Create Conventional Commits**: For each group, create a commit following the format:
+
    ```
    <type>[optional scope]: <description>
 
@@ -19,6 +21,7 @@ Review the current git changes and create well-organized commits using conventio
    ```
 
    **Common types**:
+
    - `feat`: New feature
    - `fix`: Bug fix
    - `refactor`: Code change that neither fixes a bug nor adds a feature
@@ -31,6 +34,7 @@ Review the current git changes and create well-organized commits using conventio
    **Scope examples**: `downloads`, `auth`, `ui`, `api`, `config`, `docker`, etc.
 
 4. **Present Plan**: Before creating any commits, show me:
+
    - What groups you've identified
    - What files go in each commit
    - The proposed commit message for each

@@ -7,12 +7,14 @@ The Mydia Phoenix application has been successfully generated and configured wit
 ### ✅ Completed Setup Tasks
 
 1. **Phoenix Framework Project Generated**
+
    - Phoenix 1.8.1 with LiveView
    - SQLite3 database adapter (Ecto_SQLite3)
    - No mailer (as specified)
    - Docker development environment configured
 
 2. **SQLite Database Configuration**
+
    - Development config: `config/dev.exs`
    - Production config: `config/runtime.exs`
    - Optimizations applied:
@@ -24,6 +26,7 @@ The Mydia Phoenix application has been successfully generated and configured wit
      - 5-second busy timeout
 
 3. **Tailwind CSS + DaisyUI**
+
    - Tailwind CSS 4.x configured
    - DaisyUI custom theme setup (`mydia` theme)
    - Dark-first design system
@@ -34,6 +37,7 @@ The Mydia Phoenix application has been successfully generated and configured wit
      - `tailwindcss: ^3.4.0`
 
 4. **Background Jobs (Oban)**
+
    - Oban 2.17+ configured
    - SQLite-compatible engine (Basic)
    - Queue configuration:
@@ -46,6 +50,7 @@ The Mydia Phoenix application has been successfully generated and configured wit
    - Added to application supervision tree
 
 5. **Core Dependencies Installed**
+
    ```elixir
    # Phoenix & Database
    {:phoenix, "~> 1.8.1"}
@@ -143,17 +148,20 @@ mix phx.server
 ### Immediate development priorities:
 
 1. **Create Database Schema**
+
    - Generate migrations for media_items, episodes, media_files
    - Add quality_profiles, downloads, users tables
    - Set up indexes per docs/architecture/technical.md
 
 2. **Implement Core Contexts**
+
    - `Mydia.Media` - Media management (movies, TV shows)
    - `Mydia.Library` - File scanning and organization
    - `Mydia.Downloads` - Download management
    - `Mydia.Accounts` - User authentication (OIDC + local)
 
 3. **Build UI Components**
+
    - Sidebar navigation
    - Media card/list views
    - Toolbar with filters
@@ -161,6 +169,7 @@ mix phx.server
    - Batch selection UI
 
 4. **Add Authentication**
+
    - OIDC integration (Ueberauth)
    - Local auth fallback
    - User sessions

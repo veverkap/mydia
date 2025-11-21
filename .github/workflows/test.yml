@@ -7,12 +7,12 @@ on:
       - main
   pull_request:
     branches:
-      - '**'
+      - "**"
 
 env:
   MIX_ENV: test
-  ELIXIR_VERSION: '1.17'
-  OTP_VERSION: '27'
+  ELIXIR_VERSION: "1.17"
+  OTP_VERSION: "27"
 
 jobs:
   test:

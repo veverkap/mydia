@@ -15,13 +15,13 @@
  * });
  */
 
-import { APIRequestContext, request } from '@playwright/test';
+import { APIRequestContext, request } from "@playwright/test";
 
 /**
  * Base URL for the application API
  * Uses environment variable or defaults to localhost
  */
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
+const BASE_URL = process.env.BASE_URL || "http://localhost:4000";
 
 /**
  * Reset the database to a clean state
@@ -55,12 +55,14 @@ export async function resetDatabase(): Promise<void> {
   try {
     const response = await context.post(`${BASE_URL}/api/test/reset-db`, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok()) {
-      throw new Error(`Database reset failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(
+        `Database reset failed: ${response.status()} ${response.statusText()}`,
+      );
     }
   } finally {
     await context.dispose();
@@ -89,12 +91,14 @@ export async function seedTestUsers(): Promise<void> {
   try {
     const response = await context.post(`${BASE_URL}/api/test/seed-users`, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok()) {
-      throw new Error(`User seeding failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(
+        `User seeding failed: ${response.status()} ${response.statusText()}`,
+      );
     }
   } finally {
     await context.dispose();
@@ -131,17 +135,19 @@ export async function seedTestMedia(options?: {
   try {
     const response = await context.post(`${BASE_URL}/api/test/seed-media`, {
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       data: {
         tv_shows: options?.tvShows ?? 3,
         movies: options?.movies ?? 3,
-        episodes_per_show: options?.episodes ?? 5
-      }
+        episodes_per_show: options?.episodes ?? 5,
+      },
     });
 
     if (!response.ok()) {
-      throw new Error(`Media seeding failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(
+        `Media seeding failed: ${response.status()} ${response.statusText()}`,
+      );
     }
   } finally {
     await context.dispose();
@@ -170,13 +176,15 @@ export async function executeSQL(sql: string): Promise<void> {
   try {
     const response = await context.post(`${BASE_URL}/api/test/execute-sql`, {
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      data: { sql }
+      data: { sql },
     });
 
     if (!response.ok()) {
-      throw new Error(`SQL execution failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(
+        `SQL execution failed: ${response.status()} ${response.statusText()}`,
+      );
     }
   } finally {
     await context.dispose();
@@ -204,12 +212,14 @@ export async function cleanupTestFiles(): Promise<void> {
   try {
     const response = await context.post(`${BASE_URL}/api/test/cleanup-files`, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok()) {
-      throw new Error(`File cleanup failed: ${response.status()} ${response.statusText()}`);
+      throw new Error(
+        `File cleanup failed: ${response.status()} ${response.statusText()}`,
+      );
     }
   } finally {
     await context.dispose();
@@ -260,7 +270,7 @@ export async function setupTestEnvironment(options?: {
   if (options?.seedMedia) {
     await seedTestMedia({
       tvShows: options.tvShows,
-      movies: options.movies
+      movies: options.movies,
     });
   }
 }

@@ -21,6 +21,7 @@ Mydia's interface is designed for **power users** managing **large media librari
 ## Technology Stack
 
 ### UI Framework
+
 - **Tailwind CSS 3.x**: Utility-first CSS framework
 - **DaisyUI 4.x**: Component library built on Tailwind
 - **Phoenix LiveView**: Server-rendered real-time UI
@@ -50,60 +51,61 @@ module.exports = {
       {
         mydia: {
           // Primary - Main actions (Blue)
-          "primary": "#3b82f6",
+          primary: "#3b82f6",
           "primary-focus": "#2563eb",
           "primary-content": "#ffffff",
 
           // Secondary - Premium features (Purple)
-          "secondary": "#8b5cf6",
+          secondary: "#8b5cf6",
           "secondary-focus": "#7c3aed",
           "secondary-content": "#ffffff",
 
           // Accent - Quality badges (Cyan)
-          "accent": "#06b6d4",
+          accent: "#06b6d4",
           "accent-focus": "#0891b2",
           "accent-content": "#ffffff",
 
           // Neutral - Subtle elements (Gray)
-          "neutral": "#1f2937",
+          neutral: "#1f2937",
           "neutral-focus": "#111827",
           "neutral-content": "#f9fafb",
 
           // Base - Backgrounds & text (Slate)
-          "base-100": "#0f172a",     // Slate-900 (main bg)
-          "base-200": "#1e293b",     // Slate-800 (card bg)
-          "base-300": "#334155",     // Slate-700 (hover)
-          "base-content": "#f1f5f9",  // Slate-100 (text)
+          "base-100": "#0f172a", // Slate-900 (main bg)
+          "base-200": "#1e293b", // Slate-800 (card bg)
+          "base-300": "#334155", // Slate-700 (hover)
+          "base-content": "#f1f5f9", // Slate-100 (text)
 
           // Semantic colors
-          "info": "#3b82f6",
+          info: "#3b82f6",
           "info-content": "#ffffff",
-          "success": "#10b981",
+          success: "#10b981",
           "success-content": "#ffffff",
-          "warning": "#f59e0b",
+          warning: "#f59e0b",
           "warning-content": "#000000",
-          "error": "#ef4444",
+          error: "#ef4444",
           "error-content": "#ffffff",
         },
       },
     ],
   },
-}
+};
 ```
 
 ### Color Usage
 
-| Color | Usage | Example |
-|-------|-------|---------|
-| Primary (Blue) | Main actions, selected items, links | "Download" button, selected checkbox |
-| Secondary (Purple) | Premium features, secondary actions | HDR badges, "More info" button |
-| Accent (Cyan) | Quality badges, highlights | 4K badges, resolution indicators |
-| Success (Green) | Completed states, available | Download complete, file exists |
-| Warning (Amber) | Warnings, monitored status | Missing file, upgrade available |
-| Error (Red) | Errors, failed states | Download failed, file missing |
-| Info (Blue) | Informational messages | Tips, help text |
+| Color              | Usage                               | Example                              |
+| ------------------ | ----------------------------------- | ------------------------------------ |
+| Primary (Blue)     | Main actions, selected items, links | "Download" button, selected checkbox |
+| Secondary (Purple) | Premium features, secondary actions | HDR badges, "More info" button       |
+| Accent (Cyan)      | Quality badges, highlights          | 4K badges, resolution indicators     |
+| Success (Green)    | Completed states, available         | Download complete, file exists       |
+| Warning (Amber)    | Warnings, monitored status          | Missing file, upgrade available      |
+| Error (Red)        | Errors, failed states               | Download failed, file missing        |
+| Info (Blue)        | Informational messages              | Tips, help text                      |
 
 **Key Principles:**
+
 - Dark theme optimized for extended use and media presentation
 - Strategic color use for visual hierarchy and meaning
 - WCAG AA compliant contrast ratios throughout
@@ -115,10 +117,15 @@ module.exports = {
 
 ```css
 /* Primary font - UI text */
-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-family:
+  "Inter",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  sans-serif;
 
 /* Monospace - File paths, technical info */
-font-family: 'JetBrains Mono', 'Fira Code', monospace;
+font-family: "JetBrains Mono", "Fira Code", monospace;
 ```
 
 ### Type Scale (Tailwind)
@@ -218,7 +225,9 @@ Displays a single media item (movie/show) with poster, title, and metadata.
     <img src="/posters/movie.jpg" alt="Movie Title" class="object-cover" />
 
     <!-- Hover overlay -->
-    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+    <div
+      class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2"
+    >
       <button class="btn btn-circle btn-sm btn-primary">
         <svg class="w-4 h-4"><!-- Play icon --></svg>
       </button>
@@ -316,7 +325,9 @@ For list/table view with more information.
 Top action bar for filters, search, and batch operations.
 
 ```html
-<div class="flex items-center justify-between gap-4 p-4 bg-base-100 border-b border-base-300">
+<div
+  class="flex items-center justify-between gap-4 p-4 bg-base-100 border-b border-base-300"
+>
   <!-- Left: View controls & filters -->
   <div class="flex items-center gap-2">
     <!-- View switcher -->
@@ -336,7 +347,10 @@ Top action bar for filters, search, and batch operations.
         Filters
         <span class="badge badge-sm badge-primary">3</span>
       </label>
-      <div tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52">
+      <div
+        tabindex="0"
+        class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52"
+      >
         <!-- Filter options -->
       </div>
     </div>
@@ -463,7 +477,10 @@ Top action bar for filters, search, and batch operations.
       </div>
       <span class="ml-2">John Doe</span>
     </label>
-    <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52">
+    <ul
+      tabindex="0"
+      class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52"
+    >
       <li><a>Profile</a></li>
       <li><a>Preferences</a></li>
       <li><a>Logout</a></li>
@@ -480,7 +497,9 @@ Full-screen or large modal for detailed media information.
 <dialog class="modal modal-open">
   <div class="modal-box max-w-4xl">
     <form method="dialog">
-      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+        ✕
+      </button>
     </form>
 
     <!-- Hero section -->
@@ -505,9 +524,7 @@ Full-screen or large modal for detailed media information.
           </div>
         </div>
 
-        <p class="text-sm mb-4">
-          A gripping thriller about...
-        </p>
+        <p class="text-sm mb-4">A gripping thriller about...</p>
 
         <!-- Actions -->
         <div class="flex gap-2 mb-4">
@@ -566,7 +583,9 @@ Full-screen or large modal for detailed media information.
               </td>
               <td>HEVC</td>
               <td>45.2 GB</td>
-              <td class="font-mono text-xs">/movies/Movie.Title.2024.2160p.mkv</td>
+              <td class="font-mono text-xs">
+                /movies/Movie.Title.2024.2160p.mkv
+              </td>
               <td>
                 <button class="btn btn-ghost btn-xs">Delete</button>
               </td>
@@ -579,7 +598,9 @@ Full-screen or large modal for detailed media information.
               </td>
               <td>H.264</td>
               <td>12.3 GB</td>
-              <td class="font-mono text-xs">/movies/Movie.Title.2024.1080p.mkv</td>
+              <td class="font-mono text-xs">
+                /movies/Movie.Title.2024.1080p.mkv
+              </td>
               <td>
                 <button class="btn btn-ghost btn-xs">Delete</button>
               </td>
@@ -612,7 +633,11 @@ Progress indicators for active downloads.
 
     <!-- Progress bar -->
     <div class="flex items-center gap-2">
-      <progress class="progress progress-primary flex-1" value="67" max="100"></progress>
+      <progress
+        class="progress progress-primary flex-1"
+        value="67"
+        max="100"
+      ></progress>
       <span class="text-sm font-medium">67%</span>
     </div>
 
@@ -641,9 +666,11 @@ Progress indicators for active downloads.
 
 ```html
 <!-- Appears when items are selected -->
-<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50
+<div
+  class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50
             bg-primary text-primary-content rounded-box shadow-2xl
-            px-6 py-3 flex items-center gap-4">
+            px-6 py-3 flex items-center gap-4"
+>
   <!-- Count -->
   <div class="flex items-center gap-2">
     <input type="checkbox" class="checkbox checkbox-sm" checked />
@@ -672,7 +699,10 @@ Progress indicators for active downloads.
         More
         <svg class="w-4 h-4"><!-- Chevron --></svg>
       </label>
-      <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52">
+      <ul
+        tabindex="0"
+        class="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52"
+      >
         <li><a>Edit Quality Profile</a></li>
         <li><a>Refresh Metadata</a></li>
         <li><a>Organize Files</a></li>
@@ -685,9 +715,7 @@ Progress indicators for active downloads.
   <div class="divider divider-horizontal"></div>
 
   <!-- Clear selection -->
-  <button class="btn btn-sm btn-ghost">
-    Clear
-  </button>
+  <button class="btn btn-sm btn-ghost">Clear</button>
 </div>
 ```
 
@@ -700,9 +728,7 @@ Progress indicators for active downloads.
     class="checkbox checkbox-sm checkbox-primary"
     indeterminate
   />
-  <span class="text-sm">
-    5 of 1,234 selected
-  </span>
+  <span class="text-sm"> 5 of 1,234 selected </span>
   <button class="btn btn-xs btn-link">Select all 1,234</button>
 </div>
 ```
@@ -799,7 +825,9 @@ For large libraries (1000+ items), use virtual scrolling:
 
 ```html
 <!-- Desktop: Grid with multiple columns -->
-<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+<div
+  class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
+>
   <!-- Cards -->
 </div>
 
@@ -873,9 +901,7 @@ For large libraries (1000+ items), use virtual scrolling:
 </div>
 
 <!-- Loading state -->
-<button class="btn btn-primary loading">
-  Processing...
-</button>
+<button class="btn btn-primary loading">Processing...</button>
 
 <!-- Success feedback -->
 <div class="alert alert-success shadow-lg animate-fade-in">
@@ -893,8 +919,12 @@ For large libraries (1000+ items), use virtual scrolling:
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 ```
 
@@ -907,12 +937,17 @@ Use **Heroicons** (works well with Tailwind/DaisyUI):
 ```html
 <!-- Heroicons v2 -->
 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M4 6h16M4 12h16M4 18h16" />
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d="M4 6h16M4 12h16M4 18h16"
+  />
 </svg>
 ```
 
 Common icons needed:
+
 - Film, TV, Play (media types)
 - Download, Upload, Cloud (transfers)
 - Search, Filter, Sort (navigation)
@@ -1004,12 +1039,14 @@ Common icons needed:
 ## Future Enhancements
 
 ### Phase 2
+
 - [ ] Customizable grid density (compact/normal/comfortable)
 - [ ] Custom themes (user-created color schemes)
 - [ ] Advanced filters with visual query builder
 - [ ] Drag-and-drop for file organization
 
 ### Phase 3
+
 - [ ] Column customization for table view
 - [ ] Saved views/perspectives
 - [ ] Dashboard widgets (drag-and-drop layout)

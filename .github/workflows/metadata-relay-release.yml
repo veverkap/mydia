@@ -3,7 +3,7 @@ name: Metadata Relay Release
 on:
   push:
     tags:
-      - 'metadata-relay-v*'
+      - "metadata-relay-v*"
 
 env:
   REGISTRY: ghcr.io

@@ -2,33 +2,37 @@
 
 ## Status Colors (Consistent with Calendar)
 
-| Status | Color | Class | Icon | When |
-|--------|-------|-------|------|------|
-| Downloaded | Green | `badge-success` | `hero-check-circle` | Has media files |
-| Downloading | Blue | `badge-info` | `hero-arrow-down-tray` | Active downloads |
-| Upcoming | Gray | `badge-ghost` | `hero-calendar` | Air date is future |
-| Missing | Red | `badge-error` | `hero-exclamation-triangle` | No files, not downloading |
+| Status      | Color | Class           | Icon                        | When                      |
+| ----------- | ----- | --------------- | --------------------------- | ------------------------- |
+| Downloaded  | Green | `badge-success` | `hero-check-circle`         | Has media files           |
+| Downloading | Blue  | `badge-info`    | `hero-arrow-down-tray`      | Active downloads          |
+| Upcoming    | Gray  | `badge-ghost`   | `hero-calendar`             | Air date is future        |
+| Missing     | Red   | `badge-error`   | `hero-exclamation-triangle` | No files, not downloading |
 
 ## Files to Edit
 
 ### Must Edit
+
 1. `/lib/mydia_web/live/media_live/show.html.heex` - Line 271-286 (status column)
 2. `/lib/mydia_web/live/media_live/show.ex` - Add status helper function
 
 ### Should Create
+
 3. `/lib/mydia/media/episode_status.ex` - New reusable module
 
 ### Optional (Future)
+
 4. `/lib/mydia_web/live/calendar_live/index.ex` - Refactor to use shared module
 5. `/lib/mydia_web/live/media_live/index.ex` - Add episode status if needed
 
 ## Key Code Patterns
 
 ### Determining Status
+
 ```elixir
 defp get_episode_status(episode) do
   today = Date.utc_today()
-  
+
   cond do
     Enum.any?(episode.media_files, & &1.path) -> :downloaded
     Date.compare(episode.air_date, today) == :gt -> :upcoming
@@ -39,6 +43,7 @@ end
 ```
 
 ### Displaying Status Badge
+
 ```heex
 <td>
   <% status = get_episode_status(episode) %>
@@ -50,6 +55,7 @@ end
 ```
 
 ### Status Helpers
+
 ```elixir
 defp status_badge_class(:downloaded), do: "badge-success"
 defp status_badge_class(:downloading), do: "badge-info"
@@ -75,6 +81,7 @@ defp status_label(:missing), do: "Missing"
 ✓ Real-time updates via PubSub - Already subscribed in show.ex line 11
 
 ## Current Preload (show.ex line 398)
+
 ```elixir
 [
   quality_profile: [],
@@ -97,13 +104,16 @@ defp status_label(:missing), do: "Missing"
 ## Database Queries Reference
 
 ### Get Episodes with Status Info
+
 From `media.ex` line 340:
+
 ```elixir
 Media.list_episodes_by_air_date(start_date, end_date)
 # Returns computed has_files and has_downloads fields
 ```
 
 ### Used in Calendar
+
 Already computes has_files and has_downloads via EXISTS subqueries
 
 ## Related Tasks

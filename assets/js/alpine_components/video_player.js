@@ -41,7 +41,7 @@ export function videoPlayer() {
 
     // Loading and error states
     loading: false,
-    loadingMessage: 'Loading...',
+    loadingMessage: "Loading...",
     error: null,
 
     // Transcoding progress
@@ -57,14 +57,14 @@ export function videoPlayer() {
 
     init() {
       // Alpine's init runs when component is mounted
-      console.log('Alpine video player component initialized')
-      console.log('Initial state:', {
+      console.log("Alpine video player component initialized");
+      console.log("Initial state:", {
         skipIntroVisible: this.skipIntroVisible,
         skipCreditsVisible: this.skipCreditsVisible,
         nextEpisodeVisible: this.nextEpisodeVisible,
         loading: this.loading,
-        error: this.error
-      })
+        error: this.error,
+      });
 
       // The Phoenix hook will handle the actual video setup and call
       // methods on this Alpine component to update state
@@ -73,168 +73,168 @@ export function videoPlayer() {
     // === Computed Properties (Getters) ===
 
     get formattedCurrentTime() {
-      return this.formatTime(this.currentTime)
+      return this.formatTime(this.currentTime);
     },
 
     get formattedDuration() {
-      return this.formatTime(this.duration)
+      return this.formatTime(this.duration);
     },
 
     get progressPercent() {
-      if (!this.duration || this.duration === 0) return 0
-      return (this.currentTime / this.duration) * 100
+      if (!this.duration || this.duration === 0) return 0;
+      return (this.currentTime / this.duration) * 100;
     },
 
     get speedDisplay() {
-      return this.playbackRate === 1.0 ? 'Normal' : `${this.playbackRate}x`
+      return this.playbackRate === 1.0 ? "Normal" : `${this.playbackRate}x`;
     },
 
     get qualityDisplay() {
-      if (this.currentHlsLevel === -1) return 'Auto'
+      if (this.currentHlsLevel === -1) return "Auto";
       if (this.hlsLevels[this.currentHlsLevel]) {
-        return `${this.hlsLevels[this.currentHlsLevel].height}p`
+        return `${this.hlsLevels[this.currentHlsLevel].height}p`;
       }
-      return 'Auto'
+      return "Auto";
     },
 
     // === UI Event Handlers ===
 
     togglePlay() {
-      const video = this.$refs.video
+      const video = this.$refs.video;
 
       // Unmute on first user interaction if video was auto-muted
       if (this.muted && !video.paused) {
-        console.log('Unmuting video on first user interaction')
-        video.muted = false
-        this.muted = false
+        console.log("Unmuting video on first user interaction");
+        video.muted = false;
+        this.muted = false;
       }
 
       if (video.paused) {
-        video.play()
+        video.play();
       } else {
-        video.pause()
+        video.pause();
       }
     },
 
     toggleMute() {
-      const video = this.$refs.video
-      video.muted = !video.muted
+      const video = this.$refs.video;
+      video.muted = !video.muted;
     },
 
     toggleFullscreen() {
       if (!document.fullscreenElement) {
-        this.$el.requestFullscreen().catch(err => {
-          console.error('Error enabling fullscreen:', err)
-        })
+        this.$el.requestFullscreen().catch((err) => {
+          console.error("Error enabling fullscreen:", err);
+        });
       } else {
-        document.exitFullscreen()
+        document.exitFullscreen();
       }
     },
 
     toggleSettings() {
-      this.settingsOpen = !this.settingsOpen
+      this.settingsOpen = !this.settingsOpen;
       if (!this.settingsOpen) {
-        this.speedMenuOpen = false
-        this.qualityMenuOpen = false
+        this.speedMenuOpen = false;
+        this.qualityMenuOpen = false;
       }
     },
 
     toggleSpeedMenu() {
-      this.speedMenuOpen = !this.speedMenuOpen
-      this.qualityMenuOpen = false
+      this.speedMenuOpen = !this.speedMenuOpen;
+      this.qualityMenuOpen = false;
     },
 
     toggleQualityMenu() {
-      this.qualityMenuOpen = !this.qualityMenuOpen
-      this.speedMenuOpen = false
+      this.qualityMenuOpen = !this.qualityMenuOpen;
+      this.speedMenuOpen = false;
     },
 
     closeSettings() {
-      this.settingsOpen = false
-      this.speedMenuOpen = false
-      this.qualityMenuOpen = false
+      this.settingsOpen = false;
+      this.speedMenuOpen = false;
+      this.qualityMenuOpen = false;
     },
 
     // === Playback Controls ===
 
     setVolume(value) {
-      const video = this.$refs.video
-      this.volume = value
-      video.volume = value / 100
-      video.muted = value === 0
+      const video = this.$refs.video;
+      this.volume = value;
+      video.volume = value / 100;
+      video.muted = value === 0;
 
       // Save to localStorage
-      localStorage.setItem('videoPlayerVolume', value)
+      localStorage.setItem("videoPlayerVolume", value);
     },
 
     setProgress(percent) {
-      const video = this.$refs.video
+      const video = this.$refs.video;
       if (this.hasMetadata && this.duration) {
-        video.currentTime = (percent / 100) * this.duration
+        video.currentTime = (percent / 100) * this.duration;
       }
     },
 
     setSpeed(speed) {
-      const video = this.$refs.video
-      video.playbackRate = speed
-      this.playbackRate = speed
-      localStorage.setItem('videoPlayerSpeed', speed.toString())
-      this.closeSettings()
+      const video = this.$refs.video;
+      video.playbackRate = speed;
+      this.playbackRate = speed;
+      localStorage.setItem("videoPlayerSpeed", speed.toString());
+      this.closeSettings();
     },
 
     setQuality(level) {
       // This will be called by the template, but the actual HLS level
       // switching is handled by the Phoenix hook which has access to hls.js
-      this.$dispatch('set-quality', { level })
-      this.closeSettings()
+      this.$dispatch("set-quality", { level });
+      this.closeSettings();
     },
 
     // === Video Event Handlers ===
 
     onPlay() {
-      this.playing = true
-      this.buffering = false
+      this.playing = true;
+      this.buffering = false;
     },
 
     onPause() {
-      this.playing = false
+      this.playing = false;
     },
 
     onTimeUpdate(event) {
-      this.currentTime = event.target.currentTime
+      this.currentTime = event.target.currentTime;
     },
 
     onLoadedMetadata(event) {
-      this.hasMetadata = true
-      this.duration = event.target.duration
-      this.loading = false
+      this.hasMetadata = true;
+      this.duration = event.target.duration;
+      this.loading = false;
     },
 
     onDurationChange(event) {
       // Update duration when it changes (important for HLS streams)
-      const newDuration = event.target.duration
+      const newDuration = event.target.duration;
       if (isFinite(newDuration) && newDuration > 0) {
-        this.duration = newDuration
+        this.duration = newDuration;
       }
     },
 
     onVolumeChange(event) {
-      this.muted = event.target.muted
-      this.volume = event.target.volume * 100
+      this.muted = event.target.muted;
+      this.volume = event.target.volume * 100;
     },
 
     onWaiting() {
-      this.buffering = true
-      this.loading = true
+      this.buffering = true;
+      this.loading = true;
     },
 
     onPlaying() {
-      this.buffering = false
-      this.loading = false
+      this.buffering = false;
+      this.loading = false;
     },
 
     onRateChange(event) {
-      this.playbackRate = event.target.playbackRate
+      this.playbackRate = event.target.playbackRate;
     },
 
     onFullscreenChange() {
@@ -245,37 +245,37 @@ export function videoPlayer() {
 
     skipIntro() {
       // Hook will handle the actual seeking
-      this.$dispatch('skip-intro')
+      this.$dispatch("skip-intro");
     },
 
     skipCredits() {
       // Hook will handle the actual seeking or navigation
-      this.$dispatch('skip-credits')
+      this.$dispatch("skip-credits");
     },
 
     playNextEpisode() {
-      this.$dispatch('play-next-episode')
+      this.$dispatch("play-next-episode");
     },
 
     cancelNextEpisode() {
-      this.$dispatch('cancel-next-episode')
-      this.nextEpisodeVisible = false
-      this.countdownVisible = false
+      this.$dispatch("cancel-next-episode");
+      this.nextEpisodeVisible = false;
+      this.countdownVisible = false;
     },
 
     // === Utility Methods ===
 
     formatTime(seconds) {
-      if (!isFinite(seconds)) return '0:00'
+      if (!isFinite(seconds)) return "0:00";
 
-      const hours = Math.floor(seconds / 3600)
-      const minutes = Math.floor((seconds % 3600) / 60)
-      const secs = Math.floor(seconds % 60)
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
 
       if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
       } else {
-        return `${minutes}:${secs.toString().padStart(2, '0')}`
+        return `${minutes}:${secs.toString().padStart(2, "0")}`;
       }
     },
 
@@ -284,94 +284,94 @@ export function videoPlayer() {
     // These methods allow the Phoenix hook to update Alpine state
 
     showLoading() {
-      this.loading = true
+      this.loading = true;
     },
 
     hideLoading() {
-      this.loading = false
+      this.loading = false;
     },
 
     showError(message) {
-      this.error = message
-      this.loading = false
+      this.error = message;
+      this.loading = false;
     },
 
     hideError() {
-      this.error = null
+      this.error = null;
     },
 
     updateHlsLevels(levels) {
-      this.hlsLevels = levels
+      this.hlsLevels = levels;
     },
 
     updateHlsLevel(level) {
-      this.currentHlsLevel = level
+      this.currentHlsLevel = level;
     },
 
     showSkipIntro() {
-      this.skipIntroVisible = true
+      this.skipIntroVisible = true;
     },
 
     hideSkipIntro() {
-      this.skipIntroVisible = false
+      this.skipIntroVisible = false;
     },
 
     showSkipCredits() {
-      this.skipCreditsVisible = true
+      this.skipCreditsVisible = true;
     },
 
     hideSkipCredits() {
-      this.skipCreditsVisible = false
+      this.skipCreditsVisible = false;
     },
 
     showNextEpisode() {
-      this.nextEpisodeVisible = true
+      this.nextEpisodeVisible = true;
     },
 
     hideNextEpisode() {
-      this.nextEpisodeVisible = false
-      this.countdownVisible = false
+      this.nextEpisodeVisible = false;
+      this.countdownVisible = false;
     },
 
     startCountdown() {
-      this.countdownVisible = true
+      this.countdownVisible = true;
     },
 
     updateCountdown(seconds, progressPercent) {
-      this.countdownSeconds = seconds
-      this.countdownProgress = progressPercent
+      this.countdownSeconds = seconds;
+      this.countdownProgress = progressPercent;
     },
 
     stopCountdown() {
-      this.countdownVisible = false
-      this.countdownSeconds = 15
-      this.countdownProgress = 100
+      this.countdownVisible = false;
+      this.countdownSeconds = 15;
+      this.countdownProgress = 100;
     },
 
     // === Transcoding Progress ===
 
     showTranscodingLoading() {
-      this.loading = true
-      this.isTranscoding = true
-      this.loadingMessage = 'Preparing video for playback...'
-      this.retryAttempt = 0
-      this.maxRetries = 0
+      this.loading = true;
+      this.isTranscoding = true;
+      this.loadingMessage = "Preparing video for playback...";
+      this.retryAttempt = 0;
+      this.maxRetries = 0;
     },
 
     updateTranscodingProgress(attempt, maxAttempts) {
-      this.retryAttempt = attempt
-      this.maxRetries = maxAttempts
+      this.retryAttempt = attempt;
+      this.maxRetries = maxAttempts;
       if (attempt > 1) {
-        this.loadingMessage = `Preparing video... (attempt ${attempt} of ${maxAttempts})`
+        this.loadingMessage = `Preparing video... (attempt ${attempt} of ${maxAttempts})`;
       } else {
-        this.loadingMessage = 'Preparing video for playback...'
+        this.loadingMessage = "Preparing video for playback...";
       }
     },
 
     showDirectPlayLoading() {
-      this.loading = true
-      this.isTranscoding = false
-      this.loadingMessage = 'Loading video...'
-    }
-  }
+      this.loading = true;
+      this.isTranscoding = false;
+      this.loadingMessage = "Loading video...";
+    },
+  };
 }

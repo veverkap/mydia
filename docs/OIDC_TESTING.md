@@ -11,6 +11,7 @@ Mydia uses an optimized OIDC configuration that works with **any standard OIDC p
 - **Standard OIDC scopes** (`openid`, `profile`, `email`)
 
 This means you can use Mydia with **minimal provider configuration** - no need to specify:
+
 - `token_endpoint_auth_method` settings
 - `response_modes` lists
 - JWT-based authentication methods
@@ -19,6 +20,7 @@ This means you can use Mydia with **minimal provider configuration** - no need t
 ### Supported Providers
 
 This configuration uses standard OAuth2 methods that should work with any compliant OIDC provider:
+
 - **Keycloak** - Default configuration should work out of the box
 - **Authelia** - Minimal client configuration required
 - **Auth0** - Should work with default client settings
@@ -30,6 +32,7 @@ This configuration uses standard OAuth2 methods that should work with any compli
 ### How It Works
 
 The OIDC library automatically:
+
 1. Discovers provider capabilities via the `.well-known/openid-configuration` endpoint
 2. Selects the most compatible authentication method from our preferred list
 3. Uses standard OAuth2 flows that all providers support
@@ -38,21 +41,25 @@ The OIDC library automatically:
 ## Quick Start
 
 1. **Start all services including Keycloak:**
+
    ```bash
    ./dev up -d
    ```
 
 2. **Access Keycloak admin console:**
+
    - URL: http://localhost:8080
    - Username: `admin`
    - Password: `admin`
 
 3. **Create a realm:**
+
    - Click "Create realm" button
    - Name: `mydia`
    - Click "Create"
 
 4. **Create a client:**
+
    - Go to "Clients" in the left menu
    - Click "Create client"
    - Client ID: `mydia`
@@ -71,6 +78,7 @@ The OIDC library automatically:
 5. **Configure Mydia environment variables:**
 
    Edit `compose.override.yml` and uncomment these lines in the `app` service environment section:
+
    ```yaml
    OIDC_ISSUER: "http://keycloak:8080/realms/mydia"
    OIDC_CLIENT_ID: "mydia"
@@ -78,9 +86,11 @@ The OIDC library automatically:
    OIDC_REDIRECT_URI: "http://localhost:4000/auth/oidc/callback"
    OIDC_SCOPES: "openid profile email"
    ```
+
    Replace `YOUR_CLIENT_SECRET_FROM_KEYCLOAK` with the actual secret from step 4.
 
 6. **Create a test user in Keycloak:**
+
    - Go to "Users" in the left menu
    - Click "Create new user"
    - Username: `testuser`
@@ -96,6 +106,7 @@ The OIDC library automatically:
    - Click "Save"
 
 7. **Restart the app to load new environment variables:**
+
    ```bash
    ./dev restart app
    ```
@@ -112,12 +123,14 @@ The OIDC library automatically:
 To test role-based authorization:
 
 1. **Create roles in Keycloak:**
+
    - Go to "Realm roles" in the left menu
    - Click "Create role"
    - Role name: `admin` (or `user`, `readonly`)
    - Click "Save"
 
 2. **Assign roles to users:**
+
    - Go to "Users" → select your test user
    - Go to "Role mapping" tab
    - Click "Assign role"
@@ -134,6 +147,7 @@ To test role-based authorization:
 If you prefer to use Authelia instead of Keycloak:
 
 1. **Minimal Authelia client configuration:**
+
    ```yaml
    identity_providers:
      oidc:
@@ -149,11 +163,13 @@ If you prefer to use Authelia instead of Keycloak:
    ```
 
    **That's it!** No need to specify:
+
    - `token_endpoint_auth_method` (Authelia defaults work)
    - `response_modes` (standard modes are enabled by default)
    - Any advanced OIDC features
 
 2. **Configure Mydia environment variables:**
+
    ```yaml
    OIDC_ISSUER: "http://authelia:9091"
    OIDC_CLIENT_ID: "mydia"
@@ -182,11 +198,13 @@ If you prefer to use Authentik instead of Keycloak:
 ### OIDC login not working
 
 1. **Check that Keycloak is running:**
+
    ```bash
    ./dev logs keycloak
    ```
 
 2. **Verify environment variables are loaded:**
+
    ```bash
    ./dev shell
    env | grep OIDC

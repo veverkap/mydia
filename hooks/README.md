@@ -128,6 +128,7 @@ docker-compose restart mydia
 ### Hook Errors
 
 If a hook fails:
+
 - The error is logged but doesn't stop the application
 - Other hooks continue to execute
 - Check application logs for details
@@ -135,6 +136,7 @@ If a hook fails:
 ## Documentation
 
 For complete documentation, see:
+
 - `HOOKS_SYSTEM_DESIGN.md` - Architecture and technical details
 - `HOOKS_DOCKER_CONFIG.md` - Docker deployment guide
 - Module docs: `lib/mydia/hooks.ex`

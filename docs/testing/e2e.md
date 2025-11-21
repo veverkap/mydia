@@ -80,6 +80,7 @@ npm run test:e2e -- --project=firefox
 Tests run automatically in GitHub Actions on every PR and push to master.
 
 View test results:
+
 1. Go to the **Actions** tab in GitHub
 2. Click on the latest workflow run
 3. Check the **E2E Tests (Playwright)** job
@@ -160,6 +161,7 @@ npm run test:e2e:ui
 ```
 
 Features:
+
 - Click to run individual tests
 - Watch mode - auto-runs tests on file changes
 - Time travel debugging - step through each action
@@ -176,6 +178,7 @@ npm run test:e2e -- --headed
 ```
 
 Useful for:
+
 - Understanding test flow visually
 - Debugging timing issues
 - Verifying UI interactions
@@ -190,6 +193,7 @@ npm run test:e2e -- --debug
 ```
 
 This enables:
+
 - Playwright Inspector with step-through debugging
 - Browser DevTools access
 - Automatic pause before each action
@@ -218,18 +222,18 @@ assets/e2e/
 ### Basic Test Structure
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Feature Name', () => {
-  test('should do something specific', async ({ page }) => {
+test.describe("Feature Name", () => {
+  test("should do something specific", async ({ page }) => {
     // Navigate to page
-    await page.goto('/some-page');
+    await page.goto("/some-page");
 
     // Interact with elements
     await page.click('button[type="submit"]');
 
     // Assert expected behavior
-    await expect(page.locator('h1')).toHaveText('Expected Text');
+    await expect(page.locator("h1")).toHaveText("Expected Text");
   });
 });
 ```
@@ -237,23 +241,23 @@ test.describe('Feature Name', () => {
 ### Using Helpers
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { loginAsAdmin, logout } from '../helpers/auth';
-import { assertFlashMessage, waitForLiveViewUpdate } from '../helpers/liveview';
+import { test, expect } from "@playwright/test";
+import { loginAsAdmin, logout } from "../helpers/auth";
+import { assertFlashMessage, waitForLiveViewUpdate } from "../helpers/liveview";
 
-test('authenticated workflow', async ({ page }) => {
+test("authenticated workflow", async ({ page }) => {
   // Login using helper
   await loginAsAdmin(page);
 
   // Navigate and perform action
-  await page.goto('/admin/settings');
+  await page.goto("/admin/settings");
   await page.click('button[type="submit"]');
 
   // Wait for LiveView update
   await waitForLiveViewUpdate(page);
 
   // Assert flash message
-  await assertFlashMessage(page, 'success', 'Settings saved');
+  await assertFlashMessage(page, "success", "Settings saved");
 
   // Logout
   await logout(page);
@@ -265,11 +269,11 @@ test('authenticated workflow', async ({ page }) => {
 Page Objects encapsulate page-specific selectors and actions:
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { testUsers } from '../fixtures/users';
+import { test, expect } from "@playwright/test";
+import { LoginPage } from "../pages/LoginPage";
+import { testUsers } from "../fixtures/users";
 
-test('login with page object', async ({ page }) => {
+test("login with page object", async ({ page }) => {
   const loginPage = new LoginPage(page);
 
   // Navigate to login page
@@ -282,14 +286,14 @@ test('login with page object', async ({ page }) => {
   await loginPage.login(testUsers.admin.username, testUsers.admin.password);
 
   // Assert successful redirect
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL("/");
 });
 ```
 
 ### Creating a New Page Object
 
 ```typescript
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 export class MyFeaturePage {
   constructor(private page: Page) {}
@@ -305,8 +309,8 @@ export class MyFeaturePage {
 
   // Actions
   async goto() {
-    await this.page.goto('/my-feature');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/my-feature");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async fillTitle(title: string) {
@@ -319,7 +323,7 @@ export class MyFeaturePage {
 
   // Assertions
   async assertTitleVisible() {
-    await expect(this.page.locator('h1')).toBeVisible();
+    await expect(this.page.locator("h1")).toBeVisible();
   }
 
   async assertFormSubmitted() {
@@ -331,11 +335,14 @@ export class MyFeaturePage {
 ### Testing LiveView Updates
 
 ```typescript
-import { test } from '@playwright/test';
-import { waitForLiveViewUpdate, clickAndWaitForUpdate } from '../helpers/liveview';
+import { test } from "@playwright/test";
+import {
+  waitForLiveViewUpdate,
+  clickAndWaitForUpdate,
+} from "../helpers/liveview";
 
-test('LiveView real-time update', async ({ page }) => {
-  await page.goto('/downloads');
+test("LiveView real-time update", async ({ page }) => {
+  await page.goto("/downloads");
 
   // Click button and wait for LiveView update
   await clickAndWaitForUpdate(page, 'button[phx-click="refresh"]');
@@ -349,20 +356,27 @@ test('LiveView real-time update', async ({ page }) => {
 ### Testing Forms
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { fillAndWaitForValidation, submitFormAndWait } from '../helpers/liveview';
+import { test, expect } from "@playwright/test";
+import {
+  fillAndWaitForValidation,
+  submitFormAndWait,
+} from "../helpers/liveview";
 
-test('form submission with validation', async ({ page }) => {
-  await page.goto('/admin/indexers/new');
+test("form submission with validation", async ({ page }) => {
+  await page.goto("/admin/indexers/new");
 
   // Fill field and wait for validation
-  await fillAndWaitForValidation(page, 'input[name="indexer[name]"]', 'Test Indexer');
+  await fillAndWaitForValidation(
+    page,
+    'input[name="indexer[name]"]',
+    "Test Indexer",
+  );
 
   // Submit form and wait for LiveView response
-  await submitFormAndWait(page, 'form#indexer-form');
+  await submitFormAndWait(page, "form#indexer-form");
 
   // Assert success
-  await expect(page).toHaveURL('/admin/indexers');
+  await expect(page).toHaveURL("/admin/indexers");
 });
 ```
 
@@ -391,17 +405,17 @@ test('button click', ...)
 Example:
 
 ```typescript
-test.describe('Media Search', () => {
+test.describe("Media Search", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto('/search');
+    await page.goto("/search");
   });
 
-  test('displays search results when query is entered', async ({ page }) => {
+  test("displays search results when query is entered", async ({ page }) => {
     // Test implementation
   });
 
-  test('shows empty state when no results found', async ({ page }) => {
+  test("shows empty state when no results found", async ({ page }) => {
     // Test implementation
   });
 
@@ -418,6 +432,7 @@ test.describe('Media Search', () => {
 Playwright automatically captures screenshots and videos on failure.
 
 **Configuration** (in `playwright.config.ts`):
+
 ```typescript
 use: {
   screenshot: 'only-on-failure',
@@ -426,11 +441,13 @@ use: {
 ```
 
 **Locations:**
+
 - Screenshots: `assets/test-results/<test-name>/screenshots/`
 - Videos: `assets/test-results/<test-name>/videos/`
 - HTML Report: `assets/e2e-results/html/`
 
 **Viewing results:**
+
 ```bash
 # Open HTML report with screenshots and videos
 npx playwright show-report e2e-results/html
@@ -445,6 +462,7 @@ npm run test:e2e -- --debug
 ```
 
 Features:
+
 - Step through each test action
 - Inspect page state at any point
 - View selector suggestions
@@ -456,12 +474,12 @@ Features:
 View browser console output during tests:
 
 ```typescript
-test('my test', async ({ page }) => {
+test("my test", async ({ page }) => {
   // Listen to console messages
-  page.on('console', msg => console.log('Browser:', msg.text()));
+  page.on("console", (msg) => console.log("Browser:", msg.text()));
 
   // Listen to page errors
-  page.on('pageerror', error => console.error('Page error:', error));
+  page.on("pageerror", (error) => console.error("Page error:", error));
 
   // Your test code
 });
@@ -472,8 +490,8 @@ test('my test', async ({ page }) => {
 Test selectors in the browser console:
 
 ```typescript
-test('debug selectors', async ({ page }) => {
-  await page.goto('/');
+test("debug selectors", async ({ page }) => {
+  await page.goto("/");
 
   // Pause test and open browser DevTools
   await page.pause();
@@ -505,15 +523,15 @@ await page.pause();
 await page.waitForTimeout(2000);
 
 // Take manual screenshot
-await page.screenshot({ path: 'debug-screenshot.png' });
+await page.screenshot({ path: "debug-screenshot.png" });
 
 // Print element content
-const text = await page.locator('h1').textContent();
-console.log('H1 text:', text);
+const text = await page.locator("h1").textContent();
+console.log("H1 text:", text);
 
 // Wait for specific condition
 await page.waitForFunction(() => {
-  return document.querySelector('.loading') === null;
+  return document.querySelector(".loading") === null;
 });
 ```
 
@@ -561,6 +579,7 @@ The E2E environment uses mock implementations of external services for fast, pre
 - **API Key**: `test-api-key`
 
 **Endpoints:**
+
 - `GET /api/v1/indexer` - List indexers
 - `GET /api/v1/search?query=...` - Search releases
 - `GET /api/v1/system/status` - System status
@@ -574,6 +593,7 @@ The E2E environment uses mock implementations of external services for fast, pre
 - **Features**: In-memory torrent storage, simulated progress
 
 **Endpoints:**
+
 - `POST /api/v2/auth/login` - Login (sets cookie)
 - `GET /api/v2/torrents/info` - List torrents
 - `POST /api/v2/torrents/add` - Add torrent
@@ -582,12 +602,14 @@ The E2E environment uses mock implementations of external services for fast, pre
 ### Service URLs
 
 **From host machine:**
+
 - Mydia: `http://localhost:4000`
 - Mock OAuth2: `http://localhost:8080`
 - Mock Prowlarr: `http://localhost:19696`
 - Mock qBittorrent: `http://localhost:8082`
 
 **From containers (internal network):**
+
 - Mock OAuth2: `http://mock-oauth2:8080`
 - Mock Prowlarr: `http://mock-prowlarr:9696`
 - Mock qBittorrent: `http://mock-qbittorrent:8080`
@@ -615,8 +637,8 @@ docker compose -f compose.test.yml build mock-prowlarr mock-qbittorrent
 Edit `test/mock_services/prowlarr/server.js`:
 
 ```javascript
-app.get('/api/v1/my-endpoint', (req, res) => {
-  res.json({ data: 'response' });
+app.get("/api/v1/my-endpoint", (req, res) => {
+  res.json({ data: "response" });
 });
 ```
 
@@ -627,7 +649,7 @@ Edit `test/mock_services/prowlarr/server.js`:
 ```javascript
 const mockSearchResults = [
   {
-    title: 'My Test Release',
+    title: "My Test Release",
     size: 1024000000,
     // ... other fields
   },
@@ -640,7 +662,7 @@ const mockSearchResults = [
 Edit `test/mock_services/qbittorrent/server.js`:
 
 ```javascript
-app.post('/api/v2/torrents/my-action', requireAuth, (req, res) => {
+app.post("/api/v2/torrents/my-action", requireAuth, (req, res) => {
   // Implementation
 });
 ```
@@ -658,6 +680,7 @@ E2E tests run automatically in CI as part of the main workflow.
 **Job:** `e2e-tests`
 
 **Steps:**
+
 1. Build Mydia Docker image
 2. Start test environment (app + mock services)
 3. Wait for app to be healthy
@@ -667,6 +690,7 @@ E2E tests run automatically in CI as part of the main workflow.
 7. Tear down environment
 
 **Triggers:**
+
 - Every push to `master`
 - Every pull request
 
@@ -715,11 +739,13 @@ docker compose -f compose.test.yml down -v
 ### Tests Failing Locally But Passing in CI
 
 **Possible causes:**
+
 - Different browser versions
 - Timing issues (network latency)
 - Environment-specific configuration
 
 **Solutions:**
+
 ```bash
 # Update Playwright browsers to match CI
 npx playwright install --with-deps
@@ -736,12 +762,14 @@ npm run test:e2e -- --project=chromium
 **Error:** `Test timeout of 30000ms exceeded`
 
 **Common causes:**
+
 - Element not appearing
 - LiveView not updating
 - Network request hanging
 - Selector not matching
 
 **Debug steps:**
+
 ```bash
 # Run in headed mode to see what's happening
 npm run test:e2e -- --headed --timeout=60000
@@ -753,37 +781,42 @@ await page.waitForSelector('.result', { timeout: 10000 });
 ```
 
 **Solutions:**
+
 ```typescript
 // Increase timeout for specific action
-await page.waitForSelector('.slow-loading', { timeout: 60000 });
+await page.waitForSelector(".slow-loading", { timeout: 60000 });
 
 // Use waitForLoadState
-await page.waitForLoadState('networkidle');
+await page.waitForLoadState("networkidle");
 
 // Check element state before interacting
-await page.waitForSelector('button', { state: 'visible' });
-await page.click('button');
+await page.waitForSelector("button", { state: "visible" });
+await page.click("button");
 ```
 
 ### Docker Services Not Starting
 
 **Check service health:**
+
 ```bash
 docker compose -f compose.test.yml ps
 ```
 
 **View service logs:**
+
 ```bash
 docker compose -f compose.test.yml logs mock-prowlarr
 docker compose -f compose.test.yml logs app
 ```
 
 **Verify network connectivity:**
+
 ```bash
 docker compose -f compose.test.yml exec app curl http://mock-prowlarr:9696/health
 ```
 
 **Restart services:**
+
 ```bash
 docker compose -f compose.test.yml down -v
 docker compose -f compose.test.yml up -d
@@ -792,26 +825,31 @@ docker compose -f compose.test.yml up -d
 ### Application Not Responding
 
 **Symptoms:**
+
 - Tests timeout waiting for app
 - Health check fails
 - Connection refused errors
 
 **Check app logs:**
+
 ```bash
 docker compose -f compose.test.yml logs app
 ```
 
 **Check app health:**
+
 ```bash
 curl http://localhost:4000/health
 ```
 
 **Verify database:**
+
 ```bash
 docker compose -f compose.test.yml exec app bin/mydia rpc "Mydia.Repo.query!(\"SELECT 1\")"
 ```
 
 **Restart app:**
+
 ```bash
 docker compose -f compose.test.yml restart app
 ```
@@ -821,25 +859,27 @@ docker compose -f compose.test.yml restart app
 **Error:** `locator.click: Timeout exceeded waiting for locator`
 
 **Common causes:**
+
 - Incorrect selector
 - Element not visible
 - Element rendered differently than expected
 - Dynamic content not loaded
 
 **Debug steps:**
+
 ```typescript
 // Print page HTML
 console.log(await page.content());
 
 // Check if element exists at all
-const count = await page.locator('button').count();
-console.log('Button count:', count);
+const count = await page.locator("button").count();
+console.log("Button count:", count);
 
 // Wait for element with increased timeout
-await page.waitForSelector('button', { state: 'visible', timeout: 10000 });
+await page.waitForSelector("button", { state: "visible", timeout: 10000 });
 
 // Use text content instead
-await page.click('text=Submit');
+await page.click("text=Submit");
 
 // Use role-based selectors
 await page.click('role=button[name="Submit"]');
@@ -848,82 +888,94 @@ await page.click('role=button[name="Submit"]');
 ### LiveView Not Updating
 
 **Symptoms:**
+
 - Flash messages not appearing
 - Content not changing after click
 - Form submission not working
 
 **Check LiveView connection:**
+
 ```typescript
 const connected = await page.evaluate(() => {
   const liveSocket = (window as any).liveSocket;
   return liveSocket && liveSocket.isConnected();
 });
-console.log('LiveView connected:', connected);
+console.log("LiveView connected:", connected);
 ```
 
 **Wait for updates:**
+
 ```typescript
-import { waitForLiveViewUpdate } from '../helpers/liveview';
+import { waitForLiveViewUpdate } from "../helpers/liveview";
 
 await page.click('button[phx-click="submit"]');
 await waitForLiveViewUpdate(page);
 ```
 
 **Check browser console:**
+
 ```typescript
-page.on('console', msg => console.log('Browser:', msg.text()));
-page.on('pageerror', error => console.error('Page error:', error));
+page.on("console", (msg) => console.log("Browser:", msg.text()));
+page.on("pageerror", (error) => console.error("Page error:", error));
 ```
 
 ### Authentication Issues
 
 **Symptoms:**
+
 - Cannot login
 - Redirect loops
 - Session not persisting
 
 **Check test users exist:**
+
 ```bash
 docker compose -f compose.test.yml exec app bin/mydia rpc "Mydia.Accounts.list_users()"
 ```
 
 **Seed test users manually:**
+
 ```bash
 ./scripts/seed_test_users.sh
 ```
 
 **Check session cookies:**
+
 ```typescript
 const cookies = await page.context().cookies();
-console.log('Session cookies:', cookies);
+console.log("Session cookies:", cookies);
 ```
 
 **Verify redirect:**
+
 ```typescript
-await page.goto('/auth/local/login');
-console.log('Current URL:', page.url());
+await page.goto("/auth/local/login");
+console.log("Current URL:", page.url());
 ```
 
 ### CI-Only Failures
 
 **Symptoms:**
+
 - Tests pass locally but fail in CI
 - Intermittent failures in CI
 
 **Common causes:**
+
 - Race conditions
 - Slower CI environment
 - Browser version differences
 - Missing dependencies
 
 **Solutions:**
+
 ```typescript
 // Use more reliable waits
-await page.waitForLoadState('networkidle');
-await page.waitForSelector('.element', { state: 'visible' });
+await page.waitForLoadState("networkidle");
+await page.waitForSelector(".element", { state: "visible" });
 
 // Add retries for flaky tests
-test('flaky test', async ({ page }) => {
+test("flaky test", async ({ page }) => {
   test.slow(); // Triple the timeout
   // Test code
 });
@@ -935,6 +987,7 @@ test.beforeEach(async ({ page }) => {
 ```
 
 **View CI artifacts:**
+
 1. Download `playwright-results` artifact from failed workflow
 2. Unzip and open `index.html` in browser
 3. View screenshots and video to debug
@@ -942,28 +995,31 @@ test.beforeEach(async ({ page }) => {
 ### Performance Issues
 
 **Symptoms:**
+
 - Tests taking very long
 - Timeouts in CI
 - High resource usage
 
 **Optimize tests:**
+
 ```typescript
 // Run tests in parallel
-test.describe.configure({ mode: 'parallel' });
+test.describe.configure({ mode: "parallel" });
 
 // Use fast selectors
 await page.locator('[data-testid="submit"]').click(); // Fast
-await page.locator('div > button.btn-primary').click(); // Slow
+await page.locator("div > button.btn-primary").click(); // Slow
 
 // Skip unnecessary waits
 // Don't: await page.waitForTimeout(5000);
 // Do: await page.waitForSelector('.loaded');
 
 // Reuse authentication
-test.use({ storageState: 'auth.json' });
+test.use({ storageState: "auth.json" });
 ```
 
 **Profile tests:**
+
 ```bash
 # Run with trace
 npm run test:e2e -- --trace on
@@ -975,11 +1031,13 @@ npx playwright show-trace trace.zip
 ### Environment Variables
 
 **Check environment configuration:**
+
 ```bash
 docker compose -f compose.test.yml exec app env | grep -E 'DATABASE|SECRET|OIDC'
 ```
 
 **Override for debugging:**
+
 ```bash
 # Edit compose.test.yml
 environment:
@@ -1020,6 +1078,7 @@ When adding tests for new features:
 ### Best Practices
 
 **DO:**
+
 - ✅ Use semantic selectors (`data-testid`, `role`, `text`)
 - ✅ Wait for specific conditions, not arbitrary timeouts
 - ✅ Use page objects for repeated interactions
@@ -1028,6 +1087,7 @@ When adding tests for new features:
 - ✅ Make tests independent (can run in any order)
 
 **DON'T:**
+
 - ❌ Use brittle selectors (CSS classes, complex hierarchies)
 - ❌ Use `waitForTimeout()` unless absolutely necessary
 - ❌ Make tests depend on each other

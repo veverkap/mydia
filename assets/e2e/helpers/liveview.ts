@@ -15,7 +15,7 @@
  *   await assertFlashMessage(page, 'success', 'Saved successfully');
  * });
  */
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 /**
  * Wait for LiveView to finish updating after an action
@@ -40,16 +40,28 @@ import { Page, expect } from '@playwright/test';
  * await page.click('button[phx-click="slow-action"]');
  * await waitForLiveViewUpdate(page, 10000);
  */
-export async function waitForLiveViewUpdate(page: Page, timeout: number = 5000): Promise<void> {
+export async function waitForLiveViewUpdate(
+  page: Page,
+  timeout: number = 5000,
+): Promise<void> {
   // Wait for any loading indicators to disappear
-  await page.waitForFunction(() => {
-    const loadingElements = document.querySelectorAll('[phx-loading], .phx-loading');
-    return loadingElements.length === 0 ||
-           Array.from(loadingElements).every(el => !el.classList.contains('phx-loading'));
-  }, { timeout });
+  await page.waitForFunction(
+    () => {
+      const loadingElements = document.querySelectorAll(
+        "[phx-loading], .phx-loading",
+      );
+      return (
+        loadingElements.length === 0 ||
+        Array.from(loadingElements).every(
+          (el) => !el.classList.contains("phx-loading"),
+        )
+      );
+    },
+    { timeout },
+  );
 
   // Also wait for network to be idle
-  await page.waitForLoadState('networkidle', { timeout });
+  await page.waitForLoadState("networkidle", { timeout });
 }
 
 /**
@@ -60,12 +72,15 @@ export async function waitForLiveViewUpdate(page: Page, timeout: number = 5000):
  */
 export async function assertFlashMessage(
   page: Page,
-  type: 'info' | 'error' | 'success' | 'warning',
-  message?: string
+  type: "info" | "error" | "success" | "warning",
+  message?: string,
 ): Promise<void> {
   // Wait for flash message to appear
   const flashSelector = `[role="alert"], .alert, .flash-${type}, [data-test="flash-${type}"]`;
-  await page.waitForSelector(flashSelector, { state: 'visible', timeout: 3000 });
+  await page.waitForSelector(flashSelector, {
+    state: "visible",
+    timeout: 3000,
+  });
 
   if (message) {
     // Check that the flash contains the expected message
@@ -85,11 +100,14 @@ export async function assertFlashMessage(
 export async function assertStreamUpdated(
   page: Page,
   streamId: string,
-  expectedItemCount?: number
+  expectedItemCount?: number,
 ): Promise<void> {
   // Wait for the stream container to exist
   const streamSelector = `#${streamId}[phx-update="stream"]`;
-  await page.waitForSelector(streamSelector, { state: 'attached', timeout: 3000 });
+  await page.waitForSelector(streamSelector, {
+    state: "attached",
+    timeout: 3000,
+  });
 
   if (expectedItemCount !== undefined) {
     // Count direct children (stream items)
@@ -100,7 +118,7 @@ export async function assertStreamUpdated(
         return container.children.length === count;
       },
       { selector: streamSelector, count: expectedItemCount },
-      { timeout: 5000 }
+      { timeout: 5000 },
     );
   }
 }
@@ -124,7 +142,10 @@ export async function assertStreamUpdated(
  * // Use:
  * await clickAndWaitForUpdate(page, 'button#refresh');
  */
-export async function clickAndWaitForUpdate(page: Page, selector: string): Promise<void> {
+export async function clickAndWaitForUpdate(
+  page: Page,
+  selector: string,
+): Promise<void> {
   await page.click(selector);
   await waitForLiveViewUpdate(page);
 }
@@ -146,7 +167,11 @@ export async function clickAndWaitForUpdate(page: Page, selector: string): Promi
  * // Check for validation error
  * await expect(page.locator('.error')).not.toBeVisible();
  */
-export async function fillAndWaitForValidation(page: Page, selector: string, value: string): Promise<void> {
+export async function fillAndWaitForValidation(
+  page: Page,
+  selector: string,
+  value: string,
+): Promise<void> {
   await page.fill(selector, value);
   // Trigger blur event to run validations
   await page.locator(selector).blur();
@@ -170,7 +195,10 @@ export async function fillAndWaitForValidation(page: Page, selector: string, val
  * await submitFormAndWait(page, 'form#media-form');
  * await assertFlashMessage(page, 'success', 'Media added');
  */
-export async function submitFormAndWait(page: Page, formSelector: string): Promise<void> {
+export async function submitFormAndWait(
+  page: Page,
+  formSelector: string,
+): Promise<void> {
   await page.locator(formSelector).locator('button[type="submit"]').click();
   await waitForLiveViewUpdate(page);
 }
@@ -195,17 +223,23 @@ export async function submitFormAndWait(page: Page, formSelector: string): Promi
  * await page.click('button[phx-click="add-media"]');
  * await waitForPhoenixEvent(page, 'media-added');
  */
-export async function waitForPhoenixEvent(page: Page, eventName: string, timeout: number = 5000): Promise<void> {
+export async function waitForPhoenixEvent(
+  page: Page,
+  eventName: string,
+  timeout: number = 5000,
+): Promise<void> {
   await page.waitForFunction(
     (event) => {
       return new Promise((resolve) => {
-        window.addEventListener(`phx:${event}`, () => resolve(true), { once: true });
+        window.addEventListener(`phx:${event}`, () => resolve(true), {
+          once: true,
+        });
         // Also resolve if the event was already triggered
         setTimeout(() => resolve(false), 100);
       });
     },
     eventName,
-    { timeout }
+    { timeout },
   );
 }
 
@@ -252,9 +286,15 @@ export async function isLiveViewConnected(page: Page): Promise<boolean> {
  * // Now safe to interact with LiveView elements
  * await page.click('button[phx-click="refresh"]');
  */
-export async function waitForLiveViewReady(page: Page, timeout: number = 5000): Promise<void> {
-  await page.waitForFunction(() => {
-    const liveSocket = (window as any).liveSocket;
-    return liveSocket && liveSocket.isConnected && liveSocket.isConnected();
-  }, { timeout });
+export async function waitForLiveViewReady(
+  page: Page,
+  timeout: number = 5000,
+): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const liveSocket = (window as any).liveSocket;
+      return liveSocket && liveSocket.isConnected && liveSocket.isConnected();
+    },
+    { timeout },
+  );
 }

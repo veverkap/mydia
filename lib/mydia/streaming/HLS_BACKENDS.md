@@ -58,6 +58,7 @@ The Membrane Matroska plugin (`membrane_matroska_plugin`) has several production
 ### When to Use
 
 Only use Membrane if you:
+
 - Need BEAM-native transcoding for specific architectural reasons
 - Are willing to accept limited codec support
 - Want to contribute to improving the Membrane ecosystem
@@ -93,6 +94,7 @@ ffmpeg -i input.mkv \
 ```
 
 The module monitors the FFmpeg process and parses its output for:
+
 - Duration detection
 - Progress tracking
 - Error reporting
@@ -114,6 +116,7 @@ The pipeline uses dynamic pad linking to handle different track types discovered
 ## Recommendation
 
 **Use FFmpeg as your default backend** for production deployments. It provides:
+
 - Better codec compatibility
 - More reliable transcoding
 - Clearer error messages

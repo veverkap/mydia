@@ -392,10 +392,10 @@ See these files for implementation examples:
 
 ## Environment Variables Reference
 
-| Variable | Values | Default | Description |
-|----------|--------|---------|-------------|
-| `MYDIA_DEBUG` | `true`, `false` | `false` | Enable debug mode with verbose logging |
-| `LOG_LEVEL` | `debug`, `info`, `warning`, `error` | `info` | Set logger level |
+| Variable      | Values                              | Default | Description                            |
+| ------------- | ----------------------------------- | ------- | -------------------------------------- |
+| `MYDIA_DEBUG` | `true`, `false`                     | `false` | Enable debug mode with verbose logging |
+| `LOG_LEVEL`   | `debug`, `info`, `warning`, `error` | `info`  | Set logger level                       |
 
 ## Related
 

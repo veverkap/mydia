@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
 /**
  * Smoke test to verify Playwright can connect to the Phoenix application
  * and the basic application structure is working.
  */
-test.describe('Application Smoke Test', () => {
-  test('homepage loads successfully', async ({ page }) => {
+test.describe("Application Smoke Test", () => {
+  test("homepage loads successfully", async ({ page }) => {
     // Navigate to the homepage
-    await page.goto('/');
+    await page.goto("/");
 
     // Verify the page loaded (should have HTML content)
     const html = await page.content();
@@ -15,39 +15,46 @@ test.describe('Application Smoke Test', () => {
     expect(html.length).toBeGreaterThan(0);
 
     // Verify we got a successful response (not a 404 or 500)
-    expect(page.url()).toContain('/');
+    expect(page.url()).toContain("/");
   });
 
-  test('page has proper meta tags', async ({ page }) => {
-    await page.goto('/');
+  test("page has proper meta tags", async ({ page }) => {
+    await page.goto("/");
 
     // Check for basic HTML structure
     const title = await page.title();
     expect(title).toBeTruthy();
 
     // Verify viewport meta tag exists (for mobile responsiveness)
-    const viewport = await page.locator('meta[name="viewport"]').getAttribute('content');
+    const viewport = await page
+      .locator('meta[name="viewport"]')
+      .getAttribute("content");
     expect(viewport).toBeTruthy();
   });
 
-  test('LiveView JavaScript is loaded', async ({ page }) => {
-    await page.goto('/');
+  test("LiveView JavaScript is loaded", async ({ page }) => {
+    await page.goto("/");
 
     // Wait for the page to be fully loaded
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
 
     // Wait for LiveView JavaScript to be available
     // This ensures the deferred script has executed
-    await page.waitForFunction(() => {
-      return typeof (window as any).liveSocket !== 'undefined' ||
-             document.querySelector('[data-phx-main]') !== null;
-    }, { timeout: 5000 });
+    await page.waitForFunction(
+      () => {
+        return (
+          typeof (window as any).liveSocket !== "undefined" ||
+          document.querySelector("[data-phx-main]") !== null
+        );
+      },
+      { timeout: 5000 },
+    );
 
     // Check if Phoenix LiveView JavaScript is present
     // Check for liveSocket (exposed on line 172 of app.js) or LiveView-specific elements
     const hasLiveView = await page.evaluate(() => {
-      const hasLiveSocket = typeof (window as any).liveSocket !== 'undefined';
-      const hasPhxElements = document.querySelector('[data-phx-main]') !== null;
+      const hasLiveSocket = typeof (window as any).liveSocket !== "undefined";
+      const hasPhxElements = document.querySelector("[data-phx-main]") !== null;
 
       return hasLiveSocket || hasPhxElements;
     });
@@ -55,20 +62,20 @@ test.describe('Application Smoke Test', () => {
     expect(hasLiveView).toBe(true);
   });
 
-  test('Alpine.js is loaded and initialized', async ({ page }) => {
-    await page.goto('/');
+  test("Alpine.js is loaded and initialized", async ({ page }) => {
+    await page.goto("/");
 
     // Check if Alpine.js is present (used for client-side interactions)
     const hasAlpine = await page.evaluate(() => {
-      return typeof (window as any).Alpine !== 'undefined';
+      return typeof (window as any).Alpine !== "undefined";
     });
 
     expect(hasAlpine).toBe(true);
   });
 
-  test('can navigate and browser history works', async ({ page }) => {
+  test("can navigate and browser history works", async ({ page }) => {
     // Navigate to homepage
-    await page.goto('/');
+    await page.goto("/");
     const homeUrl = page.url();
 
     // If there's a link to navigate to, test it

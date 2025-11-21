@@ -103,6 +103,7 @@ end
 ```
 
 **Key Functions**:
+
 - `toggle_changeset/2` - Enable/disable indexer
 - `config_changeset/2` - Update user credentials
 - `sync_changeset/2` - Update definition from GitHub
@@ -117,11 +118,13 @@ Parses Cardigann YAML definitions into Elixir structs.
 **Output**: `Mydia.Indexers.CardigannDefinition.Parsed` struct
 
 **Key Functions**:
+
 - `parse_definition/1` - Parse YAML to struct
 - `validate_definition/1` - Validate required fields
 - `extract_capabilities/1` - Extract supported search modes
 
 **Parsed Structure**:
+
 ```elixir
 %Parsed{
   id: "rarbg",
@@ -150,11 +153,13 @@ Parses Cardigann YAML definitions into Elixir structs.
 Executes searches using parsed definitions.
 
 **Key Functions**:
+
 - `execute_search/3` - Perform search and return raw HTTP response
 - `build_search_url/3` - Construct search URL from template
 - `apply_rate_limiting/1` - Enforce request delays
 
 **Flow**:
+
 1. Build search URL from definition template
 2. Apply query parameters (interpolate `{{ .Query }}`)
 3. Check rate limit (using `request_delay` from definition)
@@ -163,6 +168,7 @@ Executes searches using parsed definitions.
 6. Return response body for parsing
 
 **Rate Limiting**:
+
 - Stored in ETS table per indexer_id
 - Minimum delay between requests (from definition)
 - Automatic retries with exponential backoff
@@ -174,6 +180,7 @@ Executes searches using parsed definitions.
 Parses HTML/JSON responses into `SearchResult` structs.
 
 **Key Functions**:
+
 - `parse_results/3` - Main entry point
 - `parse_html_results/3` - Parse HTML using selectors
 - `parse_json_results/3` - Parse JSON using JSONPath
@@ -181,12 +188,14 @@ Parses HTML/JSON responses into `SearchResult` structs.
 - `normalize_size/1` - Convert size strings to bytes
 
 **Selector Types**:
+
 - **Element selector**: CSS selector for target element
 - **Attribute selector**: Extract attribute value (`attribute: "href"`)
 - **Text selector**: Extract text content
 - **Regex selector**: Apply regex to extracted value
 
 **Result Transformation**:
+
 ```
 HTML/JSON Response
   ↓ (selectors from definition)
@@ -211,17 +220,20 @@ SearchResult struct {
 Handles authentication for private indexers.
 
 **Supported Methods**:
+
 1. **Login Form**: POST credentials to login endpoint, store cookies
 2. **API Key**: Include key in query params or headers
 3. **Cookie**: Use pre-provided cookie string
 
 **Key Functions**:
+
 - `perform_login/3` - Execute login flow
 - `build_authenticated_request/3` - Add auth to request
 - `extract_cookies/1` - Extract cookies from response
 - `validate_session/2` - Check if session is still valid
 
 **Cookie Management**:
+
 - Stored per-user, per-indexer
 - Automatically refreshed on expiration
 - Cached in memory for performance
@@ -233,6 +245,7 @@ Handles authentication for private indexers.
 Implements the `Mydia.Indexers.Adapter` behaviour to integrate with existing search infrastructure.
 
 **Behaviour Implementation**:
+
 ```elixir
 @behaviour Mydia.Indexers.Adapter
 
@@ -247,6 +260,7 @@ def get_capabilities(config)  # Return categories/modes
 ```
 
 **Search Pipeline**:
+
 1. Fetch definition from database (by `indexer_id`)
 2. Parse YAML definition (cached)
 3. Authenticate if needed (private indexer)
@@ -257,6 +271,7 @@ def get_capabilities(config)  # Return categories/modes
 8. Return `{:ok, [%SearchResult{}, ...]}`
 
 **Config Structure**:
+
 ```elixir
 %{
   type: :cardigann,
@@ -278,12 +293,14 @@ def get_capabilities(config)  # Return categories/modes
 Syncs indexer definitions from Prowlarr's GitHub repository.
 
 **Key Functions**:
+
 - `sync_definitions/0` - Download and import all definitions
 - `fetch_definition_list/0` - Get list of available definitions
 - `import_definition/1` - Parse and store single definition
 - `cleanup_stale_definitions/0` - Remove definitions no longer in repo
 
 **Sync Process**:
+
 1. Fetch index of available definitions from GitHub API
 2. Download each YAML file
 3. Parse and validate definition
@@ -291,6 +308,7 @@ Syncs indexer definitions from Prowlarr's GitHub repository.
 5. Log sync statistics
 
 **Scheduled Sync**:
+
 - Runs daily via Oban background job
 - Can be triggered manually from UI
 - Only runs if feature flag is enabled
@@ -302,9 +320,11 @@ Syncs indexer definitions from Prowlarr's GitHub repository.
 Controls whether Cardigann features are available.
 
 **Key Functions**:
+
 - `enabled?/0` - Check if Cardigann is enabled
 
 **Configuration**:
+
 ```elixir
 # config/runtime.exs
 config :mydia, :features,
@@ -312,6 +332,7 @@ config :mydia, :features,
 ```
 
 **Integration Points**:
+
 - Adapter skips search if disabled
 - UI components hidden when disabled
 - Background sync job skips if disabled
@@ -324,12 +345,14 @@ config :mydia, :features,
 When `Indexers.search_all/2` is called:
 
 1. **Fetch Enabled Indexers**:
+
    ```elixir
    # From Settings.list_indexer_configs/0
    # Returns Prowlarr, Jackett, and Cardigann configs
    ```
 
 2. **Parallel Search**:
+
    ```elixir
    Task.async_stream(indexers, fn config ->
      Indexers.search(config, query, opts)
@@ -337,6 +360,7 @@ When `Indexers.search_all/2` is called:
    ```
 
 3. **Adapter Dispatch**:
+
    - Prowlarr config → `Adapter.Prowlarr.search/3`
    - Jackett config → `Adapter.Jackett.search/3`
    - Cardigann config → `Adapter.Cardigann.search/3`
@@ -353,11 +377,13 @@ When `Indexers.search_all/2` is called:
 ### How Cardigann Definitions Become Searchable
 
 **Option 1: Direct Adapter Call** (Currently Used):
+
 - Each enabled `CardigannDefinition` is accessed directly by the adapter
 - Adapter builds config map on-the-fly during search
 - No `IndexerConfig` records created
 
 **Option 2: IndexerConfig Integration** (Future Enhancement):
+
 - Create `IndexerConfig` records for enabled Cardigann definitions
 - `type: :cardigann`, `settings: %{indexer_id: "rarbg"}`
 - Allows unified management in settings UI
@@ -370,18 +396,21 @@ Currently, Cardigann indexers integrate at the adapter level rather than through
 ### Search Errors
 
 **Types**:
+
 1. **Definition Errors**: Missing definition, invalid YAML
 2. **Network Errors**: Connection refused, timeout
 3. **Auth Errors**: Login failed, session expired
 4. **Parse Errors**: Invalid HTML/JSON, selector mismatch
 
 **Strategy**:
+
 - All errors return `{:error, %Adapter.Error{}}`
 - Errors logged with context (indexer name, query, error type)
 - Individual failures don't block other indexers
 - UI shows error badges on failed indexers
 
 **Example Error Flow**:
+
 ```elixir
 {:error, %Adapter.Error{
   type: :auth_failed,
@@ -393,12 +422,14 @@ Currently, Cardigann indexers integrate at the adapter level rather than through
 ### Rate Limiting
 
 **Implementation**:
+
 - ETS table stores last request time per indexer
 - Before each request, check if enough time has elapsed
 - Return ` {:error, :rate_limited}` if too soon
 - Retry logic with exponential backoff
 
 **Configuration**:
+
 ```yaml
 # In definition
 settings:
@@ -413,11 +444,13 @@ settings:
 ### Caching
 
 **Parsed Definitions**:
+
 - YAML parsing is expensive
 - Cache parsed definitions in memory (future enhancement)
 - Invalidate on definition update
 
 **Authentication Sessions**:
+
 - Cookie sessions cached per-user, per-indexer
 - Reduces login requests
 - Automatic refresh on expiration
@@ -432,6 +465,7 @@ settings:
 ### Database Queries
 
 **Indexer Fetching**:
+
 ```elixir
 # Efficient query for enabled definitions
 from d in CardigannDefinition,
@@ -440,6 +474,7 @@ from d in CardigannDefinition,
 ```
 
 **Avoiding N+1**:
+
 - All enabled definitions fetched in single query
 - Preload associations when needed
 
@@ -448,6 +483,7 @@ from d in CardigannDefinition,
 ### Unit Tests
 
 **Modules Tested**:
+
 - `CardigannParserTest` - YAML parsing
 - `CardigannSearchEngineTest` - URL building, rate limiting
 - `CardigannResultParserTest` - HTML/JSON parsing
@@ -455,6 +491,7 @@ from d in CardigannDefinition,
 - `Adapter.CardigannTest` - Adapter interface
 
 **Test Approach**:
+
 - Mock HTTP requests using mocks or fixtures
 - Test with real definition samples
 - Edge case handling (missing fields, malformed data)
@@ -462,12 +499,14 @@ from d in CardigannDefinition,
 ### Integration Tests
 
 **Cardigann Parser Integration Test**:
+
 - Tagged `:external`
 - Fetches real definitions from GitHub
 - Validates parsing of production definitions
 - Runs manually, not in CI
 
 **LiveView Tests**:
+
 - Indexer library UI (`IndexerLibraryTest`)
 - Enable/disable functionality
 - Configuration modal
@@ -476,6 +515,7 @@ from d in CardigannDefinition,
 ### Real-World Testing
 
 **Test with Popular Indexers**:
+
 - 3-5 public indexers (1337x, RARBG, etc.)
 - 1-2 private indexers (if available)
 - Verify results match expectations
@@ -486,11 +526,13 @@ from d in CardigannDefinition,
 ### Credential Storage
 
 **Database Encryption**:
+
 - Private indexer credentials stored in `config` JSONB field
 - Should be encrypted at rest (database-level encryption)
 - Access controlled by application permissions
 
 **In-Memory Handling**:
+
 - Credentials never logged
 - Sensitive fields redacted in error messages
 - Cookies stored in secure HTTP-only format
@@ -498,11 +540,13 @@ from d in CardigannDefinition,
 ### Network Security
 
 **HTTPS Enforcement**:
+
 - All indexer requests use HTTPS when available
 - Certificate validation enabled
 - Configurable SSL options per definition
 
 **Request Headers**:
+
 - Custom User-Agent to identify Mydia
 - Respect robots.txt (future consideration)
 - Rate limiting to prevent abuse
@@ -510,11 +554,13 @@ from d in CardigannDefinition,
 ### Input Validation
 
 **User Input**:
+
 - Query strings sanitized before URL interpolation
 - SQL injection prevented via Ecto parameterization
 - XSS prevented by Phoenix HTML escaping
 
 **Definition Validation**:
+
 - YAML parsing validates structure
 - Required fields enforced
 - Selector syntax validated
@@ -556,6 +602,7 @@ config :logger, level: :debug
 ### Useful Log Messages
 
 **Search Flow**:
+
 ```
 [info] Cardigann search started: indexer=rarbg, query="ubuntu"
 [debug] Built search URL: https://rarbg.to/search?q=ubuntu
@@ -563,6 +610,7 @@ config :logger, level: :debug
 ```
 
 **Authentication**:
+
 ```
 [debug] Performing login for indexer: private-tracker
 [info] Login successful, cookies stored
@@ -570,6 +618,7 @@ config :logger, level: :debug
 ```
 
 **Errors**:
+
 ```
 [error] Cardigann search failed: indexer=rarbg, error=connection_refused
 [warning] Rate limit exceeded, retry after 2000ms

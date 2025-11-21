@@ -24,12 +24,14 @@ A LiveComponent that displays a modal when multiple metadata matches are found f
 ```
 
 **Props:**
+
 - `show` (boolean, required) - Controls modal visibility
 - `matches` (list, required) - List of TMDB metadata matches to display
 - `on_select` (string, required) - Event name to emit when user selects a match (includes `match_id` param)
 - `on_cancel` (string, required) - Event name to emit when user cancels
 
 **Features:**
+
 - Responsive grid layout (1 column on mobile, 2 on desktop)
 - Displays poster images, titles, years, and overviews
 - Handles missing poster images gracefully
@@ -60,6 +62,7 @@ A LiveComponent for manual metadata search when automatic parsing or matching fa
 ```
 
 **Props:**
+
 - `show` (boolean, required) - Controls modal visibility
 - `failed_title` (string, optional) - The original title that failed to match
 - `search_query` (string, required) - Current search query value
@@ -69,6 +72,7 @@ A LiveComponent for manual metadata search when automatic parsing or matching fa
 - `on_cancel` (string, required) - Event name to emit when user cancels
 
 **Features:**
+
 - Search input with submit button
 - Real-time display of search results
 - Shows media type badges (TV Show vs Movie)
@@ -98,6 +102,7 @@ A function component that provides an autocomplete-style search input with live 
 ```
 
 **Props:**
+
 - `title_value` (string, required) - Current value of search input
 - `search_results` (list, required) - List of search results to display in dropdown
 - `on_search` (string, required) - Event to trigger when user types (phx-change)
@@ -108,6 +113,7 @@ A function component that provides an autocomplete-style search input with live 
 - `show_no_results` (boolean, optional, default: false) - Whether to show "no results" helper text
 
 **Features:**
+
 - Debounced search input (300ms)
 - Dropdown with results (max height 64px with scroll)
 - Each result shows: poster image, title, year, and media type badge
@@ -165,6 +171,7 @@ All components expect metadata matches in the TMDB API format:
 ### Styling
 
 Components use DaisyUI classes and follow the app's design system:
+
 - `modal` and `modal-box` for modals
 - `card`, `badge`, `btn` for UI elements
 - Responsive grid layouts with Tailwind utilities
@@ -200,6 +207,7 @@ Components use DaisyUI classes and follow the app's design system:
 ```
 
 **Benefits:**
+
 - Reduces template size significantly
 - Centralizes modal logic in one place
 - Makes testing easier
@@ -262,6 +270,7 @@ Potential improvements for these components:
 ## Questions?
 
 For questions or issues with these components, please refer to:
+
 - Phoenix LiveComponent documentation: https://hexdocs.pm/phoenix_live_view/Phoenix.LiveComponent.html
 - Project guidelines in `CLAUDE.md`
 - Task tracking in `backlog/tasks/task-172.1`

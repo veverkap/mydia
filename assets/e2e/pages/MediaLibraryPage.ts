@@ -14,7 +14,7 @@
  *   await libraryPage.assertMediaExists('Breaking Bad');
  * });
  */
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 export class MediaLibraryPage {
   /**
@@ -26,11 +26,15 @@ export class MediaLibraryPage {
   // Selectors
 
   private get mediaGrid() {
-    return this.page.locator('[data-test="media-grid"], .media-grid, .library-grid');
+    return this.page.locator(
+      '[data-test="media-grid"], .media-grid, .library-grid',
+    );
   }
 
   private get emptyState() {
-    return this.page.locator('[data-test="empty-library"], .empty-state, :has-text("No media in library")');
+    return this.page.locator(
+      '[data-test="empty-library"], .empty-state, :has-text("No media in library")',
+    );
   }
 
   /**
@@ -38,18 +42,26 @@ export class MediaLibraryPage {
    * @param title - Media title to find
    */
   private mediaItem(title: string) {
-    return this.page.locator(`[data-test="media-item"]:has-text("${title}"), .media-item:has-text("${title}")`).first();
+    return this.page
+      .locator(
+        `[data-test="media-item"]:has-text("${title}"), .media-item:has-text("${title}")`,
+      )
+      .first();
   }
 
   /**
    * Get filter/tab buttons
    */
   private get tvShowsTab() {
-    return this.page.locator('button:has-text("TV Shows"), a:has-text("TV Shows")').first();
+    return this.page
+      .locator('button:has-text("TV Shows"), a:has-text("TV Shows")')
+      .first();
   }
 
   private get moviesTab() {
-    return this.page.locator('button:has-text("Movies"), a:has-text("Movies")').first();
+    return this.page
+      .locator('button:has-text("Movies"), a:has-text("Movies")')
+      .first();
   }
 
   // Actions
@@ -60,8 +72,8 @@ export class MediaLibraryPage {
    * await libraryPage.goto();
    */
   async goto() {
-    await this.page.goto('/media');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/media");
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -72,7 +84,7 @@ export class MediaLibraryPage {
   async filterByTVShows() {
     if (await this.tvShowsTab.isVisible()) {
       await this.tvShowsTab.click();
-      await this.page.waitForLoadState('networkidle');
+      await this.page.waitForLoadState("networkidle");
     }
   }
 
@@ -84,7 +96,7 @@ export class MediaLibraryPage {
   async filterByMovies() {
     if (await this.moviesTab.isVisible()) {
       await this.moviesTab.click();
-      await this.page.waitForLoadState('networkidle');
+      await this.page.waitForLoadState("networkidle");
     }
   }
 
@@ -106,7 +118,7 @@ export class MediaLibraryPage {
    * const exists = await libraryPage.hasMedia('Breaking Bad');
    */
   async hasMedia(title: string): Promise<boolean> {
-    return await this.mediaItem(title).count() > 0;
+    return (await this.mediaItem(title).count()) > 0;
   }
 
   // Assertions
