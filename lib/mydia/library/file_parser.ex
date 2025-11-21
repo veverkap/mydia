@@ -94,7 +94,10 @@ defmodule Mydia.Library.FileParser do
       # 1x01
       ~r/[. _-](\d{1,2})x(\d{1,2})/i,
       # Season 1 Episode 1 (verbose)
-      ~r/Season[. _-](\d{1,2})[. _-]Episode[. _-](\d{1,2})/i
+      ~r/Season[. _-](\d{1,2})[. _-]Episode[. _-](\d{1,2})/i,
+      # Absolute episode numbering (E01, E001, E0001) - common in anime
+      # Must use word boundary \b to avoid matching "ETHEL" in encoder names
+      ~r/[. _-]E(\d{2,4})\b/i
     ]
   end
 
@@ -288,6 +291,10 @@ defmodule Mydia.Library.FileParser do
       [season, episode1, episode2] ->
         # Multi-episode (e.g., S01E01-E03)
         {season, Enum.to_list(episode1..episode2)}
+
+      [episode] ->
+        # Absolute episode numbering - default to season 1
+        {1, [episode]}
 
       _ ->
         {nil, []}

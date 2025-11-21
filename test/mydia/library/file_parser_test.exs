@@ -196,6 +196,109 @@ defmodule Mydia.Library.FileParserTest do
       assert result.season == 5
       assert result.episodes == [23]
     end
+
+    test "parses anime absolute episode numbering (E##)" do
+      result = FileParser.parse("Show Name - E18 - Episode Title.mkv")
+
+      assert result.type == :tv_show
+      assert result.title == "Show Name"
+      assert result.season == 1
+      assert result.episodes == [18]
+      assert result.confidence > 0.8
+    end
+
+    test "parses anime absolute episode numbering (E###)" do
+      result =
+        FileParser.parse(
+          "Let This Grieving Soul Retire! - E018 - I Want to Soak It Up in the Hot Springs.mkv"
+        )
+
+      assert result.type == :tv_show
+      assert result.title == "Let This Grieving Soul Retire!"
+      assert result.season == 1
+      assert result.episodes == [18]
+      assert result.confidence > 0.8
+    end
+
+    test "parses anime absolute episode numbering (E####)" do
+      result = FileParser.parse("Long Running Show - E1234 - Title.mkv")
+
+      assert result.type == :tv_show
+      assert result.title == "Long Running Show"
+      assert result.season == 1
+      assert result.episodes == [1234]
+    end
+
+    test "does not match EAC3 encoder as episode" do
+      result = FileParser.parse("Show - S01E05 - Title - h264 EAC3 - NTb.mkv")
+
+      assert result.type == :tv_show
+      assert result.season == 1
+      assert result.episodes == [5]
+      # Should not match "EAC3" as E03
+      refute result.episodes == [3]
+    end
+
+    test "does not match ETHEL group name as episode" do
+      result = FileParser.parse("Show - S01E04 - Title - h264 EAC3 - ETHEL.mkv")
+
+      assert result.type == :tv_show
+      assert result.season == 1
+      assert result.episodes == [4]
+      # Should not match "ETHEL" as E04
+      refute result.episodes == [4, 4]
+    end
+
+    test "parses anime with quality markers" do
+      result =
+        FileParser.parse(
+          "Anime Show - E020 - Title - x264 AAC[JA] [EN+AR+DE+ES+FR+IT+PT+RU] - skyanime.mkv"
+        )
+
+      assert result.type == :tv_show
+      assert result.title == "Anime Show"
+      assert result.season == 1
+      assert result.episodes == [20]
+      assert result.quality.codec == "x264"
+      assert result.quality.audio == "AAC"
+    end
+
+    test "parses Ghosts (US) S05E05" do
+      result = FileParser.parse("Ghosts (US) - S05E05 - T-Daddy - h264 EAC3 - NTb.mkv")
+
+      assert result.type == :tv_show
+      # Title is normalized to Title Case, so (US) becomes (us)
+      assert result.title == "Ghosts (us)"
+      assert result.season == 5
+      assert result.episodes == [5]
+      assert result.quality.codec == "h264"
+      assert result.quality.audio == "EAC3"
+    end
+
+    test "parses Ghosts (US) S05E04" do
+      result =
+        FileParser.parse(
+          "Ghosts (US) - S05E04 - Bring Your Daughter to Work Day - h264 EAC3 - ETHEL.mkv"
+        )
+
+      assert result.type == :tv_show
+      # Title is normalized to Title Case, so (US) becomes (us)
+      assert result.title == "Ghosts (us)"
+      assert result.season == 5
+      assert result.episodes == [4]
+      assert result.quality.codec == "h264"
+      assert result.quality.audio == "EAC3"
+    end
+
+    test "parses TV show with parentheses in title" do
+      result = FileParser.parse("Show Name (US) S01E01.mkv")
+
+      assert result.type == :tv_show
+      # Title is normalized to Title Case, so (US) becomes (us)
+      assert result.title == "Show Name (us)"
+      assert result.season == 1
+      assert result.episodes == [1]
+    end
   end
 
   describe "parse/1 - auto-detection" do
