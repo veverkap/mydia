@@ -1088,9 +1088,8 @@ defmodule Mydia.Library do
   def torrent_already_imported?(client_name, client_id) do
     query =
       from f in MediaFile,
-        where:
-          fragment("json_extract(?, '$.download_client') = ?", f.metadata, ^client_name) and
-            fragment("json_extract(?, '$.download_client_id') = ?", f.metadata, ^client_id)
+        where: ^Mydia.DB.json_equals(:metadata, "$.download_client", client_name),
+        where: ^Mydia.DB.json_equals(:metadata, "$.download_client_id", client_id)
 
     Repo.exists?(query)
   end

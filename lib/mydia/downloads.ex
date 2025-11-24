@@ -523,17 +523,10 @@ defmodule Mydia.Downloads do
 
           base_query
           |> where([d], d.media_item_id == ^media_item_id)
+          |> where([d], ^Mydia.DB.json_is_true(:metadata, "$.season_pack"))
           |> where(
             [d],
-            # Handle both boolean true (1) and string "true" for season_pack
-            # SQLite json_extract returns 1 for JSON boolean true
-            (fragment("json_extract(?, '$.season_pack')  = 1", d.metadata) or
-               fragment("json_extract(?, '$.season_pack') = 'true'", d.metadata)) and
-              fragment(
-                "CAST(json_extract(?, '$.season_number') AS INTEGER) = ?",
-                d.metadata,
-                ^season_number
-              )
+            ^Mydia.DB.json_integer_equals(:metadata, "$.season_number", season_number)
           )
 
         # For movies or other media, check if there's an active download for this media_item

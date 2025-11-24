@@ -48,7 +48,8 @@ defmodule Mydia.Settings do
     DownloadClientConfig,
     IndexerConfig,
     LibraryPath,
-    DefaultQualityProfiles
+    DefaultQualityProfiles,
+    DefaultMetadataPreferences
   }
 
   @doc """
@@ -56,9 +57,13 @@ defmodule Mydia.Settings do
 
   ## Options
     - `:preload` - List of associations to preload
+    - `:is_system` - Filter by is_system flag (true/false)
+    - `:version` - Filter by version number
+    - `:source_url` - Filter by source URL (exact match)
   """
   def list_quality_profiles(opts \\ []) do
     QualityProfile
+    |> apply_quality_profile_filters(opts)
     |> maybe_preload(opts[:preload])
     |> order_by([q], asc: q.name)
     |> Repo.all()
@@ -190,6 +195,519 @@ defmodule Mydia.Settings do
       # Catch Repo not started yet error
       RuntimeError -> {:error, :database_unavailable}
     end
+  end
+
+  @doc """
+  Clones a quality profile with a new name.
+
+  Creates a copy of the given profile with all settings preserved except:
+  - New name (with " (Copy)" suffix if not provided)
+  - New ID
+  - is_system set to false
+  - source_url set to nil
+  - New timestamps
+
+  ## Examples
+
+      iex> clone_quality_profile(profile, "My Custom Profile")
+      {:ok, %QualityProfile{name: "My Custom Profile"}}
+
+      iex> clone_quality_profile(profile)
+      {:ok, %QualityProfile{name: "HD-1080p (Copy)"}}
+  """
+  def clone_quality_profile(%QualityProfile{} = profile, new_name \\ nil) do
+    name = new_name || "#{profile.name} (Copy)"
+
+    attrs = %{
+      name: name,
+      upgrades_allowed: profile.upgrades_allowed,
+      upgrade_until_quality: profile.upgrade_until_quality,
+      qualities: profile.qualities,
+      description: profile.description,
+      is_system: false,
+      version: 1,
+      source_url: nil,
+      quality_standards: profile.quality_standards,
+      metadata_preferences: profile.metadata_preferences,
+      customizations: nil
+    }
+
+    create_quality_profile(attrs)
+  end
+
+  @doc """
+  Gets the default metadata preferences.
+
+  Returns sensible default metadata preferences that can be used when
+  creating new quality profiles.
+
+  ## Examples
+
+      iex> get_default_metadata_preferences()
+      %{
+        provider_priority: ["metadata_relay", "tvdb", "tmdb"],
+        language: "en-US",
+        ...
+      }
+  """
+  def get_default_metadata_preferences do
+    DefaultMetadataPreferences.default()
+  end
+
+  @doc """
+  Gets metadata preferences with custom overrides merged with defaults.
+
+  ## Examples
+
+      iex> get_metadata_preferences_with_defaults(%{language: "fr-FR"})
+      %{
+        provider_priority: ["metadata_relay", "tvdb", "tmdb"],
+        language: "fr-FR",
+        ...
+      }
+  """
+  def get_metadata_preferences_with_defaults(custom_prefs) when is_map(custom_prefs) do
+    DefaultMetadataPreferences.with_defaults(custom_prefs)
+  end
+
+  @doc """
+  Validates that all providers referenced in metadata preferences are available.
+
+  Returns `{:ok, preferences}` if valid, or `{:error, missing_providers}`
+  if some providers are not registered in the system.
+
+  ## Examples
+
+      iex> validate_metadata_preferences_providers(%{provider_priority: ["metadata_relay"]})
+      {:ok, %{provider_priority: ["metadata_relay"]}}
+
+      iex> validate_metadata_preferences_providers(%{provider_priority: ["invalid"]})
+      {:error, ["invalid"]}
+  """
+  def validate_metadata_preferences_providers(prefs) when is_map(prefs) do
+    DefaultMetadataPreferences.validate_providers(prefs)
+  end
+
+  @doc """
+  Gets the effective metadata provider for a specific field.
+
+  Looks up the provider for a field based on the profile's metadata preferences.
+  If a field-specific override exists, uses that; otherwise uses the first
+  provider from the priority list.
+
+  ## Examples
+
+      iex> prefs = %{
+        provider_priority: ["metadata_relay", "tvdb"],
+        field_providers: %{"title" => "tvdb"}
+      }
+      iex> get_field_provider(prefs, "title")
+      "tvdb"
+
+      iex> get_field_provider(prefs, "overview")
+      "metadata_relay"
+  """
+  def get_field_provider(prefs, field) when is_map(prefs) and is_binary(field) do
+    # Check for field-specific override
+    case Map.get(prefs, :field_providers, %{}) do
+      field_providers when is_map(field_providers) ->
+        case Map.get(field_providers, field) do
+          nil ->
+            # No override, use first from priority list
+            prefs
+            |> Map.get(:provider_priority, [])
+            |> List.first()
+
+          provider ->
+            provider
+        end
+
+      _ ->
+        # Invalid field_providers, use first from priority list
+        prefs
+        |> Map.get(:provider_priority, [])
+        |> List.first()
+    end
+  end
+
+  @doc """
+  Compares two quality profile versions and returns the differences.
+
+  Returns a map with differences between the two profiles:
+  - `:changed` - Map of fields that changed with {old_value, new_value}
+  - `:added` - Map of fields added in profile2
+  - `:removed` - Map of fields removed in profile2
+
+  ## Examples
+
+      iex> compare_quality_profile_versions(profile1, profile2)
+      %{
+        changed: %{qualities: {["720p"], ["1080p"]}, version: {1, 2}},
+        added: %{quality_standards: %{...}},
+        removed: %{}
+      }
+  """
+  def compare_quality_profile_versions(%QualityProfile{} = profile1, %QualityProfile{} = profile2) do
+    # Fields to compare (excluding id, timestamps, and associations)
+    fields = [
+      :name,
+      :upgrades_allowed,
+      :upgrade_until_quality,
+      :qualities,
+      :description,
+      :is_system,
+      :version,
+      :source_url,
+      :last_synced_at,
+      :quality_standards,
+      :metadata_preferences,
+      :customizations
+    ]
+
+    changed =
+      Enum.reduce(fields, %{}, fn field, acc ->
+        val1 = Map.get(profile1, field)
+        val2 = Map.get(profile2, field)
+
+        if val1 != val2 do
+          Map.put(acc, field, {val1, val2})
+        else
+          acc
+        end
+      end)
+
+    # For added/removed, focus on optional map fields
+    optional_fields = [:quality_standards, :metadata_preferences, :customizations]
+
+    added =
+      Enum.reduce(optional_fields, %{}, fn field, acc ->
+        val1 = Map.get(profile1, field)
+        val2 = Map.get(profile2, field)
+
+        if is_nil(val1) and not is_nil(val2) do
+          Map.put(acc, field, val2)
+        else
+          acc
+        end
+      end)
+
+    removed =
+      Enum.reduce(optional_fields, %{}, fn field, acc ->
+        val1 = Map.get(profile1, field)
+        val2 = Map.get(profile2, field)
+
+        if not is_nil(val1) and is_nil(val2) do
+          Map.put(acc, field, val1)
+        else
+          acc
+        end
+      end)
+
+    %{
+      changed: changed,
+      added: added,
+      removed: removed
+    }
+  end
+
+  @doc """
+  Exports a quality profile to a shareable format (JSON or YAML).
+
+  ## Options
+    - `:format` - Output format, either `:json` or `:yaml` (default: `:json`)
+    - `:pretty` - Pretty print the output (default: `true`)
+
+  ## Returns
+    - `{:ok, content}` - The exported profile as a string
+    - `{:error, reason}` - If the export fails
+
+  ## Examples
+
+      iex> export_profile(profile, format: :json)
+      {:ok, "{\"schema_version\": 1, \"name\": \"HD-1080p\", ...}"}
+
+      iex> export_profile(profile, format: :yaml)
+      {:ok, "schema_version: 1\\nname: HD-1080p\\n..."}
+  """
+  def export_profile(%QualityProfile{} = profile, opts \\ []) do
+    format = Keyword.get(opts, :format, :json)
+    pretty = Keyword.get(opts, :pretty, true)
+
+    # Build export data structure with schema version
+    export_data = %{
+      schema_version: 1,
+      name: profile.name,
+      description: profile.description,
+      upgrades_allowed: profile.upgrades_allowed,
+      upgrade_until_quality: profile.upgrade_until_quality,
+      qualities: profile.qualities,
+      quality_standards: profile.quality_standards,
+      metadata_preferences: profile.metadata_preferences,
+      customizations: profile.customizations,
+      version: profile.version,
+      exported_at: DateTime.utc_now() |> DateTime.to_iso8601()
+    }
+
+    case format do
+      :json ->
+        encode_json(export_data, pretty)
+
+      :yaml ->
+        encode_yaml(export_data)
+
+      _ ->
+        {:error, "Unsupported format: #{format}. Use :json or :yaml"}
+    end
+  end
+
+  @doc """
+  Imports a quality profile from a file or URL.
+
+  ## Parameters
+    - `source` - Either a file path (string), URL (string starting with http/https), or raw content
+    - `opts` - Import options
+
+  ## Options
+    - `:dry_run` - If true, returns preview without saving (default: `false`)
+    - `:name` - Override the profile name from the import
+    - `:source_url` - Explicitly set the source URL (auto-detected for URL imports)
+
+  ## Returns
+    - `{:ok, profile}` - Successfully imported profile (or preview if dry_run)
+    - `{:ok, %{action: :skip, reason: reason}}` - Skipped import with reason
+    - `{:error, reason}` - If the import fails
+
+  ## Examples
+
+      iex> import_profile("/path/to/profile.json")
+      {:ok, %QualityProfile{}}
+
+      iex> import_profile("https://example.com/profile.yaml")
+      {:ok, %QualityProfile{}}
+
+      iex> import_profile(content, dry_run: true)
+      {:ok, %{action: :create, profile: %QualityProfile{}, conflicts: []}}
+  """
+  def import_profile(source, opts \\ []) do
+    dry_run = Keyword.get(opts, :dry_run, false)
+
+    with {:ok, content} <- fetch_import_content(source, opts),
+         {:ok, data} <- parse_import_content(content),
+         {:ok, validated_data} <- validate_import_schema(data),
+         {:ok, attrs} <- prepare_import_attrs(validated_data, source, opts),
+         {:ok, result} <- perform_import(attrs, dry_run) do
+      {:ok, result}
+    end
+  end
+
+  # Private helper functions for export/import
+
+  defp encode_json(data, true) do
+    case Jason.encode(data, pretty: true) do
+      {:ok, json} -> {:ok, json}
+      {:error, error} -> {:error, "JSON encoding failed: #{inspect(error)}"}
+    end
+  end
+
+  defp encode_json(data, false) do
+    case Jason.encode(data) do
+      {:ok, json} -> {:ok, json}
+      {:error, error} -> {:error, "JSON encoding failed: #{inspect(error)}"}
+    end
+  end
+
+  defp encode_yaml(data) do
+    case Ymlr.document(data) do
+      {:ok, yaml} -> {:ok, yaml}
+      {:error, error} -> {:error, "YAML encoding failed: #{inspect(error)}"}
+    end
+  end
+
+  defp fetch_import_content(source, opts) when is_binary(source) do
+    cond do
+      # Check if it's a URL
+      String.starts_with?(source, "http://") or String.starts_with?(source, "https://") ->
+        fetch_from_url(source, opts)
+
+      # Check if it's a file path
+      File.exists?(source) ->
+        File.read(source)
+
+      # Assume it's raw content
+      true ->
+        {:ok, source}
+    end
+  end
+
+  defp fetch_import_content(_source, _opts) do
+    {:error, "Invalid source: must be a file path, URL, or raw content string"}
+  end
+
+  defp fetch_from_url(url, _opts) do
+    timeout = 30_000
+
+    # Disable auto-decoding to get raw body
+    case Req.get(url,
+           connect_options: [timeout: timeout],
+           receive_timeout: timeout,
+           decode_body: false
+         ) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %{status: status}} ->
+        {:error, "Failed to fetch from URL: HTTP #{status}"}
+
+      {:error, error} ->
+        {:error, "Failed to fetch from URL: #{inspect(error)}"}
+    end
+  end
+
+  defp parse_import_content(content) when is_binary(content) do
+    # Try JSON first
+    case Jason.decode(content) do
+      {:ok, data} ->
+        {:ok, data}
+
+      {:error, _json_error} ->
+        # Try YAML if JSON fails
+        case YamlElixir.read_from_string(content) do
+          {:ok, data} ->
+            {:ok, data}
+
+          {:error, yaml_error} ->
+            {:error, "Failed to parse content as JSON or YAML: #{inspect(yaml_error)}"}
+        end
+    end
+  end
+
+  defp validate_import_schema(%{"schema_version" => 1} = data) do
+    # Schema version 1 - validate required fields
+    required_fields = ["name", "qualities"]
+
+    missing_fields =
+      required_fields
+      |> Enum.reject(&Map.has_key?(data, &1))
+
+    if Enum.empty?(missing_fields) do
+      {:ok, data}
+    else
+      {:error, "Missing required fields: #{Enum.join(missing_fields, ", ")}"}
+    end
+  end
+
+  defp validate_import_schema(%{"schema_version" => version}) do
+    {:error,
+     "Unsupported schema version: #{version}. This version only supports schema version 1. Please export the profile from a compatible version."}
+  end
+
+  defp validate_import_schema(_data) do
+    {:error,
+     "Invalid profile format: missing schema_version field. This may be a legacy format that is no longer supported. Please export the profile from a newer version."}
+  end
+
+  defp prepare_import_attrs(data, source, opts) do
+    # Extract attributes from import data
+    attrs = %{
+      name: Keyword.get(opts, :name, data["name"]),
+      description: data["description"],
+      upgrades_allowed: data["upgrades_allowed"],
+      upgrade_until_quality: data["upgrade_until_quality"],
+      qualities: data["qualities"],
+      quality_standards: atomize_keys(data["quality_standards"]),
+      metadata_preferences: atomize_keys(data["metadata_preferences"]),
+      customizations: atomize_keys(data["customizations"]),
+      version: data["version"] || 1,
+      is_system: false,
+      source_url: determine_source_url(source, opts),
+      last_synced_at: DateTime.utc_now()
+    }
+
+    {:ok, attrs}
+  end
+
+  defp determine_source_url(source, opts) do
+    case Keyword.get(opts, :source_url) do
+      nil ->
+        # Auto-detect if source is a URL
+        if is_binary(source) and
+             (String.starts_with?(source, "http://") or String.starts_with?(source, "https://")) do
+          source
+        else
+          nil
+        end
+
+      url ->
+        url
+    end
+  end
+
+  defp atomize_keys(nil), do: nil
+
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn {k, v} ->
+      key = if is_binary(k), do: String.to_atom(k), else: k
+      value = atomize_keys_value(v)
+      {key, value}
+    end)
+  end
+
+  defp atomize_keys_value(map) when is_map(map), do: atomize_keys(map)
+  defp atomize_keys_value(list) when is_list(list), do: Enum.map(list, &atomize_keys_value/1)
+  defp atomize_keys_value(value), do: value
+
+  defp perform_import(attrs, true) do
+    # Dry run - validate and return preview
+    changeset = QualityProfile.changeset(%QualityProfile{}, attrs)
+
+    if changeset.valid? do
+      # Check for conflicts
+      conflicts = detect_profile_conflicts(attrs.name)
+
+      preview = %{
+        action: if(Enum.empty?(conflicts), do: :create, else: :update),
+        profile: Ecto.Changeset.apply_changes(changeset),
+        conflicts: conflicts,
+        dry_run: true
+      }
+
+      {:ok, preview}
+    else
+      {:error, "Validation failed: #{format_changeset_errors(changeset)}"}
+    end
+  end
+
+  defp perform_import(attrs, false) do
+    # Real import - check for conflicts and create/update
+    existing_profile = get_quality_profile_by_name(attrs.name)
+
+    case existing_profile do
+      nil ->
+        # No conflict, create new profile
+        create_quality_profile(attrs)
+
+      _profile ->
+        # Profile exists, return conflict error
+        {:error,
+         "Profile '#{attrs.name}' already exists. Use dry_run mode to preview changes or provide a different name."}
+    end
+  end
+
+  defp detect_profile_conflicts(name) do
+    case get_quality_profile_by_name(name) do
+      nil -> []
+      profile -> [%{type: :name_conflict, existing_profile_id: profile.id, name: name}]
+    end
+  end
+
+  defp format_changeset_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+    |> Enum.map(fn {field, errors} -> "#{field}: #{Enum.join(errors, ", ")}" end)
+    |> Enum.join("; ")
   end
 
   ## Configuration Settings (Database)
@@ -976,6 +1494,32 @@ defmodule Mydia.Settings do
   defp maybe_preload(query, nil), do: query
   defp maybe_preload(query, []), do: query
   defp maybe_preload(query, preloads), do: preload(query, ^preloads)
+
+  # Applies optional filters to quality profile queries
+  defp apply_quality_profile_filters(query, opts) do
+    query
+    |> apply_is_system_filter(opts[:is_system])
+    |> apply_version_filter(opts[:version])
+    |> apply_source_url_filter(opts[:source_url])
+  end
+
+  defp apply_is_system_filter(query, nil), do: query
+
+  defp apply_is_system_filter(query, is_system) when is_boolean(is_system) do
+    where(query, [q], q.is_system == ^is_system)
+  end
+
+  defp apply_version_filter(query, nil), do: query
+
+  defp apply_version_filter(query, version) when is_integer(version) do
+    where(query, [q], q.version == ^version)
+  end
+
+  defp apply_source_url_filter(query, nil), do: query
+
+  defp apply_source_url_filter(query, source_url) when is_binary(source_url) do
+    where(query, [q], q.source_url == ^source_url)
+  end
 
   # Merges database records with runtime configuration items.
   #
