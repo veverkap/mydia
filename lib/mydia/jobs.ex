@@ -4,6 +4,7 @@ defmodule Mydia.Jobs do
   """
 
   import Ecto.Query
+  import Mydia.DB
   alias Mydia.Repo
   alias Oban.Job
 
@@ -127,7 +128,7 @@ defmodule Mydia.Jobs do
     avg_duration =
       from(j in Job,
         where: j.worker == ^worker_string and j.state == "completed",
-        select: fragment("AVG(CAST((completed_at - attempted_at) AS REAL))")
+        select: avg_timestamp_diff_seconds(j.completed_at, j.attempted_at)
       )
       |> Repo.one()
 
