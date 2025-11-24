@@ -50,6 +50,30 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 🎨 **Modern UI** – Built with Phoenix LiveView, Tailwind CSS, and DaisyUI
 - 🐳 **Docker Ready** – Pre-built images for amd64 and arm64 platforms
 
+## 🆚 Comparison with Radarr & Sonarr
+
+| Feature | Mydia | Radarr | Sonarr |
+|---------|-------|--------|--------|
+| **Media Types** | Movies + TV Shows | Movies only | TV Shows only |
+| **Multi-User & Requests** | ✅ Built-in (admin/guest roles) | ❌ Requires Ombi/Overseerr | ❌ Requires Ombi/Overseerr |
+| **Authentication** | Local + OIDC/SSO built-in | Local only | Local only |
+| **Library Management** | ✅ | ✅ | ✅ |
+| **Download Automation** | ✅ | ✅ | ✅ |
+| **Quality Profiles** | ✅ | ✅ Advanced | ✅ Advanced |
+| **Custom Formats** | ⏳ Planned | ✅ | ✅ |
+| **Automatic Upgrades** | ⏳ Planned | ✅ | ✅ |
+| **Media Server Integration** | ⏳ Planned | ✅ Plex/Kodi/Jellyfin | ✅ Plex/Kodi/Jellyfin |
+| **List Import** | ⏳ Planned | ✅ | ✅ |
+| **Native Playback** | 🧪 Experimental | ❌ | ❌ |
+| **Technology** | Elixir/Phoenix LiveView | .NET/React | .NET/React |
+| **Maturity** | Early development | Production-ready | Production-ready |
+
+**Legend:** ✅ Available | ⏳ Planned | 🧪 Experimental | ❌ Not Available
+
+**Choose Mydia for:** Unified movies+TV management, built-in multi-user support, modern real-time UI, native SSO
+
+**Choose Radarr/Sonarr for:** Mature ecosystem, advanced custom formats, comprehensive automation, wider integrations
+
 ## 📸 Screenshots
 
 <table>
@@ -690,6 +714,18 @@ See `assets/SCREENSHOTS.md` for configuration options.
 - Oban (background jobs)
 - Tailwind CSS + DaisyUI
 - Req (HTTP client)
+
+## 📝 TRaSH Guides Naming Compliance
+
+Mydia implements [TRaSH Guides](https://trash-guides.info/)-compatible filename naming to preserve quality metadata and prevent download loops. Core features like title, year, quality (source/resolution), PROPER/REPACK flags, codec, and release group are fully implemented. Partial support exists for HDR detection (basic detection without format distinction) and audio codecs (codec without channel info). Missing features include edition tags, custom formats, 3D indicators, audio channels, specific HDR formats, and episode title truncation.
+
+| Feature | Movies | TV Shows | Notes |
+|---------|--------|----------|-------|
+| **Implemented** | Title, Year, Quality, Codec, Release Group, PROPER/REPACK | Title, Year, S##E##, Episode Title, Quality, Codec, Release Group, PROPER/REPACK | Prevents duplicate downloads |
+| **Partial** | HDR (basic), Audio codec | HDR (basic), Audio codec | No format distinction or channel info |
+| **Missing** | Edition tags, Custom formats, 3D, Audio channels | Custom formats, Audio channels, Title truncation | Planned enhancements |
+
+**Example output:** `The Matrix (1999) [BluRay-1080p][DTS][x264]-GROUP.mkv` • `Breaking Bad (2008) - S01E01 - Pilot [BluRay-1080p][x264]-GROUP.mkv`
 
 ---
 
