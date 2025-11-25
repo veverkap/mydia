@@ -1,22 +1,48 @@
 import Config
 
-# Configure your database
-config :mydia, Mydia.Repo,
-  database: Path.expand("../mydia_dev.db", __DIR__),
-  pool_size: 5,
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  # SQLite-specific optimizations
-  # Increased timeout to handle long-running library scans (60 seconds)
-  timeout: 60_000,
-  journal_mode: :wal,
-  # 64MB cache
-  cache_size: -64000,
-  temp_store: :memory,
-  synchronous: :normal,
-  foreign_keys: :on,
-  # Increased busy_timeout to handle concurrent writes during library scans
-  busy_timeout: 30_000
+# Configure your database based on DATABASE_TYPE environment variable
+# Use DATABASE_TYPE=postgres to use PostgreSQL, otherwise SQLite is used
+database_type =
+  case System.get_env("DATABASE_TYPE") do
+    "postgres" -> :postgres
+    "postgresql" -> :postgres
+    _ -> :sqlite
+  end
+
+# Set database_type for runtime helpers (used by Mydia.DB and migrations)
+config :mydia, :database_type, database_type
+
+case database_type do
+  :postgres ->
+    config :mydia, Mydia.Repo,
+      hostname: System.get_env("DATABASE_HOST") || "localhost",
+      port: String.to_integer(System.get_env("DATABASE_PORT") || "5433"),
+      database: System.get_env("DATABASE_NAME") || "mydia_dev",
+      username: System.get_env("DATABASE_USER") || "postgres",
+      password: System.get_env("DATABASE_PASSWORD") || "postgres",
+      pool_size: 5,
+      stacktrace: true,
+      show_sensitive_data_on_connection_error: true,
+      timeout: 60_000
+
+  :sqlite ->
+    config :mydia, Mydia.Repo,
+      database: Path.expand("../mydia_dev.db", __DIR__),
+      pool_size: 5,
+      stacktrace: true,
+      show_sensitive_data_on_connection_error: true,
+      # SQLite-specific optimizations
+      # Increased timeout to handle long-running library scans (60 seconds)
+      timeout: 60_000,
+      journal_mode: :wal,
+      # 64MB cache
+      cache_size: -64000,
+      temp_store: :memory,
+      synchronous: :normal,
+      foreign_keys: :on,
+      # Increased busy_timeout to handle concurrent writes during library scans
+      busy_timeout: 30_000
+end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

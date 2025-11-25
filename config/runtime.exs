@@ -20,28 +20,55 @@ if System.get_env("PHX_SERVER") do
   config :mydia, MydiaWeb.Endpoint, server: true
 end
 
-if config_env() == :prod do
-  database_path =
-    System.get_env("DATABASE_PATH") ||
-      raise """
-      environment variable DATABASE_PATH is missing.
-      For example: /etc/mydia/mydia.db
-      """
+# Database type configuration (all environments)
+# Used by Mydia.DB runtime functions to select appropriate SQL syntax
+# Valid values: "sqlite" (default), "postgres"
+database_type =
+  case System.get_env("DATABASE_TYPE") do
+    "postgres" -> :postgres
+    "postgresql" -> :postgres
+    _ -> :sqlite
+  end
 
-  config :mydia, Mydia.Repo,
-    database: database_path,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
-    # SQLite-specific optimizations for production
-    # Increased timeout to handle long-running library scans (60 seconds)
-    timeout: 60_000,
-    journal_mode: :wal,
-    # 64MB cache
-    cache_size: -64000,
-    temp_store: :memory,
-    synchronous: :normal,
-    foreign_keys: :on,
-    # Increased busy_timeout to handle concurrent writes during library scans
-    busy_timeout: 30_000
+config :mydia, :database_type, database_type
+
+if config_env() == :prod do
+  # Database configuration based on DATABASE_TYPE
+  case database_type do
+    :postgres ->
+      config :mydia, Mydia.Repo,
+        hostname: System.get_env("DATABASE_HOST") || "localhost",
+        port: String.to_integer(System.get_env("DATABASE_PORT") || "5432"),
+        database: System.get_env("DATABASE_NAME") || "mydia",
+        username: System.get_env("DATABASE_USER") || "postgres",
+        password: System.get_env("DATABASE_PASSWORD"),
+        pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+        # Increased timeout to handle long-running library scans (60 seconds)
+        timeout: 60_000
+
+    :sqlite ->
+      database_path =
+        System.get_env("DATABASE_PATH") ||
+          raise """
+          environment variable DATABASE_PATH is missing.
+          For example: /etc/mydia/mydia.db
+          """
+
+      config :mydia, Mydia.Repo,
+        database: database_path,
+        pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
+        # SQLite-specific optimizations for production
+        # Increased timeout to handle long-running library scans (60 seconds)
+        timeout: 60_000,
+        journal_mode: :wal,
+        # 64MB cache
+        cache_size: -64000,
+        temp_store: :memory,
+        synchronous: :normal,
+        foreign_keys: :on,
+        # Increased busy_timeout to handle concurrent writes during library scans
+        busy_timeout: 30_000
+  end
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

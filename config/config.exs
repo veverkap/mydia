@@ -7,9 +7,19 @@
 # General application configuration
 import Config
 
+# Database adapter configuration (compile-time)
+# Use DATABASE_TYPE=postgres at compile time to use PostgreSQL adapter
+database_adapter =
+  case System.get_env("DATABASE_TYPE") do
+    "postgres" -> Ecto.Adapters.Postgres
+    "postgresql" -> Ecto.Adapters.Postgres
+    _ -> Ecto.Adapters.SQLite3
+  end
+
 config :mydia,
   ecto_repos: [Mydia.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  database_adapter: database_adapter
 
 # Configures the endpoint
 config :mydia, MydiaWeb.Endpoint,
@@ -219,10 +229,16 @@ config :mydia, Mydia.Auth.Guardian,
   secret_key: "REPLACE_IN_RUNTIME_CONFIG"
 
 # Configure Oban for background job processing
-# Using Lite engine with polling for SQLite compatibility
+# Use Lite engine for SQLite, Basic engine for PostgreSQL
+oban_engine =
+  case database_adapter do
+    Ecto.Adapters.Postgres -> Oban.Engines.Basic
+    _ -> Oban.Engines.Lite
+  end
+
 config :mydia, Oban,
   repo: Mydia.Repo,
-  engine: Oban.Engines.Lite,
+  engine: oban_engine,
   queues: [
     critical: 10,
     default: 5,
