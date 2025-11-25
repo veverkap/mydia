@@ -262,7 +262,9 @@ export class AdminConfigPage {
    */
   async goToClientsTab() {
     await this.clientsTab.click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for tab to be active and add button to be visible
+    await expect(this.clientsTab).toHaveClass(/tab-active/, { timeout: 5000 });
+    await expect(this.addDownloadClientButton).toBeVisible({ timeout: 5000 });
   }
 
   /**
@@ -272,7 +274,9 @@ export class AdminConfigPage {
    */
   async goToIndexersTab() {
     await this.indexersTab.click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for tab to be active and add button to be visible
+    await expect(this.indexersTab).toHaveClass(/tab-active/, { timeout: 5000 });
+    await expect(this.addIndexerButton).toBeVisible({ timeout: 5000 });
   }
 
   /**
@@ -329,12 +333,23 @@ export class AdminConfigPage {
 
   /**
    * Save the indexer configuration
+   * Waits for either:
+   * - Modal to close (successful save)
+   * - Error to appear (validation failed)
+   * @returns Promise<boolean> true if save succeeded (modal closed), false if validation failed
    * @example
    * await adminPage.saveIndexer();
    */
-  async saveIndexer() {
+  async saveIndexer(): Promise<boolean> {
     await this.saveIndexerButton.click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for either modal to close (success) or an error to appear (validation failure)
+    try {
+      await expect(this.indexerModal).not.toBeVisible({ timeout: 10000 });
+      return true;
+    } catch {
+      // Modal is still visible, check if there's a validation error
+      return false;
+    }
   }
 
   /**
@@ -368,7 +383,8 @@ export class AdminConfigPage {
     // Handle confirmation dialog
     this.page.on("dialog", (dialog) => dialog.accept());
     await this.deleteIndexerButton(name).click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for the indexer row to disappear (indicates delete completed)
+    await expect(this.indexerRow(name)).not.toBeVisible({ timeout: 10000 });
   }
 
   /**
@@ -441,12 +457,23 @@ export class AdminConfigPage {
 
   /**
    * Save the download client configuration
+   * Waits for either:
+   * - Modal to close (successful save)
+   * - Error to appear (validation failed)
+   * @returns Promise<boolean> true if save succeeded (modal closed), false if validation failed
    * @example
    * await adminPage.saveDownloadClient();
    */
-  async saveDownloadClient() {
+  async saveDownloadClient(): Promise<boolean> {
     await this.saveClientButton.click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for either modal to close (success) or an error to appear (validation failure)
+    try {
+      await expect(this.clientModal).not.toBeVisible({ timeout: 10000 });
+      return true;
+    } catch {
+      // Modal is still visible, check if there's a validation error
+      return false;
+    }
   }
 
   /**
@@ -480,20 +507,23 @@ export class AdminConfigPage {
     // Handle confirmation dialog
     this.page.on("dialog", (dialog) => dialog.accept());
     await this.deleteClientButton(name).click();
-    await this.page.waitForLoadState("networkidle");
+    // Wait for the client row to disappear (indicates delete completed)
+    await expect(this.clientRow(name)).not.toBeVisible({ timeout: 10000 });
   }
 
   // General Settings Actions
 
   /**
    * Toggle a setting switch
+   * Waits for flash message to appear indicating the setting was saved
    * @param key - Setting key
    * @example
    * await adminPage.toggleSetting('crash_reporting.enabled');
    */
   async toggleSetting(key: string) {
     await this.settingToggle(key).click();
-    await this.page.waitForTimeout(500); // Wait for setting to save
+    // Wait for flash message to appear (indicates LiveView processed the toggle)
+    await expect(this.successMessage).toBeVisible({ timeout: 5000 });
   }
 
   // Assertions
