@@ -261,139 +261,138 @@
       </div>
     <% end %>
 
-    <%!-- Media Grid View --%>
-    <div
-      id="media-items-grid"
-      phx-update="stream"
-      phx-viewport-bottom="load_more"
-      data-phx-hook="Phoenix.InfiniteScroll"
-      class={[
-        "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 pb-6 md:pb-8",
-        @view_mode != :grid && "hidden"
-      ]}
-    >
-      <%!-- Media cards --%>
-      <div :for={{id, item} <- @streams.media_items} id={"#{id}-grid"} class="relative group">
-        <%!-- Selection checkbox --%>
-        <%= if @selection_mode do %>
-          <div class="absolute top-2 left-2 z-10">
-            <input
-              type="checkbox"
-              class="checkbox checkbox-primary checkbox-sm"
-              checked={item_selected?(@selected_ids, item.id)}
-              phx-click="toggle_select"
-              phx-value-id={item.id}
-              onclick="event.stopPropagation()"
-            />
-          </div>
-        <% end %>
-
-        <%!-- Monitored toggle button (outside link, hidden in selection mode) --%>
-        <%= if not @selection_mode do %>
-          <button
-            type="button"
-            phx-click="toggle_item_monitored"
-            phx-value-id={item.id}
-            class={[
-              "absolute top-2 left-2 p-1 rounded-lg transition-all duration-200",
-              "hover:bg-base-200 hover:scale-110 active:scale-95",
-              "z-10"
-            ]}
-            title={if item.monitored, do: "Unmonitor", else: "Monitor"}
-          >
-            <.icon
-              name={if item.monitored, do: "hero-bookmark-solid", else: "hero-bookmark"}
-              class={
-                if item.monitored,
-                  do: "w-5 h-5 transition-colors duration-200 text-primary",
-                  else: "w-5 h-5 transition-colors duration-200 text-base-content opacity-60"
-              }
-            />
-          </button>
-        <% end %>
-
-        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-200">
-          <.link navigate={~p"/media/#{item.id}"}>
-            <figure class="relative aspect-[2/3] overflow-hidden bg-base-300">
-              <img
-                src={get_poster_url(item)}
-                alt={item.title}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-              />
-              <%!-- Progress indicators --%>
-              <% progress = get_progress(item) %>
-              <.progress_bar :if={progress} progress={progress} />
-              <.progress_badge :if={progress} progress={progress} />
-              <%!-- Quality badge --%>
-              <%= if quality = get_quality_badge(item) do %>
-                <div class="badge badge-primary badge-sm absolute top-2 right-2 z-10 shadow-md">
-                  {quality}
-                </div>
-              <% end %>
-            </figure>
-          </.link>
-          <div class="card-body p-3">
-            <h3 class="card-title text-sm line-clamp-2" title={item.title}>
-              {item.title}
-            </h3>
-            <%!-- Status badge and year --%>
-            <% {status, counts} = get_media_item_status(item) %>
-            <div class="flex flex-col gap-1">
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1">
-                  <div class="tooltip tooltip-right" data-tip={media_status_label(status)}>
-                    <span class={["badge badge-xs", media_status_color(status)]}>
-                      <.icon name={media_status_icon(status)} class="w-3 h-3" />
-                    </span>
-                  </div>
-                  <%!-- File indicator for unmonitored items with files --%>
-                  <%= if show_file_indicator?(status, counts) do %>
-                    <div
-                      class="tooltip tooltip-right"
-                      data-tip={get_file_indicator_tooltip(counts)}
-                    >
-                      <span class="badge badge-xs badge-success">
-                        <.icon name="hero-document-check" class="w-3 h-3" />
-                      </span>
-                    </div>
-                  <% end %>
-                </div>
-                <span class="text-xs text-base-content/70">{format_year(item.year)}</span>
-              </div>
-              <%= if episode_count = format_episode_count(counts) do %>
-                <span class="text-xs text-base-content/70">{episode_count}</span>
-              <% end %>
-            </div>
-          </div>
-        </div>
+    <%!-- List View Container (card wrapper for table-like appearance) --%>
+    <div :if={@view_mode == :list} class="card bg-base-100 shadow-lg overflow-hidden">
+      <%!-- List View Header --%>
+      <div class="flex items-center bg-base-200 font-semibold text-sm px-4 py-3 border-b border-base-300">
+        <div class="w-10 flex-shrink-0"></div>
+        <div class="w-14 flex-shrink-0"></div>
+        <div class="flex-1 min-w-0">Title</div>
+        <div class="w-20 hidden md:block text-center flex-shrink-0">Year</div>
+        <div class="w-28 hidden lg:block flex-shrink-0">Status</div>
+        <div class="w-20 hidden lg:block text-center flex-shrink-0">Quality</div>
+        <div class="w-24 hidden xl:block text-right flex-shrink-0">Size</div>
       </div>
     </div>
 
-    <%!-- Media List View --%>
+    <%!-- Unified Media Items Container (single stream for both grid and list) --%>
     <div
-      id="media-items-list-scroll"
-      class={["overflow-x-auto", @view_mode != :list && "hidden"]}
+      id="media-items"
+      phx-update="stream"
       phx-viewport-bottom="load_more"
-      data-phx-hook="Phoenix.InfiniteScroll"
+      class={[
+        @view_mode == :grid &&
+          "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 pb-6 md:pb-8",
+        @view_mode == :list && "card bg-base-100 shadow-lg overflow-hidden -mt-px"
+      ]}
     >
-      <table class="table table-zebra w-full">
-        <thead>
-          <tr>
-            <th class="w-10">
-              <%!-- Checkbox column header --%>
-            </th>
-            <th class="w-12"></th>
-            <th>Title</th>
-            <th class="hidden md:table-cell">Year</th>
-            <th class="hidden lg:table-cell">Status</th>
-            <th class="hidden lg:table-cell">Quality</th>
-            <th class="hidden xl:table-cell">Size</th>
-          </tr>
-        </thead>
-        <tbody id="media-items-list" phx-update="stream">
-          <tr :for={{id, item} <- @streams.media_items} id={"#{id}-list"} class="hover">
-            <td>
+      <div
+        :for={{id, item} <- @streams.media_items}
+        id={id}
+        class={@view_mode == :list && "contents"}
+      >
+        <%= if @view_mode == :grid do %>
+          <%!-- Grid Card View --%>
+          <div class="relative group">
+            <%!-- Selection checkbox --%>
+            <%= if @selection_mode do %>
+              <div class="absolute top-2 left-2 z-10">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-primary checkbox-sm"
+                  checked={item_selected?(@selected_ids, item.id)}
+                  phx-click="toggle_select"
+                  phx-value-id={item.id}
+                  onclick="event.stopPropagation()"
+                />
+              </div>
+            <% end %>
+
+            <%!-- Monitored toggle button (outside link, hidden in selection mode) --%>
+            <%= if not @selection_mode do %>
+              <button
+                type="button"
+                phx-click="toggle_item_monitored"
+                phx-value-id={item.id}
+                class={[
+                  "absolute top-2 left-2 p-1 rounded-lg transition-all duration-200",
+                  "hover:bg-base-200 hover:scale-110 active:scale-95",
+                  "z-10"
+                ]}
+                title={if item.monitored, do: "Unmonitor", else: "Monitor"}
+              >
+                <.icon
+                  name={if item.monitored, do: "hero-bookmark-solid", else: "hero-bookmark"}
+                  class={
+                    if item.monitored,
+                      do: "w-5 h-5 transition-colors duration-200 text-primary",
+                      else: "w-5 h-5 transition-colors duration-200 text-base-content opacity-60"
+                  }
+                />
+              </button>
+            <% end %>
+
+            <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-200">
+              <.link navigate={~p"/media/#{item.id}"}>
+                <figure class="relative aspect-[2/3] overflow-hidden bg-base-300">
+                  <img
+                    src={get_poster_url(item)}
+                    alt={item.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <%!-- Progress indicators --%>
+                  <% progress = get_progress(item) %>
+                  <.progress_bar :if={progress} progress={progress} />
+                  <.progress_badge :if={progress} progress={progress} />
+                  <%!-- Quality badge --%>
+                  <%= if quality = get_quality_badge(item) do %>
+                    <div class="badge badge-primary badge-sm absolute top-2 right-2 z-10 shadow-md">
+                      {quality}
+                    </div>
+                  <% end %>
+                </figure>
+              </.link>
+              <div class="card-body p-3">
+                <h3 class="card-title text-sm line-clamp-2" title={item.title}>
+                  {item.title}
+                </h3>
+                <%!-- Status badge and year --%>
+                <% {status, counts} = get_media_item_status(item) %>
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1">
+                      <div class="tooltip tooltip-right" data-tip={media_status_label(status)}>
+                        <span class={["badge badge-xs", media_status_color(status)]}>
+                          <.icon name={media_status_icon(status)} class="w-3 h-3" />
+                        </span>
+                      </div>
+                      <%!-- File indicator for unmonitored items with files --%>
+                      <%= if show_file_indicator?(status, counts) do %>
+                        <div
+                          class="tooltip tooltip-right"
+                          data-tip={get_file_indicator_tooltip(counts)}
+                        >
+                          <span class="badge badge-xs badge-success">
+                            <.icon name="hero-document-check" class="w-3 h-3" />
+                          </span>
+                        </div>
+                      <% end %>
+                    </div>
+                    <span class="text-xs text-base-content/70">{format_year(item.year)}</span>
+                  </div>
+                  <%= if episode_count = format_episode_count(counts) do %>
+                    <span class="text-xs text-base-content/70">{episode_count}</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <%!-- List Row View --%>
+          <div class="flex items-center px-4 py-3 hover:bg-base-200/50 border-b border-base-200 last:border-b-0 odd:bg-base-100 even:bg-base-200/30 transition-colors">
+            <%!-- Checkbox/Bookmark column --%>
+            <div class="w-10 flex-shrink-0">
               <%= if @selection_mode do %>
                 <input
                   type="checkbox"
@@ -402,26 +401,50 @@
                   phx-click="toggle_select"
                   phx-value-id={item.id}
                 />
+              <% else %>
+                <button
+                  type="button"
+                  phx-click="toggle_item_monitored"
+                  phx-value-id={item.id}
+                  class="btn btn-ghost btn-xs btn-circle"
+                  title={if item.monitored, do: "Unmonitor", else: "Monitor"}
+                >
+                  <.icon
+                    name={if item.monitored, do: "hero-bookmark-solid", else: "hero-bookmark"}
+                    class={
+                      if item.monitored,
+                        do: "w-4 h-4 text-primary",
+                        else: "w-4 h-4 text-base-content/40"
+                    }
+                  />
+                </button>
               <% end %>
-            </td>
-            <td>
-              <div class="avatar">
-                <div class="w-12 rounded">
-                  <img src={get_poster_url(item)} alt={item.title} loading="lazy" />
-                </div>
-              </div>
-            </td>
-            <td>
+            </div>
+            <%!-- Poster column --%>
+            <div class="w-14 flex-shrink-0">
+              <.link navigate={~p"/media/#{item.id}"} class="block w-10">
+                <img
+                  src={get_poster_url(item)}
+                  alt={item.title}
+                  loading="lazy"
+                  class="w-10 h-14 rounded shadow-sm object-cover bg-base-300"
+                />
+              </.link>
+            </div>
+            <%!-- Title column --%>
+            <div class="flex-1 min-w-0 pr-4">
               <div class="flex items-center gap-2">
                 <div class="flex-1 min-w-0">
                   <.link
                     navigate={~p"/media/#{item.id}"}
-                    class="font-semibold hover:text-primary transition-colors"
+                    class="font-medium hover:text-primary transition-colors line-clamp-1"
                   >
                     {item.title}
                   </.link>
                   <%= if item.original_title && item.original_title != item.title do %>
-                    <div class="text-sm text-base-content/70">{item.original_title}</div>
+                    <div class="text-sm text-base-content/60 line-clamp-1">
+                      {item.original_title}
+                    </div>
                   <% end %>
                 </div>
                 <%!-- Progress indicator for list view --%>
@@ -438,47 +461,53 @@
                   <% end %>
                 <% end %>
               </div>
-            </td>
-            <td class="hidden md:table-cell">{format_year(item.year)}</td>
-            <td class="hidden lg:table-cell">
+            </div>
+            <%!-- Year column --%>
+            <div class="w-20 hidden md:block text-center text-base-content/70 flex-shrink-0">
+              {format_year(item.year)}
+            </div>
+            <%!-- Status column --%>
+            <div class="w-28 hidden lg:block flex-shrink-0">
               <% {status, counts} = get_media_item_status(item) %>
-              <div class="flex flex-col gap-1">
+              <div class="flex flex-col gap-0.5">
                 <div class="flex items-center gap-1">
-                  <div class="tooltip tooltip-right" data-tip={media_status_label(status)}>
-                    <span class={["badge badge-sm", media_status_color(status)]}>
-                      <.icon name={media_status_icon(status)} class="w-4 h-4" />
+                  <div class="tooltip tooltip-left" data-tip={media_status_label(status)}>
+                    <span class={["badge badge-sm gap-1", media_status_color(status)]}>
+                      <.icon name={media_status_icon(status)} class="w-3 h-3" />
                     </span>
                   </div>
                   <%!-- File indicator for unmonitored items with files --%>
                   <%= if show_file_indicator?(status, counts) do %>
                     <div
-                      class="tooltip tooltip-right"
+                      class="tooltip tooltip-left"
                       data-tip={get_file_indicator_tooltip(counts)}
                     >
                       <span class="badge badge-sm badge-success">
-                        <.icon name="hero-document-check" class="w-4 h-4" />
+                        <.icon name="hero-document-check" class="w-3 h-3" />
                       </span>
                     </div>
                   <% end %>
                 </div>
                 <%= if episode_count = format_episode_count(counts) do %>
-                  <span class="text-xs text-base-content/70">{episode_count}</span>
+                  <span class="text-xs text-base-content/60">{episode_count}</span>
                 <% end %>
               </div>
-            </td>
-            <td class="hidden lg:table-cell">
+            </div>
+            <%!-- Quality column --%>
+            <div class="w-20 hidden lg:block text-center flex-shrink-0">
               <%= if quality = get_quality_badge(item) do %>
                 <span class="badge badge-primary badge-sm">{quality}</span>
               <% else %>
-                <span class="text-base-content/50">—</span>
+                <span class="text-base-content/40">—</span>
               <% end %>
-            </td>
-            <td class="hidden xl:table-cell">
+            </div>
+            <%!-- Size column --%>
+            <div class="w-24 hidden xl:block text-right text-base-content/70 text-sm flex-shrink-0">
               {format_file_size(total_file_size(item))}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        <% end %>
+      </div>
     </div>
 
     <%!-- Loading indicator for infinite scroll --%>

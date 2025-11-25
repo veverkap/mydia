@@ -175,7 +175,7 @@ defmodule MydiaWeb.MediaLive.IndexTest do
       |> render_change(%{"search" => "matrix"})
 
       # Only The Matrix should be visible
-      assert has_element?(view, "#media-items-grid", movie1.title)
+      assert has_element?(view, "#media-items", movie1.title)
 
       # Clear the search
       view
@@ -183,9 +183,9 @@ defmodule MydiaWeb.MediaLive.IndexTest do
       |> render_change(%{"search" => ""})
 
       # All items should be visible again
-      assert has_element?(view, "#media-items-grid", movie1.title)
-      assert has_element?(view, "#media-items-grid", movie2.title)
-      assert has_element?(view, "#media-items-grid", show1.title)
+      assert has_element?(view, "#media-items", movie1.title)
+      assert has_element?(view, "#media-items", movie2.title)
+      assert has_element?(view, "#media-items", show1.title)
     end
 
     test "search works for both movies and TV shows", %{
@@ -280,7 +280,7 @@ defmodule MydiaWeb.MediaLive.IndexTest do
       |> render_click()
 
       # Search should still be applied
-      assert has_element?(view, "#media-items-list", movie1.title)
+      assert has_element?(view, "#media-items", movie1.title)
 
       # Switch back to grid view
       view
@@ -288,7 +288,7 @@ defmodule MydiaWeb.MediaLive.IndexTest do
       |> render_click()
 
       # Search should still be applied
-      assert has_element?(view, "#media-items-grid", movie1.title)
+      assert has_element?(view, "#media-items", movie1.title)
     end
 
     test "search can be combined with monitoring filter", %{

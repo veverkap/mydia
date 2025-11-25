@@ -66,7 +66,12 @@ defmodule MydiaWeb.MediaLive.Index do
   @impl true
   def handle_event("toggle_view", %{"mode" => mode}, socket) do
     view_mode = String.to_existing_atom(mode)
-    {:noreply, assign(socket, :view_mode, view_mode)}
+
+    {:noreply,
+     socket
+     |> assign(:view_mode, view_mode)
+     |> assign(:page, 0)
+     |> load_media_items(reset: true)}
   end
 
   def handle_event("search", params, socket) do
