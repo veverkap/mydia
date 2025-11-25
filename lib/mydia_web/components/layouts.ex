@@ -142,11 +142,6 @@ defmodule MydiaWeb.Layouts do
                 </li>
 
                 <li>
-                  <a href="/admin">
-                    <.icon name="hero-server" class="w-5 h-5" /> System Status
-                  </a>
-                </li>
-                <li>
                   <a href="/admin/users">
                     <.icon name="hero-users" class="w-5 h-5" /> Users
                   </a>
