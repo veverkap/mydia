@@ -1,5 +1,6 @@
 defmodule MydiaWeb.AdminStatusLive.Index do
   use MydiaWeb, :live_view
+  alias Mydia.DB
   alias Mydia.Repo
   alias Mydia.Settings
   alias Mydia.System
@@ -41,9 +42,7 @@ defmodule MydiaWeb.AdminStatusLive.Index do
     # Get runtime config
     config = Settings.get_runtime_config()
 
-    # Convert to a list of settings with their sources
-    [
-      # Server settings
+    server_settings = [
       %{
         category: "Server",
         key: "server.port",
@@ -67,21 +66,12 @@ defmodule MydiaWeb.AdminStatusLive.Index do
         key: "server.url_host",
         value: config.server.url_host,
         source: get_setting_source("URL_HOST")
-      },
-      # Database settings
-      %{
-        category: "Database",
-        key: "database.path",
-        value: config.database.path,
-        source: get_setting_source("DATABASE_PATH")
-      },
-      %{
-        category: "Database",
-        key: "database.pool_size",
-        value: config.database.pool_size,
-        source: get_setting_source("POOL_SIZE")
-      },
-      # Auth settings
+      }
+    ]
+
+    database_settings = get_database_settings(config)
+
+    auth_settings = [
       %{
         category: "Authentication",
         key: "auth.local_enabled",
@@ -93,8 +83,10 @@ defmodule MydiaWeb.AdminStatusLive.Index do
         key: "auth.oidc_enabled",
         value: config.auth.oidc_enabled,
         source: get_setting_source("OIDC_ENABLED")
-      },
-      # Media settings
+      }
+    ]
+
+    media_settings = [
       %{
         category: "Media",
         key: "media.movies_path",
@@ -112,8 +104,10 @@ defmodule MydiaWeb.AdminStatusLive.Index do
         key: "media.scan_interval_hours",
         value: config.media.scan_interval_hours,
         source: get_setting_source("MEDIA_SCAN_INTERVAL_HOURS")
-      },
-      # Downloads settings
+      }
+    ]
+
+    downloads_settings = [
       %{
         category: "Downloads",
         key: "downloads.monitor_interval_minutes",
@@ -121,7 +115,69 @@ defmodule MydiaWeb.AdminStatusLive.Index do
         source: get_setting_source("DOWNLOAD_MONITOR_INTERVAL_MINUTES")
       }
     ]
+
+    (server_settings ++ database_settings ++ auth_settings ++ media_settings ++ downloads_settings)
     |> Enum.group_by(& &1.category)
+  end
+
+  defp get_database_settings(config) do
+    if DB.postgres?() do
+      repo_config = Application.get_env(:mydia, Mydia.Repo, [])
+
+      [
+        %{
+          category: "Database",
+          key: "database.adapter",
+          value: "PostgreSQL",
+          source: :default
+        },
+        %{
+          category: "Database",
+          key: "database.hostname",
+          value: Keyword.get(repo_config, :hostname, "localhost"),
+          source: get_setting_source("DATABASE_HOST")
+        },
+        %{
+          category: "Database",
+          key: "database.port",
+          value: Keyword.get(repo_config, :port, 5432),
+          source: get_setting_source("DATABASE_PORT")
+        },
+        %{
+          category: "Database",
+          key: "database.name",
+          value: Keyword.get(repo_config, :database, "unknown"),
+          source: get_setting_source("DATABASE_NAME")
+        },
+        %{
+          category: "Database",
+          key: "database.pool_size",
+          value: config.database.pool_size,
+          source: get_setting_source("POOL_SIZE")
+        }
+      ]
+    else
+      [
+        %{
+          category: "Database",
+          key: "database.adapter",
+          value: "SQLite",
+          source: :default
+        },
+        %{
+          category: "Database",
+          key: "database.path",
+          value: config.database.path,
+          source: get_setting_source("DATABASE_PATH")
+        },
+        %{
+          category: "Database",
+          key: "database.pool_size",
+          value: config.database.pool_size,
+          source: get_setting_source("POOL_SIZE")
+        }
+      ]
+    end
   end
 
   defp get_setting_source(env_var_name) do
@@ -129,6 +185,14 @@ defmodule MydiaWeb.AdminStatusLive.Index do
   end
 
   defp get_database_info do
+    if DB.postgres?() do
+      get_postgres_database_info()
+    else
+      get_sqlite_database_info()
+    end
+  end
+
+  defp get_sqlite_database_info do
     config = Application.get_env(:mydia, Mydia.Repo, [])
     db_path = Keyword.get(config, :database, "unknown")
 
@@ -140,9 +204,37 @@ defmodule MydiaWeb.AdminStatusLive.Index do
       end
 
     %{
+      adapter: :sqlite,
       path: db_path,
       size: format_file_size(file_size),
       exists: File.exists?(db_path),
+      health: get_database_health()
+    }
+  end
+
+  defp get_postgres_database_info do
+    config = Application.get_env(:mydia, Mydia.Repo, [])
+    hostname = Keyword.get(config, :hostname, "localhost")
+    port = Keyword.get(config, :port, 5432)
+    database = Keyword.get(config, :database, "unknown")
+
+    # Get database size from PostgreSQL
+    size =
+      try do
+        %{rows: [[size_bytes]]} =
+          Repo.query!("SELECT pg_database_size(current_database())")
+
+        format_file_size(size_bytes)
+      rescue
+        _ -> "Unknown"
+      end
+
+    %{
+      adapter: :postgres,
+      hostname: hostname,
+      port: port,
+      database: database,
+      size: size,
       health: get_database_health()
     }
   end

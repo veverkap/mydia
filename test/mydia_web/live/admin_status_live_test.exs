@@ -55,5 +55,40 @@ defmodule MydiaWeb.AdminStatusLiveTest do
     test "displays database information", %{view: view} do
       assert has_element?(view, "h2", "Database")
     end
+
+    test "displays database adapter-specific information", %{view: view} do
+      html = render(view)
+
+      # Should always show Size:
+      assert html =~ "Size:"
+
+      if Mydia.DB.postgres?() do
+        # PostgreSQL mode
+        assert html =~ "PostgreSQL"
+        assert html =~ "Host:"
+        assert html =~ "Database:"
+        refute html =~ "Exists:"
+      else
+        # SQLite mode
+        assert html =~ "SQLite"
+        assert html =~ "Location:"
+        assert html =~ "Exists:"
+      end
+    end
+
+    test "displays database adapter in settings", %{view: view} do
+      html = render(view)
+      # Should show the database adapter in the Database settings section
+      assert html =~ "database.adapter"
+
+      if Mydia.DB.postgres?() do
+        assert html =~ "database.hostname"
+        assert html =~ "database.name"
+        refute html =~ "database.path"
+      else
+        assert html =~ "database.path"
+        refute html =~ "database.hostname"
+      end
+    end
   end
 end

@@ -45,22 +45,47 @@
           </span>
         </h2>
         <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="font-medium">Location:</span>
-            <code class="text-sm bg-base-300 px-2 py-1 rounded">{@database_info.path}</code>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="font-medium">Size:</span>
-            <span>{@database_info.size}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="font-medium">Exists:</span>
-            <span class={
-              if @database_info.exists, do: "badge badge-success", else: "badge badge-error"
-            }>
-              {if @database_info.exists, do: "Yes", else: "No"}
-            </span>
-          </div>
+          <%= if @database_info.adapter == :postgres do %>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Adapter:</span>
+              <span class="badge badge-info">PostgreSQL</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Host:</span>
+              <code class="text-sm bg-base-300 px-2 py-1 rounded">
+                {@database_info.hostname}:{@database_info.port}
+              </code>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Database:</span>
+              <code class="text-sm bg-base-300 px-2 py-1 rounded">{@database_info.database}</code>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Size:</span>
+              <span>{@database_info.size}</span>
+            </div>
+          <% else %>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Adapter:</span>
+              <span class="badge badge-info">SQLite</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Location:</span>
+              <code class="text-sm bg-base-300 px-2 py-1 rounded">{@database_info.path}</code>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Size:</span>
+              <span>{@database_info.size}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Exists:</span>
+              <span class={
+                if @database_info.exists, do: "badge badge-success", else: "badge badge-error"
+              }>
+                {if @database_info.exists, do: "Yes", else: "No"}
+              </span>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
