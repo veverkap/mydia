@@ -18,7 +18,7 @@ defmodule Mydia.Events.Event do
           category: String.t(),
           type: String.t(),
           actor_type: atom() | nil,
-          actor_id: binary() | nil,
+          actor_id: String.t() | nil,
           resource_type: String.t() | nil,
           resource_id: binary() | nil,
           severity: atom(),
@@ -30,7 +30,9 @@ defmodule Mydia.Events.Event do
     field :category, :string
     field :type, :string
     field :actor_type, Ecto.Enum, values: @actor_types
-    field :actor_id, :binary_id
+    # String type allows both UUIDs (for user actors) and descriptive identifiers
+    # (for system/job actors like "media_context", "download_monitor")
+    field :actor_id, :string
     field :resource_type, :string
     field :resource_id, :binary_id
     field :severity, Ecto.Enum, values: @severity_levels, default: :info
