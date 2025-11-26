@@ -17,8 +17,6 @@ defmodule Mydia.Library.MigrationValidationTest do
   alias Mydia.Settings.LibraryPath
   alias Mydia.Repo
 
-  import Mydia.MediaFixtures
-
   @moduletag :tmp_dir
 
   describe "library path sync from runtime config" do

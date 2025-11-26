@@ -4,8 +4,6 @@ defmodule MydiaWeb.Live.UserAuthTest do
   import Phoenix.LiveViewTest
   import Mydia.AccountsFixtures
 
-  alias MydiaWeb.Live.UserAuth
-
   describe "on_mount/4 :ensure_authenticated" do
     test "allows authenticated user to continue", %{conn: conn} do
       user = user_fixture()

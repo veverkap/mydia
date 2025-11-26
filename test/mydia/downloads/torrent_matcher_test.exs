@@ -1,7 +1,6 @@
 defmodule Mydia.Downloads.TorrentMatcherTest do
   use Mydia.DataCase, async: true
   alias Mydia.Downloads.TorrentMatcher
-  alias Mydia.Media
   import Mydia.Factory
 
   describe "find_match/2 - movies" do

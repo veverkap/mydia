@@ -4,7 +4,7 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
   import Phoenix.LiveViewTest
   import Mydia.MediaFixtures
   import MydiaWeb.AuthHelpers
-  alias Mydia.{Accounts, Media, Repo}
+  alias Mydia.Media
 
   @mock_movie_metadata %{
     "id" => 550,
@@ -18,20 +18,6 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
     "vote_count" => 27_000,
     "popularity" => 70.0,
     "runtime" => 139
-  }
-
-  @mock_tv_show_metadata %{
-    "id" => 1396,
-    "name" => "Breaking Bad",
-    "original_name" => "Breaking Bad",
-    "first_air_date" => "2008-01-20",
-    "overview" => "A high school chemistry teacher diagnosed with cancer...",
-    "poster_path" => "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
-    "backdrop_path" => "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
-    "vote_average" => 8.9,
-    "vote_count" => 12_000,
-    "number_of_seasons" => 5,
-    "number_of_episodes" => 62
   }
 
   setup do
@@ -133,9 +119,9 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
           monitored: true
         })
 
-      view = mount_search_live(conn, token)
+      _view = mount_search_live(conn, token)
 
-      release_title = "Fight.Club.1999.1080p.BluRay.x264-GROUP"
+      _release_title = "Fight.Club.1999.1080p.BluRay.x264-GROUP"
 
       # Since we can't easily mock external calls, we'll test the duplicate detection
       # logic by directly verifying the database query works
@@ -173,7 +159,7 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
       assert media_item.type == "tv_show"
 
       # Verify episode was created
-      episodes = Media.list_episodes_for_media(media_item.id)
+      episodes = Media.list_episodes(media_item.id)
       assert length(episodes) == 1
       episode = List.first(episodes)
       assert episode.season_number == 1
@@ -197,7 +183,7 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
 
       # Verify all episodes were created
       media_item = Media.get_media_item_by_tmdb(1396)
-      episodes = Media.list_episodes_for_media(media_item.id)
+      episodes = Media.list_episodes(media_item.id)
       assert length(episodes) == 3
 
       episode_numbers = Enum.map(episodes, & &1.episode_number) |> Enum.sort()
@@ -212,7 +198,7 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
     end
 
     test "handles parse failure with manual search modal", %{conn: conn, token: token} do
-      view = mount_search_live(conn, token)
+      _view = mount_search_live(conn, token)
 
       # Unparseable release title
       release_title = "random_garbage_123"
@@ -258,7 +244,7 @@ defmodule MydiaWeb.SearchLive.AddToLibraryTest do
     end
 
     test "handles low confidence parsing with warning", %{conn: conn, token: token} do
-      view = mount_search_live(conn, token)
+      _view = mount_search_live(conn, token)
 
       # Test with a title that produces low confidence
       release_title = "Movie.Title"

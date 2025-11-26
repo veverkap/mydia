@@ -1,8 +1,6 @@
 defmodule MydiaWeb.Live.AuthorizationTest do
   use MydiaWeb.ConnCase, async: true
 
-  import Phoenix.ConnTest
-  import Phoenix.LiveViewTest
   import Mydia.AccountsFixtures
 
   alias MydiaWeb.Live.Authorization

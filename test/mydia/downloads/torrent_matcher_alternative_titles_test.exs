@@ -135,7 +135,7 @@ defmodule Mydia.Downloads.TorrentMatcherAlternativeTitlesTest do
     end
 
     test "alternative title with different year still requires year validation" do
-      {:ok, movie} =
+      {:ok, _movie} =
         Media.create_media_item(%{
           type: "movie",
           title: "Leon: The Professional",

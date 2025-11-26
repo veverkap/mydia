@@ -343,7 +343,7 @@ defmodule Mydia.Jobs.DownloadMonitorTest do
 
       media_item = media_item_fixture()
 
-      download =
+      _download =
         download_fixture(%{
           media_item_id: media_item.id
         })

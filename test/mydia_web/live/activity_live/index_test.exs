@@ -13,14 +13,14 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
     end
 
     test "renders the activity page", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       assert html =~ "Activity Feed"
       assert html =~ "Recent events and system activity"
     end
 
     test "shows empty state when no events exist", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       assert html =~ "No events yet"
       assert html =~ "Events will appear here as activity happens"
@@ -28,7 +28,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
 
     test "displays events in reverse chronological order", %{conn: conn} do
       # Create test events
-      {:ok, event1} =
+      {:ok, _event1} =
         Events.create_event(%{
           category: "media",
           type: "media_item.added",
@@ -37,7 +37,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"title" => "Test Movie 1", "media_type" => "movie"}
         })
 
-      {:ok, event2} =
+      {:ok, _event2} =
         Events.create_event(%{
           category: "downloads",
           type: "download.initiated",
@@ -46,7 +46,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"title" => "Test Download"}
         })
 
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       # Should show both events
       assert html =~ "Test Movie 1"
@@ -162,7 +162,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"title" => "Failed.File.mkv", "error_message" => "Connection timeout"}
         })
 
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       # Check formatted descriptions
       assert html =~ "Added movie: Inception"
@@ -194,7 +194,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"job_name" => "test_job", "error_message" => "Warning"}
         })
 
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       # Should show severity badges
       assert html =~ "error"
@@ -211,7 +211,7 @@ defmodule MydiaWeb.ActivityLive.IndexTest do
           metadata: %{"title" => "Recent Movie", "media_type" => "movie"}
         })
 
-      {:ok, view, html} = live(conn, ~p"/activity")
+      {:ok, _view, html} = live(conn, ~p"/activity")
 
       # Should show "just now" or similar relative time
       assert html =~ ~r/(just now|minutes ago|seconds ago)/

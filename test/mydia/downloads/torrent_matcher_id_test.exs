@@ -33,7 +33,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
 
     test "prefers TMDB ID match over title match even with different title" do
       # Create two movies with similar titles but different TMDB IDs
-      matrix =
+      _matrix =
         insert(:media_item, %{
           type: "movie",
           title: "The Matrix",
@@ -185,7 +185,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
         })
 
       # Create another movie with same IMDB but different TMDB (hypothetical scenario)
-      other_movie =
+      _other_movie =
         insert(:media_item, %{
           type: "movie",
           title: "Other Movie",
@@ -344,7 +344,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
     end
 
     test "handles zero TMDB ID as no ID" do
-      movie =
+      _movie =
         insert(:media_item, %{
           type: "movie",
           title: "Test Movie",
@@ -367,7 +367,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
     end
 
     test "handles empty IMDB ID string as no ID" do
-      movie =
+      _movie =
         insert(:media_item, %{
           type: "movie",
           title: "Test Movie",
@@ -399,7 +399,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
           monitored: true
         })
 
-      matrix_reloaded =
+      _matrix_reloaded =
         insert(:media_item, %{
           type: "movie",
           title: "The Matrix Reloaded",
@@ -426,7 +426,7 @@ defmodule Mydia.Downloads.TorrentMatcherIdTest do
 
   describe "ID-based matching - TV episode not found" do
     test "returns error when episode not found even with ID match" do
-      tv_show =
+      _tv_show =
         insert(:media_item, %{
           type: "tv_show",
           title: "Breaking Bad",

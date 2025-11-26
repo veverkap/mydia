@@ -8,7 +8,6 @@ defmodule Mydia.Jobs.MovieSearchTest do
   alias Mydia.IndexerMock
   alias Mydia.Downloads.Client
   alias Mydia.Downloads.Client.Registry
-  alias Mydia.Downloads.Client.Error
 
   import Mydia.MediaFixtures
   import Mydia.SettingsFixtures

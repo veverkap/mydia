@@ -1,7 +1,7 @@
 defmodule MydiaWeb.Api.PlaybackControllerTest do
   use MydiaWeb.ConnCase, async: true
 
-  alias Mydia.{Accounts, Media, Playback}
+  alias Mydia.{Media, Playback}
 
   setup do
     # Create test user and get auth token

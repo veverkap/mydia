@@ -35,7 +35,7 @@ defmodule MydiaWeb.AdminConfigLiveTest do
       assert path =~ "/auth"
     end
 
-    test "requires admin role", %{conn: conn, token: token} do
+    test "requires admin role", %{conn: conn, token: _token} do
       # Create a regular user (non-admin)
       {:ok, regular_user} =
         Accounts.create_user(%{

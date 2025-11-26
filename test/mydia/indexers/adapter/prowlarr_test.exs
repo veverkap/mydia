@@ -163,7 +163,7 @@ defmodule Mydia.Indexers.Adapter.ProwlarrTest do
 
   describe "result parsing" do
     test "parses quality from title" do
-      config = %{
+      _config = %{
         type: :prowlarr,
         name: "Test Prowlarr",
         host: "localhost",

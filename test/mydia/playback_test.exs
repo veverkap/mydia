@@ -2,7 +2,6 @@ defmodule Mydia.PlaybackTest do
   use Mydia.DataCase, async: true
 
   alias Mydia.Playback
-  alias Mydia.Playback.Progress
   alias Mydia.Accounts
   alias Mydia.Media
 

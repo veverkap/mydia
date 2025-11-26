@@ -1,7 +1,6 @@
 defmodule Mydia.Library.MetadataEnricherTest do
   use Mydia.DataCase, async: true
 
-  alias Mydia.Library.MetadataEnricher
   alias Mydia.{Library, Settings}
 
   describe "library type validation" do
