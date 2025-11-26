@@ -85,7 +85,10 @@
         <% end %>
         <%!-- Quality Profiles Tab --%>
         <%= if @active_tab == "quality" do %>
-          <Components.quality_profiles_tab quality_profiles={@quality_profiles} />
+          <Components.quality_profiles_tab
+            quality_profiles={@quality_profiles}
+            default_quality_profile_id={@default_quality_profile_id}
+          />
         <% end %>
         <%!-- Download Clients Tab --%>
         <%= if @active_tab == "clients" do %>

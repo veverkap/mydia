@@ -256,73 +256,64 @@ defmodule MydiaWeb.AdminConfigLive.Index do
     # Convert category string to atom for schema compatibility
     category_atom = category_string_to_atom(category)
 
-    # Special handling for quality profile ID - use dedicated setter
-    case key do
-      "media.default_quality_profile_id" ->
-        profile_id =
-          case value do
-            "" -> nil
-            id_str -> String.to_integer(id_str)
-          end
+    # Generic select setting handling for future select settings
+    changeset =
+      validate_config_setting(%{
+        key: key,
+        value: value,
+        category: category_atom
+      })
 
-        case Settings.set_default_quality_profile(profile_id) do
-          {:ok, _} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Default quality profile updated")
-             |> load_configuration_data()}
+    if changeset.valid? do
+      validated_data = Ecto.Changeset.apply_changes(changeset)
 
-          {:error, changeset} ->
-            MydiaLogger.log_error(:liveview, "Failed to update select setting",
-              error: changeset,
-              error_details: inspect(changeset, pretty: true),
-              operation: :update_setting,
-              category: category,
-              setting_key: key,
-              user_id: socket.assigns.current_user.id
-            )
+      validated_data_with_user =
+        Map.put(validated_data, :updated_by_id, socket.assigns.current_user.id)
 
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to update setting")}
-        end
-
-      _ ->
-        # Generic select setting handling (fallback for future select settings)
-        changeset =
-          validate_config_setting(%{
-            key: key,
-            value: value,
-            category: category_atom
-          })
-
-        if changeset.valid? do
-          validated_data = Ecto.Changeset.apply_changes(changeset)
-
-          validated_data_with_user =
-            Map.put(validated_data, :updated_by_id, socket.assigns.current_user.id)
-
-          case upsert_config_setting(validated_data_with_user) do
-            {:ok, _setting} ->
-              {:noreply,
-               socket
-               |> put_flash(:info, "Setting updated successfully")
-               |> load_configuration_data()}
-
-            {:error, _changeset} ->
-              {:noreply,
-               socket
-               |> put_flash(:error, "Failed to update setting")}
-          end
-        else
+      case upsert_config_setting(validated_data_with_user) do
+        {:ok, _setting} ->
           {:noreply,
            socket
-           |> put_flash(:error, "Invalid setting value")}
-        end
+           |> put_flash(:info, "Setting updated successfully")
+           |> load_configuration_data()}
+
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Failed to update setting")}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Invalid setting value")}
     end
   end
 
   ## Quality Profile Events
+
+  @impl true
+  def handle_event("update_default_quality_profile", params, socket) do
+    require Logger
+    Logger.debug("update_default_quality_profile params: #{inspect(params)}")
+
+    profile_id = params["profile_id"]
+    profile_id = if profile_id == "", do: nil, else: profile_id
+
+    case Settings.set_default_quality_profile(profile_id) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Default quality profile updated")
+         |> assign(:default_quality_profile_id, profile_id)}
+
+      {:error, reason} ->
+        Logger.error("Failed to update default quality profile: #{inspect(reason)}")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to update default quality profile")}
+    end
+  end
 
   @impl true
   def handle_event("new_quality_profile", _params, socket) do
@@ -1615,6 +1606,7 @@ defmodule MydiaWeb.AdminConfigLive.Index do
     |> assign(:config, Settings.get_runtime_config())
     |> assign(:config_settings_with_sources, get_all_settings_with_sources())
     |> assign(:quality_profiles, Settings.list_quality_profiles())
+    |> assign(:default_quality_profile_id, Settings.get_default_quality_profile_id())
     |> assign(:download_clients, download_clients)
     |> assign(:client_health, client_health)
     |> assign(:indexers, indexers)
@@ -1749,14 +1741,6 @@ defmodule MydiaWeb.AdminConfigLive.Index do
       ],
       "Media" => [
         %{
-          key: "media.default_quality_profile_id",
-          label: "Default Quality Profile",
-          type: :select,
-          value: Settings.get_default_quality_profile_id(),
-          source: get_source(nil, "media.default_quality_profile_id"),
-          options: build_quality_profile_options()
-        },
-        %{
           key: "media.movies_path",
           label: "Movies Path",
           type: :string,
@@ -1853,8 +1837,8 @@ defmodule MydiaWeb.AdminConfigLive.Index do
 
   defp get_source(env_var_name, key) do
     cond do
-      # Check if set via environment variable
-      Elixir.System.get_env(env_var_name) ->
+      # Check if set via environment variable (skip if env_var_name is nil)
+      env_var_name != nil and Elixir.System.get_env(env_var_name) != nil ->
         :env
 
       # Check if set in database
@@ -1961,17 +1945,6 @@ defmodule MydiaWeb.AdminConfigLive.Index do
         Logger.debug("Update result: #{inspect(result)}")
         result
     end
-  end
-
-  # Builds a list of quality profile options for the default quality profile dropdown
-  # Returns [{id, name}, ...] with nil option first for "Any Quality"
-  defp build_quality_profile_options do
-    profiles = Settings.list_quality_profiles()
-
-    [
-      {nil, "Any Quality (first available)"}
-      | Enum.map(profiles, fn p -> {p.id, p.name} end)
-    ]
   end
 
   # Transforms quality profile form params to match the schema structure

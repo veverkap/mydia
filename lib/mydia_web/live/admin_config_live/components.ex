@@ -468,10 +468,41 @@ defmodule MydiaWeb.AdminConfigLive.Components do
   Renders the Quality Profiles tab content.
   """
   attr :quality_profiles, :list, required: true
+  attr :default_quality_profile_id, :string, default: nil
 
   def quality_profiles_tab(assigns) do
     ~H"""
     <div class="p-4 sm:p-6 space-y-4" phx-hook="DownloadFile" id="quality-profiles-section">
+      <%!-- Default Quality Profile Setting --%>
+      <div class="bg-base-200 rounded-box p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="flex-1">
+            <div class="font-medium">Default Quality Profile</div>
+            <div class="text-xs opacity-60">
+              Used when adding new media items to your library
+            </div>
+          </div>
+          <form phx-change="update_default_quality_profile" id="default-quality-profile-form">
+            <select
+              id="default-quality-profile-select"
+              class="select select-sm select-bordered w-full sm:w-64"
+              name="profile_id"
+            >
+              <option value="" selected={is_nil(@default_quality_profile_id)}>
+                Any Quality (first available)
+              </option>
+              <%= for profile <- @quality_profiles do %>
+                <option value={profile.id} selected={@default_quality_profile_id == profile.id}>
+                  {profile.name}
+                </option>
+              <% end %>
+            </select>
+          </form>
+        </div>
+      </div>
+
+      <div class="divider my-2"></div>
+
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 class="text-lg font-semibold flex items-center gap-2">
           <.icon name="hero-sparkles" class="w-5 h-5 opacity-60" /> Quality Profiles
