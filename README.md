@@ -12,6 +12,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 - 🤖 **Automated Downloads** – Background search and download with quality profiles and smart release ranking
 - ⬇️ **Download Clients** – qBittorrent, Transmission, SABnzbd, and NZBGet support
 - 🔎 **Indexer Integration** – Search via Prowlarr and Jackett for finding releases
+- 📚 **Built-in Indexer Library** – Native Cardigann support (experimental, limited testing)
 - 👥 **Multi-User System** – Built-in admin/guest roles with request approval workflow
 - 🔐 **SSO Support** – Local authentication plus OIDC/OpenID Connect integration
 - 🔔 **Release Calendar** – Track upcoming releases and monitor episodes
@@ -22,6 +23,7 @@ A modern, self-hosted media management platform for tracking, organizing, and mo
 | Feature | Mydia | Radarr | Sonarr |
 |---------|-------|--------|--------|
 | **Media Types** | Movies + TV Shows | Movies only | TV Shows only |
+| **Built-in Indexers** | 🧪 Cardigann (experimental) | ❌ Requires Prowlarr/Jackett | ❌ Requires Prowlarr/Jackett |
 | **Multi-User & Requests** | ✅ Built-in (admin/guest roles) | ❌ Requires Ombi/Overseerr | ❌ Requires Ombi/Overseerr |
 | **Authentication** | Local + OIDC/SSO built-in | Local only | Local only |
 | **Library Management** | ✅ | ✅ | ✅ |
@@ -523,8 +525,12 @@ After the admin user is created, you'll be automatically logged in and can begin
 | Variable           | Description                                                                             | Default |
 | ------------------ | --------------------------------------------------------------------------------------- | ------- |
 | `ENABLE_PLAYBACK`  | Enable media playback controls and HLS streaming                                        | `false` |
-| `ENABLE_CARDIGANN` | Enable native Cardigann indexer support (hundreds of indexers without Prowlarr/Jackett) | `false` |
+| `ENABLE_CARDIGANN` | Enable native Cardigann indexer support (hundreds of indexers without Prowlarr/Jackett) | `true`  |
 | `ENABLE_SUBTITLES` | Enable subtitle download and management                                                 | `false` |
+
+> **📋 CARDIGANN INDEXERS NOTE**
+>
+> Cardigann indexer support is **highly experimental**. Only a limited number of indexers have been tested. You may encounter issues with untested indexers - if you do, please report them as GitHub issues to help improve compatibility. Set `ENABLE_CARDIGANN=false` to disable if needed.
 
 ### Download Clients
 

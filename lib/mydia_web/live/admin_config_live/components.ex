@@ -803,6 +803,19 @@ defmodule MydiaWeb.AdminConfigLive.Components do
         </div>
       </div>
 
+      <%= if @cardigann_enabled do %>
+        <div class="alert alert-warning">
+          <.icon name="hero-exclamation-triangle" class="w-5 h-5" />
+          <div>
+            <div class="font-medium">Cardigann indexers are experimental</div>
+            <div class="text-sm opacity-80">
+              Only a limited number of indexers have been tested. You may encounter issues with untested indexers.
+              Please report any problems as GitHub issues.
+            </div>
+          </div>
+        </div>
+      <% end %>
+
       <%= if @indexers == [] and @library_indexers == [] do %>
         <div class="alert alert-info">
           <.icon name="hero-information-circle" class="w-5 h-5" />

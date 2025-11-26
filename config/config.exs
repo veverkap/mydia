@@ -323,9 +323,9 @@ config :mydia, :features,
   playback_enabled: false,
   # Enable/disable Cardigann native indexer support
   # When enabled, provides access to hundreds of torrent indexers without external Prowlarr/Jackett
-  # Set to false to disable Cardigann indexers (default)
+  # Set to false to disable Cardigann indexers
   # Can be overridden via ENABLE_CARDIGANN environment variable
-  cardigann_enabled: false
+  cardigann_enabled: true
 
 # Configure Ueberauth with empty providers by default
 # This is overridden in dev.exs if OIDC is configured
